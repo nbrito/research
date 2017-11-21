@@ -1,0 +1,72 @@
+***************
+*** 72,77 ****
+        register int caplen;
+        register u_char *bp;
+        struct sockaddr from;
+        int fromlen;
+  
+        bp = p->buffer + p->offset;
+--- 73,79 ----
+        register int caplen;
+        register u_char *bp;
+        struct sockaddr from;
++       struct timeval timeout;
+        int fromlen;
+  
+        bp = p->buffer + p->offset;
+***************
+*** 84,89 ****
+  
+  again:
+        do {
+                fromlen = sizeof(from);
+                cc = recvfrom(p->fd, bp, bufsize, 0, &from, &fromlen);
+                if (cc < 0) {
+--- 86,114 ----
+  
+  again:
+        do {
++               if (timerisset(&p->timeout)) {
++                       /*
++                        * Delay no more than the specified amount of
++                        * time waiting for a packet to arrive, by
++                        * using "select()" with that as a timeout
++                        * to wait for the packet.  Return 0 if no
++                        * packet arrives.
++                        */
++                       fd_set set1;
++               
++                       FD_ZERO(&set1);
++                       FD_SET(p->fd, &set1);
++               
++                       /*
++                        * Linux modifies the timeout value, so we need to re-initialize
++                        * it each time.
++                        */
++                       timeout.tv_sec = p->timeout.tv_sec;
++                       timeout.tv_usec = p->timeout.tv_usec;
++                       if (select(p->fd+1, &set1, NULL, NULL, &timeout) == 0)
++                               return (0);
++               }
++               
+                fromlen = sizeof(from);
+                cc = recvfrom(p->fd, bp, bufsize, 0, &from, &fromlen);
+                if (cc < 0) {
+***************
+*** 272,277 ****
+                sprintf(ebuf, "malloc: %s", pcap_strerror(errno));
+                goto bad;
+        }
+  
+        /* XXX */
+        if (promisc && broadcast) {
+--- 297,305 ----
+                sprintf(ebuf, "malloc: %s", pcap_strerror(errno));
+                goto bad;
+        }
++ 
++       p->timeout.tv_sec = to_ms / 1000;
++       p->timeout.tv_usec = (to_ms * 1000) % 1000000;
+  
+        /* XXX */
+        if (promisc && broadcast) {

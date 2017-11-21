@@ -1,0 +1,46 @@
+Project: 	IRPAS
+		Internetwork Routing Portocol Attack Suite
+
+Author:		FX <fx@phenoelit.de>
+Organization:	Phenoelit (http://www.phenoelit.de)
+
+Version: 	$Id: IRPAS.version,v 0.8 2001/05/29 15:45:10 fx Exp fx $
+
+Copyright:	(c) 2k++
+
+License:	see http://www.phenoelit.de/fr/license.html
+
+Documentation:	see http://www.phenoelit.de/irpas/docu.html
+
+Content:	* file2cable
+			raw ether frame sender
+		* itrace 
+			traceroute using echo-request
+		* tctrace
+			traceroute using TCP SYN packets
+		* netenum
+			target enumeration
+		* netmask
+			ICMP netmask query
+		* protos 
+			IP protocol scanner
+		* cdp 
+			program for sending Cisco Discovery Protocol messages
+		* igrp
+			program for sending IGRP routing updates
+		* irdp	
+			program for sending IRDP ICMP messages
+		* irdpresponder
+			sends responses to IRDP solicication messages
+		* hsrp
+			Hot Standby Router Protocol takeover tool
+		* ass
+			autonomous system scanner 
+			- IGRP
+			- IRDP
+			- EIGRP
+			- RIPv1
+			- RIPv2
+			- CDP
+			- HSRP
+			- OSPF

@@ -1,0 +1,16 @@
+***************
+*** 71,76 ****
+        int linktype;
+        int tzoff;              /* timezone offset */
+        int offset;             /* offset for proper alignment */
+  
+        struct pcap_sf sf;
+        struct pcap_md md;
+--- 71,77 ----
+        int linktype;
+        int tzoff;              /* timezone offset */
+        int offset;             /* offset for proper alignment */
++       struct timeval timeout; /* packet timeout when reading live traffic */
+  
+        struct pcap_sf sf;
+        struct pcap_md md;

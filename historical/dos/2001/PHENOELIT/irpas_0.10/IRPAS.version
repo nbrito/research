@@ -1,0 +1,56 @@
+Project: 	IRPAS
+		Internetwork Routing Portocol Attack Suite
+
+Author:		FX <fx@phenoelit.de>
+Organization:	Phenoelit (http://www.phenoelit.de)
+
+Version: 	$Id: IRPAS.version,v 0.10 2002/01/07 20:00:42 fx Exp fx $
+
+Copyright:	(c) 2k++
+
+License:	see http://www.phenoelit.de/fr/license.html
+
+Documentation:	see http://www.phenoelit.de/irpas/docu.html
+
+Content:	* dhcpx
+			Dynamic Host Confusion Program 
+			Requests all available IP adresses from a DHCP server
+			(still first implementation - might me a bit alpha)
+		* icmp_redirect
+			Dynamic redirection: redirects communication using
+			network/netmask matches for targeted attacks
+		* dfkaa
+			"Devices formerly known as Ascend" hacking tool 
+			(still a little undocumented - give it a try)
+		* file2cable
+			raw ether frame sender
+		* itrace 
+			traceroute using echo-request
+		* tctrace
+			traceroute using TCP SYN packets
+		* netenum
+			target enumeration
+		* netmask
+			ICMP netmask query
+		* protos 
+			IP protocol scanner
+		* cdp 
+			program for sending Cisco Discovery Protocol messages
+		* igrp
+			program for sending IGRP routing updates
+		* irdp	
+			program for sending IRDP ICMP messages
+		* irdpresponder
+			sends responses to IRDP solicication messages
+		* hsrp
+			Hot Standby Router Protocol takeover tool
+		* ass
+			autonomous system scanner 
+			- IGRP
+			- IRDP
+			- EIGRP
+			- RIPv1
+			- RIPv2
+			- CDP
+			- HSRP
+			- OSPF
