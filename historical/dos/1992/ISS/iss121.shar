@@ -1,0 +1,1860 @@
+#! /bin/sh
+# This is a shell archive.  Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file".  To overwrite existing
+# files, type "sh file -c".  You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g..  If this archive is complete, you
+# will see the following message at the end:
+#		"End of shell archive."
+# Contents:  iss iss/Bugs iss/Changes iss/Makefile iss/iss.1 iss/iss.c
+#   iss/readme.iss iss/telnet.h iss/todo
+# Wrapped by gt6468c@sundial.gatech.edu on Wed Oct  6 02:40:30 1993
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+if test ! -d 'iss' ; then
+    echo shar: Creating directory \"'iss'\"
+    mkdir 'iss'
+fi
+if test -f 'iss/Bugs' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/Bugs'\"
+else
+echo shar: Extracting \"'iss/Bugs'\" \(157 characters\)
+sed "s/^X//" >'iss/Bugs' <<'END_OF_FILE'
+XCant open a port socket sometimes.
+XThe src code hasnt been tested on many other unixes other than SunOs4.1.1-3.
+XCore dumps sometimes for unknown reasons.
+X
+X
+X
+END_OF_FILE
+if test 157 -ne `wc -c <'iss/Bugs'`; then
+    echo shar: \"'iss/Bugs'\" unpacked with wrong size!
+fi
+# end of 'iss/Bugs'
+fi
+if test -f 'iss/Changes' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/Changes'\"
+else
+echo shar: Extracting \"'iss/Changes'\" \(2028 characters\)
+sed "s/^X//" >'iss/Changes' <<'END_OF_FILE'
+XV1.00 First Release.
+X
+XV1.02 Patched a few minor bugs.
+X1. Changing  S_un to s.addr which abreviates the structure, but also
+Xmakes it more compatible to compile on other machines.
+X2. The closing of files was changed from close(file) -> fclose(file).
+X3. Unnecessary variables have been removed.
+X4. One of the nested loops was incorrectly bracketted around the wrong command.
+X5. Incorrectly calling the function getname(a). Changed to getname(&a).
+X
+XV1.03 Minor bugs fixed that make it more compatible on other unixes.
+X1. Check for NULL file before closing ISS.log. Caused core dump on some unixes.
+X2. Included <strings.h>
+X3. Added siginterrupt (SIGALRM,1) to varies parts. Apparently on some machines,
+X the signal wasn't being caught until this was set.
+X
+XV1.10 Added new features and better routines.
+X1. Changed the method of how to scan allowing a user to be more specific
+Xin which hosts are scanned.
+X2. Option "-p" implemented to scan individual hosts for all opening tcp port.
+X3. Sending a QUIT to the SMTP and FTP port.
+X4. Can now enter just one ip-address to probe that host.
+X5. Option -o to change the output to something other than ISS.log.
+X  if "-o -" is spefied, - becomes stdout. Allowing for easier debugging and
+X  testing.
+X
+XV1.20 Modified a few more minor bugs.
+X1. Used htonl() and htons() hopefully to fix byte order of addresses on some machines.
+X2. Made the socket descriptions all conform to (sd) and changed
+Xclose(s) to close(sd).
+X3. Added more checking of read(s, &c, 1) routines.
+X4. Allowing the user to just enter one ip-addr to scan that particular host
+Xfor security holes.
+X5. Checks "NoName" as a domainname guess.
+X6. Increased size of hostnames within program.
+X
+XV1.21 Few fixes.
+X1. Options -e and -y turned off more than just what they were suppose to.
+X2. Cleaned up some code for routines that allowed users to select which 
+Xhosts to scan.
+X3. Made time-outs longer and checks slightly more efficent for ftp and smtp.
+X4. #ifdef sun siginterrupt routine.
+X5. Including <string.h> except for pyramid systems.
+X
+X
+X
+END_OF_FILE
+if test 2028 -ne `wc -c <'iss/Changes'`; then
+    echo shar: \"'iss/Changes'\" unpacked with wrong size!
+fi
+# end of 'iss/Changes'
+fi
+if test -f 'iss/Makefile' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/Makefile'\"
+else
+echo shar: Extracting \"'iss/Makefile'\" \(64 characters\)
+sed "s/^X//" >'iss/Makefile' <<'END_OF_FILE'
+Xiss:	iss.o telnet.h
+X	$(CC) -o $@ iss.o
+X
+Xclean:
+X	rm -f iss iss.o
+END_OF_FILE
+if test 64 -ne `wc -c <'iss/Makefile'`; then
+    echo shar: \"'iss/Makefile'\" unpacked with wrong size!
+fi
+# end of 'iss/Makefile'
+fi
+if test -f 'iss/iss.1' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/iss.1'\"
+else
+echo shar: Extracting \"'iss/iss.1'\" \(9446 characters\)
+sed "s/^X//" >'iss/iss.1' <<'END_OF_FILE'
+X.\" "%W% %G%"
+X.TH ISS 1
+X.SH NAME
+Xiss \- Internet Security Scanner
+X.SH SYNOPSIS
+X.B iss
+X[ -msrdyvpqefo ] #1 #2 
+X.SH DESCRIPTION
+X.I ISS
+XInternet Security Scanner (
+X.I ISS
+X) is one of the first multi-level security
+Xscanners available to the public.  It was designed to be flexible and easily
+Xportable to many unix platforms and do its job in a reasonable amount of
+Xtime.  It provides information to the administrator that will fix obvious
+Xsecurity misconfigurations. 
+X.PP
+X.I ISS
+Xdoes a multi-level scan of security, not just searching for one
+Xweakness in the system.  To provide this to the public or at least to the
+Xsecurity conscious crowd may cause people to think that it is too dangerous
+Xfor the public, but many of the (cr/h)ackers are already aware of these
+Xsecurity holes and know how to exploit them. 
+X.PP
+XThese security holes are not deep in some OS routines, but standard
+Xmisconfigurations that many domains on Internet tend to show.  Many of these
+Xholes are warned about in CERT and CIAC advisories.  This is the first
+Xrelease of 
+X.I ISS 
+Xand there is still much room for improvement. 
+X.PP
+X.I ISS
+Xis a project that I started as I became interested in security.  As I
+Xheard about (cr/h)ackers breaking into NASA and universities around the
+Xworld, I wanted to find out the deep secrets of security and how these people
+Xwere able to gain access to expensive machines that I would think were
+Xsecure.  I searched Internet for relative information, such as Phrack and
+XCERT advisories. 
+X.PP
+XMost information was vague and did not explain how intruders were able to
+Xgain access to most systems.  At most the information told administrators to
+Xmake password security tighter and to apply the vendor's security patches. 
+XThey lacked real information on how an intruder would look at a site to try
+Xto gain access.  Having talked with security experts and reading CERT
+Xadvisories, I started trying to look for various security holes within my
+Xdomain.
+X.PP
+XTo my surprise, I noticed that many of machines were adequately secured,
+Xbut within a domain there remained enough machines with obvious holes that
+Xanyone wanted into any machine could attack the weak 'trusted' machine and
+Xfrom there could gain access to the rest of the domain. From this project, I
+Xhave not learned any new deep secret to cracking systems, but with the right
+Xtools that most domains on Internet are insecure.  These holes will not be a
+Xsurprise to any advanced intruder, but with this tool administrators will be
+Xable to quickly search for obvious holes and prepare to fix them.
+X.PP
+X
+X.SH OPTIONS
+X.TP
+X.B \-d
+XIgnores Checking Default Logins such as sync.
+X.TP
+X.B \-m
+XIgnores checking for mail port.
+X.TP
+X.B \-s
+Xxx number of seconds max to wait.
+X.TP
+X.B \-r
+XIgnores Checking for RPC calls.
+X.TP
+X.B \-y
+XTry to get pw via Ypx.
+X.TP
+X.B \-v
+XIgnores finding Mail Aliases for decode, guest, bbs, lp.
+X.TP
+X.B \-p
+XScans one Host for all open TCP ports (disables all other options).
+X.TP
+X.B \-q
+XTurns off Quick Scan so it finds hosts even with no name.
+X.TP
+X.B \-e
+XOnly logs directories that can be mounted by everyone.
+X.TP
+X.B \-f
+XIgnores Checking FTP port for logging in as anonymous.
+X.TP
+X.B \-o
+XChanges logfile to something besides ISS.log. 
+X.PP
+X#1 and #2 are the beginning and end of the domain address to scan.
+X.PP
+X.I ISS
+Xwill scan a domain sequentially looking for connections.  When it finds
+Xa host it will try to connect to various ports.  For starters, it tries the
+Xtelnet port. When it connects to the telnet port, it logs any information
+Xthat the host displays.  
+X.PP
+XWith the -d option, 
+X.I ISS
+Xignores trying default accounts.  By default,
+X.I ISS
+Xwill then try to log in as 'sync' which is a common account name for
+XSunOS and other Unixes.  It in itself is not a big hole other than giving
+Xmore information about type of OS, version number of OS, and  displaying the
+XMOTD.   But 'sync' with no password can become a security hole as someone
+Xwith a regular account on that host can divert the 'sync' privileges and
+Xultimately become root.  The 'sync' account should be passworded or disabled.
+X.PP
+XWith the -m option, 
+X.I ISS
+Xignores the mail port. By default, 
+X.I ISS
+Xtries the
+Xmail port. Connecting to this provides information regarding the hostname,
+Xtype of OS it is, and even the version number of sendmail. 
+X.PP
+XWith the -v option, 
+X.I ISS
+Xwont check for mail aliases. By default, it will
+Xcheck for various users and aliases.  The obvious aliases to search for is
+Xdecode and uudecode.  With these aliases, you are able to send mail to
+Xdecode@hostname with a file that has been uuencoded to overwrite a systems
+Xfile, such as .rhosts.  Some of the users it looks for is 'bbs','guest','lp',
+Xand the well known debug and wiz backdoors within sendmail.  'bbs','guest',
+Xand 'lp' are known to have weak passwords or no passwords at all.
+X.PP
+XWith the -f option, 
+X.I ISS
+Xwont check the FTP port. By default, it will
+Xconnect to the ftp port and check to see if a person can log into anonymous. 
+XMany systems such as Macs let anyone log in and look around other users'
+Xprivate information.  If it succeeds logging in as anonymous, it will then
+Xattempt to create a directory.  If it does that successfully, the main
+Xdirectory of the FTP site is writeable and open to attack.  Many anonymous
+Xftp sites have security holes.  Such weaknesses is being able to write to the
+Xmain directory of the ftp directory, thus an intruder could write a .rhost
+Xfile and log in as ftp.  Plus, the anonymous ftp site may contain the actual
+Xhost's password file and not just a dummy password file. 
+X.PP
+XWith the -r option, 
+X.I ISS
+Xignores checking for rpc. By default, 
+X.I ISS
+Xwill look
+Xfor holes that most systems are more prone to have open.  It uses rpc
+Xinformation to find security weaknesses.  It will do a 'rpcinfo -p hostname'.
+XWith this information gained, it finds which hosts are running NIS, rexd,
+Xbootparam, whose on the host, selection_svc, and NFS. 
+X.PP
+XIf a system shows YPServ, it is likely that it has not been patched yet and
+Xwith the proper domainname, ypserv will provide the password file to any
+Xremote host asking for it.  To fix this, apply the proper ypserv patch from
+Xyour vendor.  
+X.I ISS
+Xwill attempt to guess the domainname and that will provide
+Xinformation as to which machine is the NIS server is.   The domainname should
+Xbe changed if it can easily be guessed so that it will slow people from
+Xgrabbing the password file.  Another attempt to fix this problem is
+Xto make sure that if the password file does get out, none of the
+Xpasswords can easily be cracked.  Crack (by Alec Muffett alecm@sun.com) does
+Xa fine job of finding weak passwords. Also shadowing the password file will
+Xhelp correct this weakness.
+X.PP
+XWith the -y option and a program called Ypx (by Rob Nautu
+Xrob@wzv.win.tue.nl), 
+X.I ISS
+Xwill try to grab the password file from ypserv.
+X.PP
+XIf a system shows Select_svr, selection_svr is running on the machine and
+Xthere are known holes that let anyone remotely grab the password file.
+XSelection_svr should be disabled.
+X.PP
+XWhen Rexd is running on a remote system, anyone with a small C program can
+Xemulate the 'on' command spoofing any user on the remote machine, thus
+Xgaining access to the password file and adding .rhosts files. Rexd should be
+Xdisabled.
+X.PP
+XIf a machine is running Bootparam, it is likely a server to diskless
+Xclients.  One problem with bootparam is that if it is running and someone
+Xcan guess which machines the client and servers are, they are able to get
+Xthe domainname from bootparam, which goes back to the YPServ problem.   
+X.PP
+XThe -e option will only log exports that everyone can mount.  To
+Xusually find out which machines are its clients, by default, log all the
+Xexportable directories.  'showmount -e hostname' shows the exports on a
+Xremote host.  If the exported directories look like:
+X.RS
+X.nf
+X
+X	/usr 		   (everyone)
+X	/export/placebo    placebo
+X	/export/spiff      spiff
+X.fi
+X.RE
+X.PP
+XAnyone can mount /usr and possible replace files and do other damage.
+XPlacebo and spiff appear to be clients to this server.
+X.PP
+X.I ISS
+Xalso does a 'rusers -l hostname' searching for users on the system.
+XThat provides how busy is the machine and possible login entries to try.
+X.PP
+X.I ISS
+Xwith option -p will support scanning all the ports on a certain host,
+Xthus looking for possible access entries, such as gophers, muds, and other
+Xapplications ran by local users.  This has not been implemented yet.
+X.PP
+X.I ISS
+Xwill quickly scan the domain. It does not try to connect to every
+Xaddress, but rather scans through doing a name lookup for each address.  And
+Xif that address has a name, it will then do a more thorough lookup of
+Xinformation on that host. With the -q option, it will try to connect to hosts
+Xeven without names.  
+X.PP
+XTo sum it up, 
+X.I ISS
+Xwill scan a domain grabbing essential information for
+Xadministrators to easily sort through and give him a chance to secure the
+Xopen machines on his network.
+X
+X.SH ACKNOWLEDGEMENTS
+X
+XI would like to thank the following people for ideas, suggestions, and help:
+XScott Miles, Dan Farmer, Wietse Venema, Alec Muffett, Scott Yelich, Darren
+XReed, and Tim Newsham.
+X
+X.SH ENHANCEMENTS
+X.PP
+XPlease send suggestions to
+X.RS
+X.nf
+X                cklaus@hotsun.nersc.gov
+X                         or
+X                coup@gnu.ai.mit.edu.
+X.fi
+X.RE
+X.SH COPYRIGHT
+X.PP
+XCopyright (c) Christopher Klaus, 1992, 1993.
+X(cklaus@hotsun.nersc.gov or coup@gnu.ai.mit.edu)
+X
+X.SH BUGS
+X.PP
+XMay not be ready to compile on machines beside SunOs.
+END_OF_FILE
+if test 9446 -ne `wc -c <'iss/iss.1'`; then
+    echo shar: \"'iss/iss.1'\" unpacked with wrong size!
+fi
+# end of 'iss/iss.1'
+fi
+if test -f 'iss/iss.c' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/iss.c'\"
+else
+echo shar: Extracting \"'iss/iss.c'\" \(20292 characters\)
+sed "s/^X//" >'iss/iss.c' <<'END_OF_FILE'
+X/*
+X * Internet Security Scannner v1.21
+X *
+X * Purpose: Check the Security of your Domain
+X *
+X *
+X * program_name -options #1 #2
+X * #1 is the inetnet network to start searching on
+X * #2 is the inetnet network to end searching on
+X *
+X *
+X * This software is Copyright (c) 1992, 1993 by Christopher Klaus
+X *
+X * Permission is hereby granted to copy, distribute or otherwise
+X * use any part of this package as long as you do not try to make
+X * money from it or pretend that you wrote it.  This copyright
+X * notice must be maintained in any copy made.
+X *
+X * Use of this software constitutes acceptance for use in an AS IS
+X * condition. There are NO warranties with regard to this software.
+X * In no event shall the author be liable for any damages whatsoever
+X * arising out of or in connection with the use or performance of this
+X * software.  Any use of this software is at the user's own risk.
+X *
+X *  If you make modifications to this software that you feel
+X *  increases it usefulness for the rest of the community, please
+X *  email the changes, enhancements, bug fixes as well as any and
+X *  all ideas to me. This software is going to be maintained and
+X *  enhanced as deemed necessary by the community.
+X *
+X *              Christopher Klaus
+X *  (cklaus@hotsun.nersc.gov or coup@gnu.ai.mit.edu)
+X */
+X
+X#include <fcntl.h>
+X#include <sys/types.h>
+X#include <sys/socket.h>
+X#include <netinet/in.h>
+X#include <signal.h>
+X#include <stdio.h>
+X#include <string.h>
+X#include <netdb.h>
+X#include <ctype.h>
+X#include <arpa/nameser.h>
+X#include "telnet.h"
+X#include <sys/stat.h>
+X#ifndef pyr
+X#include <string.h>
+X#endif
+X#ifdef pyr
+X#include <strings.h>
+X#endif
+X
+X
+X
+X#define TELOPTS
+X#define TELCMDS
+X#define BUFSIZE 16
+X#include <resolv.h>
+X
+X/* Set to Appropriate Paths For Various Unixes */
+X#define SHOWMOUNT "/usr/etc/showmount"
+X#define RUSERS "/usr/ucb/rusers"
+X#define RPCINFO "/usr/etc/rpcinfo"
+X#define YPWHICH "/usr/bin/ypwhich"
+X
+Xstruct sockaddr_in a;
+X/* struct of socket */
+Xint x, i, thirty = 30, sd;
+Xint r;
+X/*  range values to scan */
+Xstruct in_addr first, second, myaddr;
+X
+Xint sec = 0, port = 0;
+X/* Check to see when function is done */
+Xint done;
+X/* Conditions to check scan for in each host */
+Xint mail = 0, acctcheck = 0, ypx = 0, rpcinfo = 0, scanports = 0;
+Xint quick = 0, export = 0, ftp = 0, login = 0;
+X
+Xint mnt = 0, width = 0;
+Xchar hname[200], testname[200], smtpname[200], addr[100], *progname, c;
+Xchar tryname[200], res[10][200], buf[200], temp1[200], temp2[200];
+X
+XFILE *fp = NULL;
+Xdonothing()			/* Signal sets done variable to tell program
+X				 * to quit */
+X{
+X    done = 1;
+X#ifdef sun
+X    siginterrupt(SIGALRM, 1);
+X#endif
+X    signal(SIGALRM, donothing);
+X}
+Xgetname(addr)
+X    struct sockaddr_in *addr;
+X{
+X    struct hostent *hoste;
+X    hoste = gethostbyaddr((char *) &addr->sin_addr, sizeof(struct in_addr),
+X			  addr->sin_family);
+X    if (hoste)
+X    {
+X	sprintf(hname, "%s", hoste->h_name);
+X	return (1);
+X    } else
+X    {
+X	sprintf(hname, "NoName");	/* May be interesting */
+X	return (0);
+X    }
+X}
+Xctos()				/* Connect to Socket */
+X{
+X    int soc;
+X    soc = socket(AF_INET, SOCK_STREAM, 0);
+X    if (soc < 0)
+X    {
+X	sleep(5);
+X	(void) setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &thirty, sizeof(thirty));
+X	soc = socket(AF_INET, SOCK_STREAM, 0);
+X	printf("Retrying Socket.\n");
+X	if (soc < 0)
+X	{
+X	    printf("Socket is locked\n");
+X	}
+X    }
+X    a.sin_port = htons((port == 0) ? 23 : port);
+X    a.sin_family = AF_INET;
+X    a.sin_addr.s_addr = x;
+X    r = connect(soc, &a, sizeof(a));
+X    return (soc);
+X}
+X/* Give usage message */
+Xvoid
+Xusage()
+X{
+X    printf("\n\nISS v1.21  (Internet Security Scanner)\n");
+X    printf("Usage: %s -msrdyvpqefo #1 #2 \n", progname);
+X    printf(" -m Ignores checking for mail port.\n");
+X    printf(" -s xx number of seconds max to wait\n");
+X    printf(" -r Ignores Checking for RPC calls\n");
+X    printf(" -d Ignores Checking Default Logins such as sync\n");
+X    printf(" -y Try to get pw via Ypx\n");
+X    printf(" -v Ignores finding Mail Aliases for decode, guest, bbs, lp\n");
+X    printf(" -p Scans one Host for all open TCP ports (disables all");
+X    printf(" other options)\n");
+X    printf(" -q Turns off Quick Scan so it finds hosts even with no name.\n");
+X    printf(" -e Only logs directories that can be mounted by everyone\n");
+X    printf(" -f Ignores Checking FTP port for logging in as anonymous\n");
+X    printf(" -o <file> send output to non ISS.log file, \"-\" is stdout\n");
+X    printf("#1 is the inetnet network to start searching on\n");
+X    printf("#2 is the inetnet network to end searching on\n");
+X    printf("(ie. 128.128.128.1 128.128.128.25 will scan all hosts from \n");
+X    printf(" 128.128.128.1 to 128.128.128.25).\n");
+X
+X    printf("\nWritten By Christopher Klaus (coup@gnu.ai.mit.edu)\n");
+X    printf(" Send me suggestions, bugs, fixes, and ideas.	Send flames > /dev/null\n");
+X    exit(1);
+X}
+Xclrlog()			/* clear log buffer */
+X{
+X    for (i = 0; i < 190; i++)
+X    {
+X	temp1[i] = ' ';
+X	temp2[i] = ' ';
+X    }
+X    temp1[0] = '\0';
+X}
+Xfmt(buff1, buff2)		/* Format string for log */
+X    char buff1[200], buff2[200];
+X{
+X
+X    int y, r;
+X    y = 0;
+X
+X    r = 0;
+X    while ((buff1[y] != NULL) && (r < width))
+X    {
+X	if (iscntrl(buff1[y]))
+X	    buff1[y] = ' ';
+X
+X	if (y != 0)
+X	    if ((buff1[y] == buff2[r - 1]) && (ispunct(buff1[y]) || isspace(buff1[y])))
+X		y++;
+X	    else
+X	    {
+X		buff2[r] = buff1[y];
+X		y++;
+X		r++;
+X	    }
+X	else
+X	{
+X	    buff2[r] = buff1[y];
+X	    y++;
+X	    r++;
+X	}
+X    }
+X    buff2[r] = NULL;
+X
+X}
+X
+X
+Xdo_log(s)			/* Records the telnet session and tries
+X				 * defaults */
+X    int s;
+X{
+X    unsigned char c, buf[5];
+X    int a, count, cnt;
+X    alarm(0);
+X    alarm(9);
+X    width = 78;
+X    clrlog();
+X    cnt = 0;
+X    count = 0;
+X    (void) write(s, '\n', 1);
+X    while (!done && (count != 250))
+X    {
+X	a = read(s, &c, 1);
+X	if (a < 0)
+X	    return;
+X	if (a == 0)
+X	    continue;
+X	if (c == IAC)
+X	{
+X	    read(s, buf, 2);
+X	    respond(s, buf[0], buf[1]);
+X	} else
+X	{
+X	    if (c == 0)
+X		continue;
+X	    if (c == '\n')
+X	    {
+X		temp1[cnt] = c;
+X		cnt++;
+X		count++;
+X		continue;
+X	    }
+X	    if (isprint(c) || isspace(c))
+X	    {
+X		temp1[cnt] = c;
+X		count++;
+X		cnt++;
+X	    }
+X	}
+X    }
+X    fmt(temp1, temp2);
+X    fflush(fp);
+X    if (login != 1)
+X    {
+X	(void) writeln(s, "sync");
+X	alarm(0);
+X	alarm(3);
+X	cnt = 0;
+X	for (count = 0; count < 3; count++)
+X	{
+X	    c = 0;
+X	    while ((c != '\n') && !done)
+X	    {
+X		c = 0;
+X		if (!(read(sd, &c, 1)) && (c != 0))
+X		{
+X		    fprintf(fp, "%c", c);
+X		    fflush(fp);
+X		}
+X	    }
+X	}
+X
+X	fflush(fp);
+X    }
+X}
+X
+X
+X
+X
+X/* Our Policy is always say *NO* to telnet negotations */
+Xrespond(s, com, opt)
+X    int s;
+X    unsigned int com, opt;
+X{
+X    unsigned char buf[10];
+X    buf[0] = IAC;
+X    buf[2] = opt;
+X    switch (com)
+X    {
+X	/* will and wont get do and dont as reply */
+X    case WILL:
+X    case WONT:
+X	buf[1] = DONT;
+X	(void) write(s, buf, 3);
+X	break;
+X	/* do and dont get will and wont as reply  */
+X    case DO:
+X    case DONT:
+X	buf[1] = WONT;
+X	(void) write(s, buf, 3);
+X	break;
+X    default:
+X	fprintf(stderr, "(%d)(%d)", com, opt);
+X    }
+X}
+X /* Takes a Name and uses parts of it to guess domainname */
+Xdomainguess()
+X{
+X    int l, l1, i;
+X    l = 0;
+X    l1 = 0;
+X    for (i = 0; i <= (strlen(hname)); i++)
+X    {
+X
+X	res[l][l1] = hname[i];
+X	l1++;
+X	if (hname[i] == '.')
+X	{
+X	    res[l][l1 - 1] = NULL;
+X	    l1 = 0;
+X	    l++;
+X	}
+X    }
+X    sprintf(tryname, "NoName");
+X    testdomain();
+X    sprintf(tryname, "noname");
+X    testdomain();
+X    sprintf(tryname, "Noname");
+X    testdomain();
+X    for (i = 0; i <= l; i++)
+X    {
+X	sprintf(tryname, "%s", res[i]);
+X	testdomain();
+X    }
+X    for (i = 0; i < l; i++)
+X    {
+X	sprintf(tryname, "%s.%s", res[i], res[i + 1]);
+X	testdomain();
+X    }
+X    if (l >= 2)
+X    {
+X	sprintf(tryname, "%s.%s.%s", res[l - 2], res[l - 1], res[l]);
+X	testdomain();
+X    }
+X    if (l >= 3)
+X    {
+X	sprintf(tryname, "%s.%s.%s.%s", res[l - 3], res[l - 2], res[l - 1], res[l]);
+X	testdomain();
+X    }
+X    if (l >= 4)
+X    {
+X	sprintf(tryname, "%s.%s.%s.%s.%s", res[l - 4], res[l - 3], res[l - 2], res[l - 1], res[l]);
+X	testdomain();
+X    }
+X}
+Xtestdomain()			/* Check each guess to see if it matched
+X				 * domainname */
+X{
+X    FILE *nis;			/* pointer to nis domainname log file */
+X
+X
+X    (void) sprintf(buf, "%s -d %s %s > %s.dom 2>/dev/null", YPWHICH, tryname, hname, addr);
+X    (void) system(buf);
+X    (void) sprintf(buf, "%s.dom", addr);
+X    if ((nis = fopen(buf, "r")) == NULL)
+X    {
+X	printf("\nError Opening File\n");
+X	return (1);
+X    }
+X    while (!feof(nis))
+X    {
+X	buf[0] = NULL;
+X	fgets(buf, sizeof(buf), nis);
+X	if ((strstr(buf, "Domain") == NULL) && (buf[0] != NULL))
+X	{
+X	    fprintf(fp, "\nDomainname: %s NIS Server: %s", tryname, buf);
+X	}
+X    }
+X    (void) fclose(nis);
+X    (void) sprintf(buf, "rm %s.dom", addr);
+X    (void) system(buf);
+X
+X}
+Xgetsmtpname()
+X{
+X    int l, lp1, i;
+X    l = 0;
+X    lp1 = 0;
+X    for (i = 0; i <= (strlen(temp1)); i++)
+X    {
+X	if ((temp1[i] == ' '))
+X	    l++;
+X
+X	if (l == 1)
+X	{
+X	    if (lp1 != 0)
+X	    {
+X		smtpname[lp1 - 1] = temp1[i];
+X	    }
+X	    lp1++;
+X	}
+X    }
+X}
+X
+X
+X
+Xchecksmtp()			/* Check Sendmail Port */
+X{
+X    int count = 0;
+X    int t = 0;
+X    alarm((sec == 0) ? 8 : sec);
+X    port = 25;
+X    done = 0;
+X    c = 0;
+X    sd = ctos();
+X    if (r != -1)
+X    {
+X	/* Read & Write Here */
+X	(void) setsockopt(sd, SOL_SOCKET, SO_LINGER, &thirty, sizeof(thirty));
+X	fcntl(sd, F_SETFL, O_NDELAY);
+X	while ((c != '\n') && !done)
+X	{
+X	    read(sd, &c, 1);
+X	    if ((c != 0) && (t < 200))
+X	    {
+X		temp1[t] = c;
+X		t++;
+X	    }
+X	}
+X	width = 75;
+X	fmt(temp1, temp2);
+X	fprintf(fp, "\nSMTP:%s\n", temp2);
+X	getsmtpname();
+X	clrlog();
+X	if (!acctcheck)
+X	{
+X	    (void) writeln(sd, "VRFY guest");
+X	    (void) writeln(sd, "VRFY decode");
+X	    (void) writeln(sd, "VRFY bbs");
+X	    (void) writeln(sd, "VRFY lp");
+X	    (void) writeln(sd, "VRFY uudecode");
+X	    (void) writeln(sd, "wiz");
+X	    (void) writeln(sd, "debug");
+X	    (void) writeln(sd, "QUIT");
+X	    alarm(0);
+X	    alarm(10);
+X	    for (count = 0; count < 9; count++)
+X	    {
+X		c = 0;
+X		while ((c != '\n') && !done)
+X		{
+X		    read(sd, &c, 1);
+X		    if (c != 0)
+X		    {
+X			fprintf(fp, "%c", c);
+X			fflush(fp);
+X		    }
+X		}
+X	    }
+X	}
+X    } else
+X    {
+X	fprintf(fp, "\n NoSMTP");
+X    }
+X
+X    alarm(0);
+X    (void) close(sd);
+X    done = 0;
+X}
+Xcheckftp()			/* Check FTP Port for anonymous */
+X{
+X    int count = 0;
+X    int t = 0;
+X    alarm((sec == 0) ? 5 : sec);
+X    port = 21;
+X    sd = ctos();
+X    if (r != -1)
+X    {
+X	(void) setsockopt(sd, SOL_SOCKET, SO_LINGER, &thirty, sizeof(thirty));
+X	done = 0;
+X	c = 0;
+X	t = 0;
+X	fcntl(sd, F_SETFL, O_NDELAY);
+X	fflush(fp);
+X	clrlog();
+X	while ((c != '\n') && !done && (t < 200))
+X	{
+X	    read(sd, &c, 1);
+X	    if (c != 0)
+X	    {
+X		temp1[t] = c;
+X		t++;
+X	    }
+X	}
+X	width = 75;
+X	fmt(temp1, temp2);
+X	fprintf(fp, "\nFTP:%s\n", temp2);
+X	clrlog();
+X	(void) writeln(sd, "user anonymous");
+X	(void) writeln(sd, "pass -iss@iss.iss.iss");	/* turns off messages
+X							 * with dash */
+X	(void) writeln(sd, "pwd");	/* PWD shows current directory */
+X	(void) writeln(sd, "mkd test");	/* Tries to make a directory */
+X	(void) writeln(sd, "rmd test");	/* Tries to remove the directory */
+X	(void) writeln(sd, "QUIT");
+X	alarm(0);
+X	alarm(10);
+X	for (count = 0; count < 30; count++)
+X	{
+X	    c = 0;
+X	    while ((c != '\n') && !done)
+X	    {
+X		read(sd, &c, 1);
+X		if (c != 0)
+X		{
+X		    fprintf(fp, "%c", c);
+X		}
+X	    }
+X	}
+X    } else
+X    {
+X	fprintf(fp, "\n NoFTP");
+X    }
+X
+X    alarm(0);
+X    (void) close(sd);
+X}
+Xcheckrpc()
+X{
+X    FILE *rpc;			/* pointer to rpcinfo log file */
+X
+X    int rusr, yp, rex, name, boot, x25, sels;
+X    /* Flags for rusers,ypserv,rexd,x25,select_svr,bootparam and named server */
+X
+X    yp = 0;
+X    mnt = 0;
+X    rex = 0;
+X    boot = 0;
+X    sels = 0;
+X    x25 = 0;
+X    rusr = 0;
+X    name = 0;
+X
+X    (void) sprintf(buf, "%s.log", addr);
+X    if ((rpc = fopen(buf, "r")) == NULL)
+X    {
+X	(void) printf("\nError Opening File\n");
+X	return (1);
+X    }
+X    while (!feof(rpc))
+X    {
+X	fgets(buf, sizeof(buf), rpc);
+X	if (strstr(buf, "ypserv") != NULL)
+X	{
+X	    if (!yp)
+X		fprintf(fp, " YPSERV");
+X	    yp = 1;
+X	}
+X	if (strstr(buf, "mount") != NULL)
+X	{
+X	    if (!mnt)
+X		fprintf(fp, " MOUNT");
+X	    mnt = 1;
+X	}
+X	if (strstr(buf, "name") != NULL)
+X	{
+X	    if (!name)
+X		fprintf(fp, " NAME");
+X	    name = 1;
+X	}
+X	if (strstr(buf, "x25") != NULL)
+X	{
+X	    if (!x25)
+X		fprintf(fp, " X25");
+X	    x25 = 1;
+X	}
+X	if (strstr(buf, "boot") != NULL)
+X	{
+X	    if (!boot)
+X		fprintf(fp, " BOOT");
+X	    boot = 1;
+X	}
+X	if (strstr(buf, "selec") != NULL)
+X	{
+X	    if (!sels)
+X		fprintf(fp, " SELECT");
+X	    sels = 1;
+X	}
+X	if (strstr(buf, "rexd") != NULL)
+X	{
+X	    if (!rex)
+X		fprintf(fp, " REXD");
+X	    rex = 1;
+X	}
+X	if (strstr(buf, "rusers") != NULL)
+X	{
+X	    if (!rusr)
+X		fprintf(fp, " RUSERS");
+X	    rusr = 1;
+X	}
+X    }
+X    (void) fclose(rpc);
+X/* Try to guess domain name if ypserv was found */
+X    if (yp)
+X    {
+X	(void) strcpy(testname, hname);
+X	domainguess();
+X	if (smtpname[0] != NULL)
+X	{
+X	    (void) strcpy(testname, smtpname);
+X	    domainguess();
+X	    smtpname[0] = NULL;
+X	}
+X    }
+X/*  Check Mount List for directories */
+X    if (mnt == 1)
+X    {
+X	sprintf(buf, "%s -e %s > %s.log 2>/dev/null", SHOWMOUNT, addr, addr);
+X	system(buf);
+X	sprintf(buf, "%s.log", addr);
+X	if ((rpc = fopen(buf, "r")) == NULL)
+X	{
+X	    (void) printf("\nError Opening File\n");
+X	    return (1);
+X	}
+X	fprintf(fp, "\n");
+X	while (!feof(rpc))
+X	{
+X	    fgets(buf, sizeof(buf), rpc);
+X	    if (!export == 1)
+X	    {
+X		fprintf(fp, "%s", buf);
+X		sprintf(buf, " ");
+X	    } else
+X	    {
+X		if (strstr(buf, "every") != NULL)
+X		{
+X		    fprintf(fp, "ALL:%s", buf);
+X		    (void) sprintf(buf, " ");
+X		}
+X	    }
+X	}
+X	(void) fclose(rpc);
+X    }
+X/* Tries to get password file via ypserv, need ypx in local directory */
+X/* Plan to add my own code that grabs the password file */
+X    if ((yp == 1) && (ypx == 1))
+X    {
+X	sprintf(buf, "./ypx -dgs -o %s.yp %s", addr, hname);
+X	system(buf);
+X    }
+X    if (rusr == 1)
+X    {
+X	sprintf(buf, "%s -l %s > %s.log 2> /dev/null", RUSERS, hname, addr);
+X	system(buf);
+X	sprintf(buf, "%s.log", addr);
+X	if ((rpc = fopen(buf, "r")) == NULL)
+X	{
+X	    (void) printf("\nError Opening File\n");
+X	    return (1);
+X	}
+X	fprintf(fp, "\n");
+X	sprintf(buf, "NoOne Online");
+X	while (!feof(rpc))
+X	{
+X	    fgets(buf, sizeof(buf), rpc);
+X	    {
+X		fprintf(fp, "%s", buf);
+X	    }
+X	}
+X	(void) fclose(rpc);
+X
+X    }
+X    (void) sprintf(buf, "rm %s.log", addr);
+X    (void) system(buf);
+X}
+Xcheckall()
+X{
+X    alarm((sec == 0) ? 6 : sec);
+X    /* Set Alarm to def 6 seconds */
+X    port = 23;
+X    sd = ctos();
+X    if (r != -1)
+X    {
+X	do_log(sd);
+X    }
+X    /* Try to Connect */
+X    alarm(0);
+X    (void) close(sd);
+X    if (r != -1)
+X    {
+X	if (!rpcinfo)
+X	{
+X	    (void) sprintf(buf, "%s -p %s > %s.log 2> /dev/null", RPCINFO, addr, addr);
+X	    (void) system(buf);
+X	}
+X	(void) getname(&a);
+X	fprintf(fp, "%s %s", addr, hname);
+X	fprintf(fp, "\n>%s", temp2);
+X	clrlog();
+X	if (!mail)
+X	{
+X	    checksmtp();	/* Try to Read The SendMail Port */
+X	}
+X	if (ftp != 1)
+X	{
+X	    checkftp();
+X	}
+X	if (!rpcinfo)
+X	{
+X	    (void) checkrpc();
+X	}
+X	fprintf(fp, "\n\n");
+X	fflush(fp);
+X    }
+X#ifdef notdef
+X    else
+X    {
+X	if (quick == 1)
+X	{
+X	    fprintf(fp, "Host %s would not connect.\n", hname);
+X	}
+X    }
+X#endif
+X}
+Xopen_logfile(file)
+X    char *file;
+X{
+X    if (!fp)
+X    {
+X	if (fp = fopen(file, "r"))
+X	{
+X	    (void) fclose(fp);
+X	    fp = fopen(file, "a");
+X	} else
+X	    fp = fopen(file, "a");
+X	fprintf(fp, "       -->    Inet Sec Scanner Log By Christopher Klaus (C) 1993    <--\n");
+X	fprintf(fp, "              Email: cklaus@hotsun.nersc.gov coup@gnu.ai.mit.edu\n");
+X	fprintf(fp, "       ================================================================\n");
+X
+X    }
+X}
+Xwriteln(pd, string)
+X    int pd;
+X    char *string;
+X{
+X    (void) write(pd, string, strlen(string));
+X    (void) write(pd, "\n", 1);
+X}
+X/* Thanks to H.Morrow Long,Manager of Development,Yale U CS Computing Facility
+X   INET: Long-Morrow@CS.Yale.EDU
+X   for the following routines taken from probe_tcp_ports.c,v 1.3 93/10/01 */
+X
+XProbe_TCP_Ports(Name)
+X    char *Name;
+X{
+X    unsigned Port;
+X    char *Host;
+X    struct hostent *HostEntryPointer;
+X    struct sockaddr_in SocketInetAddr;
+X    struct hostent TargetHost;
+X    struct in_addr TargetHostAddr;
+X    char *AddressList[1];
+X    char NameBuffer[128];
+X
+X    extern int inet_addr();
+X    extern char *rindex();
+X    if (Name == NULL)
+X	return (1);
+X    Host = Name;
+X    if (Host == NULL)
+X	return (1);
+X    HostEntryPointer = gethostbyname(Host);
+X    if (HostEntryPointer == NULL)
+X    {
+X	TargetHostAddr.s_addr = inet_addr(Host);
+X	if (TargetHostAddr.s_addr == -1)
+X	{
+X	    (void) fprintf(fp, "unknown host: %s\n", Host);
+X	    return (1);
+X	}
+X	(void) strcpy(NameBuffer, Host);
+X	TargetHost.h_name = NameBuffer;
+X	TargetHost.h_addr_list = AddressList, TargetHost.h_addr =
+X	    (char *) &TargetHostAddr;
+X	TargetHost.h_length = sizeof(struct in_addr);
+X	TargetHost.h_addrtype = AF_INET;
+X	TargetHost.h_aliases = 0;
+X	HostEntryPointer = &TargetHost;
+X    }
+X    SocketInetAddr.sin_family = HostEntryPointer->h_addrtype;
+X    bcopy(HostEntryPointer->h_addr, (char *) &SocketInetAddr.sin_addr,
+X	  HostEntryPointer->h_length);
+X
+X
+X    for (Port = 1; Port < 65536; Port++)
+X	(void) Probe_TCP_Port(Port, HostEntryPointer, SocketInetAddr);
+X    return (0);
+X}
+XProbe_TCP_Port(Port, HostEntryPointer, SocketInetAddr)
+X    unsigned Port;
+X    struct hostent *HostEntryPointer;
+X    struct sockaddr_in SocketInetAddr;
+X{
+X    int SocketDescriptor;
+X    struct servent *ServiceEntryPointer;
+X
+X
+X    SocketInetAddr.sin_port = htons(Port);
+X    SocketDescriptor = socket(AF_INET, SOCK_STREAM, 6);
+X    if (SocketDescriptor < 0)
+X    {
+X	perror("socket");
+X	return (1);
+X    }
+X    if (!(connect(SocketDescriptor, (char *) &SocketInetAddr,
+X		  sizeof(SocketInetAddr)) < 0))
+X    {
+X	(void) fprintf(fp, "Host %s, Port %d ",
+X		       HostEntryPointer->h_name, Port);
+X	if ((ServiceEntryPointer = getservbyport(Port, "tcp")) !=
+X	    (struct servent *) NULL)
+X	    (void) fprintf(fp, " (\"%s\" service) ",
+X			   ServiceEntryPointer->s_name);
+X	(void) fprintf(fp, "opened.\n");
+X	(void) fflush(fp);
+X    }
+X    (void) close(SocketDescriptor);
+X    return (0);
+X}
+Xmain(argc, argv)
+X    int argc;
+X    char **argv;
+X{
+X    char line[512];
+X    char *logfile = "ISS.log", *arg;
+X    sethostent(1);
+X    progname = argv[0];
+X    first.s_addr = 0;
+X    second.s_addr = 0;
+X
+X    if (argc == 1)
+X	usage();
+X
+X    while ((arg = *++argv))
+X    {
+X	if (*arg == '-')
+X	    for (arg++; *arg; arg++)
+X		switch (*arg)
+X		{
+X		case 'h':
+X		    usage();
+X		    exit(0);
+X		    break;
+X		case 'd':
+X		    login++;
+X		    break;
+X		case 'v':
+X		    acctcheck++;
+X		    break;
+X		case 'y':
+X		    ypx++;
+X		    break;
+X		case 'f':
+X		    ftp++;
+X		    break;
+X		case 'm':
+X		    mail++;
+X		    break;
+X		case 'o':
+X		    if (argv[1] && *argv[1])
+X			if (!strcmp(argv[1], "-"))
+X			    fp = stdout;
+X			else
+X			    logfile = *++argv;
+X		    break;
+X		case 'r':
+X		    rpcinfo++;
+X		    break;
+X		case 'q':
+X		    quick++;
+X		    break;
+X		case 'e':
+X		    export++;
+X		    break;
+X		case 'p':
+X		    scanports++;
+X		    open_logfile(logfile);
+X		    logfile = *++argv;
+X		    break;
+X		case 's':
+X		    sec = atoi(arg + 1);
+X		    if (sec == 0)
+X		    {
+X			if (!*++argv)
+X			{
+X			    (void) printf("Parse error! missing parameter\n");
+X			    exit(1);
+X			}
+X			sec = atoi(*argv);
+X		    }
+X		    break;
+X		}
+X	else
+X	{
+X	    if (!first.s_addr)
+X		first.s_addr = inet_addr(*argv);
+X	    else if (!second.s_addr)
+X		second.s_addr = inet_addr(*argv);
+X	}
+X    }
+X    if (scanports)
+X    {
+X	Probe_TCP_Ports(logfile);
+X	(void) fclose(fp);
+X	return (0);
+X    }
+X    if (!first.s_addr)
+X    {
+X	(void) printf("Enter address to probe : ");
+X	(void) gets(line);
+X	first.s_addr = inet_addr(line);
+X    }
+X    if (!second.s_addr)
+X    {
+X	second.s_addr = first.s_addr;
+X    }
+X    if (first.s_addr == -1 || second.s_addr == -1)
+X    {
+X	(void) printf("Out of range.\n");
+X	exit(1);
+X    }
+X    open_logfile(logfile);
+X#ifdef sun
+X    siginterrupt(SIGALRM, 1);
+X#endif
+X    signal(SIGALRM, donothing);
+X    fprintf(fp, "\nScanning from %s", inet_ntoa(first));
+X    fprintf(fp, " to %s\n", inet_ntoa(second));
+X    fflush(fp);
+X
+X    for (x = ntohl(first.s_addr); x <= ntohl(second.s_addr); x++)
+X    {
+X	if ((x & 0xff) == 255)
+X	    x++;
+X	if ((x & 0xff) == 0)
+X	    x++;
+X	myaddr.s_addr = htonl(x);
+X	(void) strcpy(addr, inet_ntoa(myaddr));
+X	if (quick == 1)
+X	{
+X	    a.sin_port = htons((port == 0) ? 23 : port);
+X	    a.sin_family = AF_INET;
+X	    a.sin_addr.s_addr = myaddr.s_addr;
+X	    if (getname(&a) == 1)	/* Look For Names */
+X		checkall();	/* Try for addresses with names */
+X	} else
+X	    checkall();		/* Try for each address */
+X    }
+X    endhostent();
+X    (void) fclose(fp);
+X    return (0);
+X}
+END_OF_FILE
+if test 20292 -ne `wc -c <'iss/iss.c'`; then
+    echo shar: \"'iss/iss.c'\" unpacked with wrong size!
+fi
+# end of 'iss/iss.c'
+fi
+if test -f 'iss/readme.iss' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/readme.iss'\"
+else
+echo shar: Extracting \"'iss/readme.iss'\" \(8971 characters\)
+sed "s/^X//" >'iss/readme.iss' <<'END_OF_FILE'
+X	   Internet Security Scanner, v1.21
+X
+X	Copyright (c) Christopher Klaus, 1992, 1993.
+X      (cklaus@hotsun.nersc.gov or coup@gnu.ai.mit.edu)
+X
+X
+X  Internet Security Scanner (ISS) is one of the first multi-level security
+Xscanners available to the public.  It was designed to be flexible and easily
+Xportable to many unix platforms and do its job in a reasonable amount of
+Xtime.  It provides information to the administrator that will fix obvious
+Xsecurity misconfigurations. 
+X
+X  ISS does a multi-level scan of security, not just searching for one
+Xweakness in the system.  To provide this to the public or at least to the
+Xsecurity conscious crowd may cause people to think that it is too dangerous
+Xfor the public, but many of the (cr/h)ackers are already aware of these
+Xsecurity holes and know how to exploit them. 
+X
+X  These security holes are not deep in some OS routines, but standard
+Xmisconfigurations that many domains on Internet tend to show.  Many of these
+Xholes are warned about in CERT and CIAC advisories.  This is the first
+Xrelease of ISS and there is still much room for improvement. 
+X
+X  ISS is a project that I started as I became interested in security.  As I
+Xheard about (cr/h)ackers breaking into NASA and universities around the
+Xworld, I wanted to find out the deep secrets of security and how these people
+Xwere able to gain access to expensive machines that I would think were
+Xsecure.  I searched Internet for relative information, such as Phrack and
+XCERT advisories. 
+X
+X  Most information was vague and did not explain how intruders were able to
+Xgain access to most systems.  At most the information told administrators to
+Xmake password security tighter and to apply the vendor's security patches. 
+XThey lacked real information on how an intruder would look at a site to try
+Xto gain access.  Having talked with security experts and reading CERT
+Xadvisories, I started trying to look for various security holes within my
+Xdomain.
+X
+X  To my surprise, I noticed that many of machines were adequately secured,
+Xbut within a domain there remained enough machines with obvious holes that
+Xanyone wanted into any machine could attack the weak 'trusted' machine and
+Xfrom there could gain access to the rest of the domain. From this project, I
+Xhave not learned any new deep secret to cracking systems, but with the right
+Xtools that most domains on Internet are insecure.  These holes will not be a
+Xsurprise to any advanced intruder, but with this tool administrators will be
+Xable to quickly search for obvious holes and prepare to fix them.
+X
+X  ISS will scan a domain sequentially looking for connections.  When it finds
+Xa host it will try to connect to various ports.  For starters, it tries the
+Xtelnet port. When it connects to the telnet port, it logs any information
+Xthat the host displays.  
+X
+X	With the -d option, ISS ignores trying default accounts.  By default,
+XISS will then try to log in as 'sync' which is a common account name for
+XSunOS and other Unixes.  It in itself is not a big hole other than giving
+Xmore information about type of OS, version number of OS, and  displaying the
+XMOTD.   But 'sync' with no password can become a security hole as someone
+Xwith a regular account on that host can divert the 'sync' privileges and
+Xultimately become root.  The 'sync' account should be passworded or disabled.
+X
+X  With the -m option, ISS ignores the mail port. By default, ISS tries the
+Xmail port. Connecting to this provides information regarding the hostname,
+Xtype of OS it is, and even the version number of sendmail. 
+X
+X  With the -v option, ISS wont check for mail aliases. By default, it will
+Xcheck for various users and aliases.  The obvious aliases to search for is
+Xdecode and uudecode.  With these aliases, you are able to send mail to
+Xdecode@hostname with a file that has been uuencoded to overwrite a systems
+Xfile, such as .rhosts.  Some of the users it looks for is 'bbs', 'guest',
+X'lp', and the well known debug and wiz backdoors within sendmail.  'bbs',
+X'guest', and 'lp' are known to have weak passwords or no passwords at all.
+X
+X  With the -f option, ISS wont check the FTP port. By default, it will
+Xconnect to the ftp port and check to see if a person can log into anonymous.
+X Many systems such as Macs let anyone log in and look around other users'
+Xprivate information.  If it succeeds logging in as anonymous, it will then
+Xattempt to create a directory.  If it does that successfully, the main
+Xdirectory of the FTP site is writeable and open to attack.  Many anonymous
+Xftp sites have security holes.  Such weaknesses is being able to write to
+Xthe main directory of the ftp directory, thus an intruder could write a
+X.rhost file and log in as ftp.  Plus, the anonymous ftp site may contain the
+Xactual host's password file and not just a dummy password file. 
+X
+X  With the -r option, ISS ignores checking for rpc. By default, ISS will
+Xlook for holes that most systems are more prone to have open.  It uses rpc
+Xinformation to find security weaknesses.  It will do a 'rpcinfo -p
+Xhostname'. With this information gained, it finds which hosts are running
+XNIS, rexd, bootparam, whose on the host, selection_svc, and NFS. 
+X
+X  If a system shows YPServ, it is likely that it has not been patched yet and
+Xwith the proper domainname, ypserv will provide the password file to any
+Xremote host asking for it.  To fix this, apply the proper ypserv patch from
+Xyour vendor.  ISS will attempt to guess the domainname and that will provide
+Xinformation as to which machine is the NIS server is.   The domainname should
+Xbe changed if it can easily be guessed so that it will slow people from
+Xgrabbing the password file.  Another attempt to fix this problem is
+Xto make sure that if the password file does get out, none of the
+Xpasswords can easily be cracked.  Crack (by Alec Muffett alecm@sun.com) does
+Xa fine job of finding weak passwords. Also shadowing the password file will
+Xhelp correct this weakness.
+X
+X  With the -y option and a program called Ypx (by Rob Nautu
+Xrob@wzv.win.tue.nl), ISS will try to grab the password file from ypserv.
+X
+X  If a system shows Select_svr, selection_svr is running on the machine and
+Xthere are known holes that let anyone remotely read any file on the system,
+Xeven the password file.  Selection_svr should be disabled.
+X
+X  When Rexd is running on a remote system, anyone with a small C program can
+Xemulate the 'on' command spoofing any user on the remote machine, thus
+Xgaining access to the password file and adding .rhosts files. Rexd should be
+Xdisabled.
+X
+X  If a machine is running Bootparam, it is likely a server to diskless
+Xclients.  One problem with bootparam is that if it is running and someone
+Xcan guess which machines the client and servers are, they are able to get
+Xthe domainname from bootparam, which goes back to the YPServ problem.   
+X
+X  The -e option will only log exports that everyone can mount.  To
+Xusually find out which machines are its clients, by default, log all the
+Xexportable directories.  'showmount -e hostname' shows the exports on a
+Xremote host.  If the exported directories look like:
+X
+X	/usr 		   (everyone)
+X	/export/placebo    placebo
+X	/export/spiff      spiff
+X
+X  Anyone can mount /usr and possible replace files and do other damage.
+XPlacebo and spiff appear to be clients to this server.
+X
+X  ISS also does a 'rusers -l hostname' searching for users on the system.
+XThat provides how busy is the machine and possible login entries to try.
+X
+X  ISS with option -p will support scanning all the ports on a certain host,
+Xthus looking for possible access entries, such as gophers, muds, and other
+Xapplications ran by local users.  It also can be used to show which ports
+Xare blocked by a firewall.
+X
+X  ISS will quickly scan the domain. It does not try to connect to every
+Xaddress, but rather scans through doing a name lookup for each address.  And
+Xif that address has a name, it will then do a more thorough lookup of
+Xinformation on that host. With the -q option, it will try to connect to hosts
+Xeven without names.  
+X
+X  Option -o will allow you to send output to another log file rather than
+Xthe regular ISS.log.  Output to "-" is to stdout, allowing for quicker
+Xdebugging and testing.
+X
+X  To sum it up, ISS will scan a domain grabbing essential information for
+Xadministrators to easily sort through and give themselves a chance to secure
+Xthe open machines on their network.
+X
+X  Some additional notes about this program.  You can find patches and
+Xadditional information from cert@cert.org and their anonymous FTP site 
+Xcert.org (192.88.209.5).  They have an advisory about the security flaws
+Xfound with ISS that may be beneficial in closing the flaws.
+X
+XAcknowledgements
+X  I would like to thank the following people for ideas, suggestions, and help:
+XScott Miles, Dan Farmer, Wietse Venema, Alec Muffett, Scott Yelich, Darren
+XReed, Tim Newsham, H. Morrow Long (for port scan routines), Jim Morton, and
+XBilly Barron.
+X
+X Please send suggestions to
+X
+X	cklaus@hotsun.nersc.gov
+X or:	coup@gnu.ai.mit.edu.
+X
+X Copyright C Klaus, 1993.
+END_OF_FILE
+if test 8971 -ne `wc -c <'iss/readme.iss'`; then
+    echo shar: \"'iss/readme.iss'\" unpacked with wrong size!
+fi
+# end of 'iss/readme.iss'
+fi
+if test -f 'iss/telnet.h' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/telnet.h'\"
+else
+echo shar: Extracting \"'iss/telnet.h'\" \(10035 characters\)
+sed "s/^X//" >'iss/telnet.h' <<'END_OF_FILE'
+X/*
+X * Copyright (c) 1983 Regents of the University of California.
+X * All rights reserved.
+X *
+X * Redistribution and use in source and binary forms, with or without
+X * modification, are permitted provided that the following conditions
+X * are met:
+X * 1. Redistributions of source code must retain the above copyright
+X *    notice, this list of conditions and the following disclaimer.
+X * 2. Redistributions in binary form must reproduce the above copyright
+X *    notice, this list of conditions and the following disclaimer in the
+X *    documentation and/or other materials provided with the distribution.
+X * 3. All advertising materials mentioning features or use of this software
+X *    must display the following acknowledgement:
+X *	This product includes software developed by the University of
+X *	California, Berkeley and its contributors.
+X * 4. Neither the name of the University nor the names of its contributors
+X *    may be used to endorse or promote products derived from this software
+X *    without specific prior written permission.
+X *
+X * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+X * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+X * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+X * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+X * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+X * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+X * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+X * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+X * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+X * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+X * SUCH DAMAGE.
+X *
+X *	@(#)telnet.h	5.14 (Berkeley) 4/3/91
+X */
+X
+X#ifndef _TELNET_H_
+X#define	_TELNET_H_
+X
+X/*
+X * Definitions for the TELNET protocol.
+X */
+X#define	IAC	255		/* interpret as command: */
+X#define	DONT	254		/* you are not to use option */
+X#define	DO	253		/* please, you use option */
+X#define	WONT	252		/* I won't use option */
+X#define	WILL	251		/* I will use option */
+X#define	SB	250		/* interpret as subnegotiation */
+X#define	GA	249		/* you may reverse the line */
+X#define	EL	248		/* erase the current line */
+X#define	EC	247		/* erase the current character */
+X#define	AYT	246		/* are you there */
+X#define	AO	245		/* abort output--but let prog finish */
+X#define	IP	244		/* interrupt process--permanently */
+X#define	BREAK	243		/* break */
+X#define	DM	242		/* data mark--for connect. cleaning */
+X#define	NOP	241		/* nop */
+X#define	SE	240		/* end sub negotiation */
+X#define EOR     239             /* end of record (transparent mode) */
+X#define	ABORT	238		/* Abort process */
+X#define	SUSP	237		/* Suspend process */
+X#define	xEOF	236		/* End of file: EOF is already used... */
+X
+X#define SYNCH	242		/* for telfunc calls */
+X
+X#ifdef TELCMDS
+Xchar *telcmds[] = {
+X	"EOF", "SUSP", "ABORT", "EOR",
+X	"SE", "NOP", "DMARK", "BRK", "IP", "AO", "AYT", "EC",
+X	"EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC", 0,
+X};
+X#else
+Xextern char *telcmds[];
+X#endif
+X
+X#define	TELCMD_FIRST	xEOF
+X#define	TELCMD_LAST	IAC
+X#define	TELCMD_OK(x)	((x) <= TELCMD_LAST && (x) >= TELCMD_FIRST)
+X#define	TELCMD(x)	telcmds[(x)-TELCMD_FIRST]
+X
+X/* telnet options */
+X#define TELOPT_BINARY	0	/* 8-bit data path */
+X#define TELOPT_ECHO	1	/* echo */
+X#define	TELOPT_RCP	2	/* prepare to reconnect */
+X#define	TELOPT_SGA	3	/* suppress go ahead */
+X#define	TELOPT_NAMS	4	/* approximate message size */
+X#define	TELOPT_STATUS	5	/* give status */
+X#define	TELOPT_TM	6	/* timing mark */
+X#define	TELOPT_RCTE	7	/* remote controlled transmission and echo */
+X#define TELOPT_NAOL 	8	/* negotiate about output line width */
+X#define TELOPT_NAOP 	9	/* negotiate about output page size */
+X#define TELOPT_NAOCRD	10	/* negotiate about CR disposition */
+X#define TELOPT_NAOHTS	11	/* negotiate about horizontal tabstops */
+X#define TELOPT_NAOHTD	12	/* negotiate about horizontal tab disposition */
+X#define TELOPT_NAOFFD	13	/* negotiate about formfeed disposition */
+X#define TELOPT_NAOVTS	14	/* negotiate about vertical tab stops */
+X#define TELOPT_NAOVTD	15	/* negotiate about vertical tab disposition */
+X#define TELOPT_NAOLFD	16	/* negotiate about output LF disposition */
+X#define TELOPT_XASCII	17	/* extended ascic character set */
+X#define	TELOPT_LOGOUT	18	/* force logout */
+X#define	TELOPT_BM	19	/* byte macro */
+X#define	TELOPT_DET	20	/* data entry terminal */
+X#define	TELOPT_SUPDUP	21	/* supdup protocol */
+X#define	TELOPT_SUPDUPOUTPUT 22	/* supdup output */
+X#define	TELOPT_SNDLOC	23	/* send location */
+X#define	TELOPT_TTYPE	24	/* terminal type */
+X#define	TELOPT_EOR	25	/* end or record */
+X#define	TELOPT_TUID	26	/* TACACS user identification */
+X#define	TELOPT_OUTMRK	27	/* output marking */
+X#define	TELOPT_TTYLOC	28	/* terminal location number */
+X#define	TELOPT_3270REGIME 29	/* 3270 regime */
+X#define	TELOPT_X3PAD	30	/* X.3 PAD */
+X#define	TELOPT_NAWS	31	/* window size */
+X#define	TELOPT_TSPEED	32	/* terminal speed */
+X#define	TELOPT_LFLOW	33	/* remote flow control */
+X#define TELOPT_LINEMODE	34	/* Linemode option */
+X#define TELOPT_XDISPLOC	35	/* X Display Location */
+X#define TELOPT_ENVIRON	36	/* Environment variables */
+X#define	TELOPT_AUTHENTICATION 37/* Authenticate */
+X#define	TELOPT_ENCRYPT	38	/* Encryption option */
+X#define	TELOPT_EXOPL	255	/* extended-options-list */
+X
+X
+X#define	NTELOPTS	(1+TELOPT_ENCRYPT)
+X#ifdef TELOPTS
+Xchar *telopts[NTELOPTS+1] = {
+X	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
+X	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
+X	"NAOCRD", "NAOHTS", "NAOHTD", "NAOFFD", "NAOVTS",
+X	"NAOVTD", "NAOLFD", "EXTEND ASCII", "LOGOUT", "BYTE MACRO",
+X	"DATA ENTRY TERMINAL", "SUPDUP", "SUPDUP OUTPUT",
+X	"SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
+X	"TACACS UID", "OUTPUT MARKING", "TTYLOC",
+X	"3270 REGIME", "X.3 PAD", "NAWS", "TSPEED", "LFLOW",
+X	"LINEMODE", "XDISPLOC", "ENVIRON", "AUTHENTICATION",
+X	"ENCRYPT",
+X	0,
+X};
+X#define	TELOPT_FIRST	TELOPT_BINARY
+X#define	TELOPT_LAST	TELOPT_ENCRYPT
+X#define	TELOPT_OK(x)	((x) <= TELOPT_LAST && (x) >= TELOPT_FIRST)
+X#define	TELOPT(x)	telopts[(x)-TELOPT_FIRST]
+X#endif
+X
+X/* sub-option qualifiers */
+X#define	TELQUAL_IS	0	/* option is... */
+X#define	TELQUAL_SEND	1	/* send option */
+X#define	TELQUAL_INFO	2	/* ENVIRON: informational version of IS */
+X#define	TELQUAL_REPLY	2	/* AUTHENTICATION: client version of IS */
+X#define	TELQUAL_NAME	3	/* AUTHENTICATION: client version of IS */
+X
+X/*
+X * LINEMODE suboptions
+X */
+X
+X#define	LM_MODE		1
+X#define	LM_FORWARDMASK	2
+X#define	LM_SLC		3
+X
+X#define	MODE_EDIT	0x01
+X#define	MODE_TRAPSIG	0x02
+X#define	MODE_ACK	0x04
+X#define MODE_SOFT_TAB	0x08
+X#define MODE_LIT_ECHO	0x10
+X
+X#define	MODE_MASK	0x1f
+X
+X/* Not part of protocol, but needed to simplify things... */
+X#define MODE_FLOW		0x0100
+X#define MODE_ECHO		0x0200
+X#define MODE_INBIN		0x0400
+X#define MODE_OUTBIN		0x0800
+X#define MODE_FORCE		0x1000
+X
+X#define	SLC_SYNCH	1
+X#define	SLC_BRK		2
+X#define	SLC_IP		3
+X#define	SLC_AO		4
+X#define	SLC_AYT		5
+X#define	SLC_EOR		6
+X#define	SLC_ABORT	7
+X#define	SLC_EOF		8
+X#define	SLC_SUSP	9
+X#define	SLC_EC		10
+X#define	SLC_EL		11
+X#define	SLC_EW		12
+X#define	SLC_RP		13
+X#define	SLC_LNEXT	14
+X#define	SLC_XON		15
+X#define	SLC_XOFF	16
+X#define	SLC_FORW1	17
+X#define	SLC_FORW2	18
+X
+X#define	NSLC		18
+X
+X/*
+X * For backwards compatability, we define SLC_NAMES to be the
+X * list of names if SLC_NAMES is not defined.
+X */
+X#define	SLC_NAMELIST	"0", "SYNCH", "BRK", "IP", "AO", "AYT", "EOR", \
+X			"ABORT", "EOF", "SUSP", "EC", "EL", "EW", "RP", \
+X			"LNEXT", "XON", "XOFF", "FORW1", "FORW2", 0,
+X#ifdef	SLC_NAMES
+Xchar *slc_names[] = {
+X	SLC_NAMELIST
+X};
+X#else
+Xextern char *slc_names[];
+X#define	SLC_NAMES SLC_NAMELIST
+X#endif
+X
+X#define	SLC_NAME_OK(x)	((x) >= 0 && (x) < NSLC)
+X#define SLC_NAME(x)	slc_names[x]
+X
+X#define	SLC_NOSUPPORT	0
+X#define	SLC_CANTCHANGE	1
+X#define	SLC_VARIABLE	2
+X#define	SLC_DEFAULT	3
+X#define	SLC_LEVELBITS	0x03
+X
+X#define	SLC_FUNC	0
+X#define	SLC_FLAGS	1
+X#define	SLC_VALUE	2
+X
+X#define	SLC_ACK		0x80
+X#define	SLC_FLUSHIN	0x40
+X#define	SLC_FLUSHOUT	0x20
+X
+X#define	ENV_VALUE	0
+X#define	ENV_VAR		1
+X#define	ENV_ESC		2
+X
+X/*
+X * AUTHENTICATION suboptions
+X */
+X
+X/*
+X * Who is authenticating who ...
+X */
+X#define	AUTH_WHO_CLIENT		0	/* Client authenticating server */
+X#define	AUTH_WHO_SERVER		1	/* Server authenticating client */
+X#define	AUTH_WHO_MASK		1
+X
+X/*
+X * amount of authentication done
+X */
+X#define	AUTH_HOW_ONE_WAY	0
+X#define	AUTH_HOW_MUTUAL		2
+X#define	AUTH_HOW_MASK		2
+X
+X#define	AUTHTYPE_NULL		0
+X#define	AUTHTYPE_KERBEROS_V4	1
+X#define	AUTHTYPE_KERBEROS_V5	2
+X#define	AUTHTYPE_SPX		3
+X#define	AUTHTYPE_MINK		4
+X#define	AUTHTYPE_CNT		5
+X
+X#define	AUTHTYPE_TEST		99
+X
+X#ifdef	AUTH_NAMES
+Xchar *authtype_names[] = {
+X	"NULL", "KERBEROS_V4", "KERBEROS_V5", "SPX", "MINK", 0,
+X};
+X#else
+Xextern char *authtype_names[];
+X#endif
+X
+X#define	AUTHTYPE_NAME_OK(x)	((x) >= 0 && (x) < AUTHTYPE_CNT)
+X#define	AUTHTYPE_NAME(x)	authtype_names[x]
+X
+X/*
+X * ENCRYPTion suboptions
+X */
+X#define	ENCRYPT_IS		0	/* I pick encryption type ... */
+X#define	ENCRYPT_SUPPORT		1	/* I support encryption types ... */
+X#define	ENCRYPT_REPLY		2	/* Initial setup response */
+X#define	ENCRYPT_START		3	/* Am starting to send encrypted */
+X#define	ENCRYPT_END		4	/* Am ending encrypted */
+X#define	ENCRYPT_REQSTART	5	/* Request you start encrypting */
+X#define	ENCRYPT_REQEND		6	/* Request you send encrypting */
+X#define	ENCRYPT_ENC_KEYID	7
+X#define	ENCRYPT_DEC_KEYID	8
+X#define	ENCRYPT_CNT		9
+X
+X#define	ENCTYPE_ANY		0
+X#define	ENCTYPE_DES_CFB64	1
+X#define	ENCTYPE_DES_OFB64	2
+X#define	ENCTYPE_CNT		3
+X
+X#ifdef	ENCRYPT_NAMES
+Xchar *encrypt_names[] = {
+X	"IS", "SUPPORT", "REPLY", "START", "END",
+X	"REQUEST-START", "REQUEST-END", "ENC-KEYID", "DEC-KEYID",
+X	0,
+X};
+Xchar *enctype_names[] = {
+X	"ANY", "DES_CFB64",  "DES_OFB64",  0,
+X};
+X#else
+Xextern char *encrypt_names[];
+Xextern char *enctype_names[];
+X#endif
+X
+X
+X#define	ENCRYPT_NAME_OK(x)	((x) >= 0 && (x) < ENCRYPT_CNT)
+X#define	ENCRYPT_NAME(x)		encrypt_names[x]
+X
+X#define	ENCTYPE_NAME_OK(x)	((x) >= 0 && (x) < ENCTYPE_CNT)
+X#define	ENCTYPE_NAME(x)		enctype_names[x]
+X
+X#endif /* !_TELNET_H_ */
+END_OF_FILE
+if test 10035 -ne `wc -c <'iss/telnet.h'`; then
+    echo shar: \"'iss/telnet.h'\" unpacked with wrong size!
+fi
+# end of 'iss/telnet.h'
+fi
+if test -f 'iss/todo' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'iss/todo'\"
+else
+echo shar: Extracting \"'iss/todo'\" \(676 characters\)
+sed "s/^X//" >'iss/todo' <<'END_OF_FILE'
+XTry common default accounts (e.g. guest, bbs, lp, adm, admin, sysadm). 
+X
+XThe following are possible things to probe for: more sendmail bugs, tftp, more
+Xftp tests, finger probe, ypset , nfs problems (guess file handles, export
+Xaccess list => 256 bytes), rsh bug, ip-forwarding, and various other bugs.
+X
+XClean up the Log file so it is more readable and comprehensive.  For example,
+XFTP will tell you whether or not it has anonymous FTP and if the ftp site has
+Xflaws, rather than just showing the results of the commands.
+X
+XMake it so you can 'iss hostname' and it will scan that host and any related
+Xhosts in that domain that would provide access to the hostname you specified.
+X
+END_OF_FILE
+if test 676 -ne `wc -c <'iss/todo'`; then
+    echo shar: \"'iss/todo'\" unpacked with wrong size!
+fi
+# end of 'iss/todo'
+fi
+echo shar: End of shell archive.
+exit 0
+
+exit 0 # Just in case...

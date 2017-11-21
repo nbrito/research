@@ -1,0 +1,21 @@
+The purpose of the crashme program is to cause instruction faults
+that would otherwise be only rarely seen in the normal operation
+of a system (where "normal" includes conditions of user programs
+with bugs in them, and to executable code corruption due to
+memory, disk, and network problems).
+
+Caution: Don't even *think* about running this program on a
+system without a projected mode operating of some kind.
+
+For more information see the comments in the code.
+
+Note: The use of srand and rand is unlikely to result in a very
+good random mapping unto a machine instruction set.
+
+Infinite loops will be broken out of (presumably) by the ALARM
+signal. 10 seconds are given for this. Adjust as needed.
+
+Ideally a shell script should be set up to run crashme again and
+again for hours and hours with different input settings.
+
+-George Carrette. GJC@BU-IT.BU.EDU
