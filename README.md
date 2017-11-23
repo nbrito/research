@@ -1,5 +1,5 @@
 # Research Repository
-This repository is a collection of tools and documents that helped the repository's owner to study and understand some cybersecurity related topics.
+This repository is a collection of information, code and/or tool that helped the repository's owner to study and understand some cybersecurity related topics.
 
 ## Directories
 * cve
@@ -10,8 +10,6 @@ This repository is a collection of tools and documents that helped the repositor
 
 ## Credits
 [Nelson Brito](https://fnstenv.blogspot.com) (a.k.a. repository's owner)
-
-The names of actual information, code and/or tool mentioned herein may be the trademarks of their respective owners.
 
 ## Disclaimer
 Codes are available for research purposes only, and the repository's owner vehemently denies the malicious use, as well as the illegal purpose use, of any information, code and/or tool contained in this repository.
