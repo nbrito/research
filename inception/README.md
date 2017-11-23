@@ -1,18 +1,24 @@
 ```
-          .___                            __  .__
-          |   | ____   ____  ____ _______/  |_|__| ____   ____
-          |   |/    \_/ ___\/ __ \\____ \   __\  |/  _ \ /    \
-          |   |   |  \  \__\  ___/|  |_> >  | |  (  <_> )   |  \
-          |___|___|__/\_____>_____>   __/|__| |__|\____/|___|__/
-                                  |__|
-                      _______________  ____ ____
-                      \_____  \   _  \/_   /_   |
-                       /  ____/  /_\  \|   ||   |
-                      /       \  \_/   \   ||   |
-                      \________\_______/___||___|
-                      
+/**************************************************************************
+ * Talk:        Inception - The extended edition
+ * Author:      Nelson Brito <nbrito *NoSPAM* sekure.org>
+ * Conference:  Hackers to Hackers Conference Eighth Edition (October 2011)
+ **************************************************************************
+ *         .___                            __  .__                        *
+ *         |   | ____   ____  ____ _______/  |_|__| ____   ____           *
+ *         |   |/    \_/ ___\/ __ \\____ \   __\  |/  _ \ /    \          *
+ *         |   |   |  \  \__\  ___/|  |_> >  | |  (  <_> )   |  \         *
+ *         |___|___|__/\_____>_____>   __/|__| |__|\____/|___|__/         *
+ *                                 |__|                                   *
+ *                     _______________  ____ ____                         *
+ *                     \_____  \   _  \/_   /_   |                        *
+ *                      /  ____/  /_\  \|   ||   |                        *
+ *                     /       \  \_/   \   ||   |                        *
+ *                     \________\_______/___||___|                        *
+ *                                                                        *
+ **************************************************************************/
 ```
-# Inception 2011
+# Inception
 _"Sometimes, the best way to advance is in reverse"_. ([Reversing: Secrest of Reverse Engineering](https://en.wikipedia.org/wiki/Reversing:_Secrets_of_Reverse_Engineering))
 
 Every time any new vulnerability comes out we should be ready to understand it, in order to perform its exploitation or even to build defenses. [Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches.
@@ -35,7 +41,7 @@ The **black magic** is finally unveiled, showing how to use tools (public availa
 
 ## Root Cause
 
-###  ```CRecordInstance::TransferToDestination``` Reverse Engineered Code
+###  ```CRecordInstance::TransferToDestination```
 ```
 int CRecordInstance::TransferToDestination () {
     int ebp_minus_4h, eax;
