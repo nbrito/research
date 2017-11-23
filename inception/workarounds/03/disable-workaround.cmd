@@ -1,0 +1,1 @@
+SecEdit /configure /db UnblockAccess.sdb /cfg unBlockAccess_x86.inf

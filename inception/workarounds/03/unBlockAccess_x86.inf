@@ -1,0 +1,7 @@
+[Unicode]
+Unicode=yes
+[Version]
+signature="$CHICAGO$"
+Revision=1
+[File Security]
+"%ProgramFiles%\Common Files\System\Ole DB\oledb32.dll",2,"S:(ML;;NW;;;ME)"

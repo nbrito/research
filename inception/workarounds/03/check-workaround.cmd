@@ -1,0 +1,1 @@
+icacls "%ProgramFiles%\Common Files\System\Ole DB\oledb32.dll"

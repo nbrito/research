@@ -1,0 +1,1 @@
+cacls "%ProgramFiles%\Common Files\System\Ole DB\oledb32.dll" /E /P everyone:N

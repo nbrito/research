@@ -1,0 +1,40 @@
+-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-
+- Set Internet and Local intranet security zone settings to "High" to prompt before running ActiveX Controls and Active Scripting in these zones
+-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-
+
+To raise the browsing security level in Internet Explorer, follow these steps:
+1. On the Internet Explorer Tools menu, click Internet Options.
+2. In the Internet Options dialog box, click the Security tab, and then click the Internet icon.
+3. Under Security level for this zone, move the slider to High. This sets the security level for all Web sites you visit to High.
+
+Note: If no slider is visible, click Default Level, and then move the slider to High.
+
+
+-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-
+- Configure Internet Explorer to prompt before running Active Scripting or to disable Active Scripting in the Internet and Local intranet security zone
+-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-
+
+To do this, follow these steps:
+1. In Internet Explorer, click Internet Options on the Tools menu.
+2. Click the Security tab.
+3. Click Internet, and then click Custom Level.
+4. Under Settings, in the Scripting section, under Active Scripting,  click Prompt or Disable, and then click OK.
+5. Click Local intranet, and then click Custom Level.
+6. Under Settings, in the Scripting section, under Active Scripting, click Prompt or Disable, and then click OK.
+7. Click OK two times to return to Internet Explorer.
+
+Note: Disabling Active Scripting in the Internet and Local intranet security zones may cause some Web sites to work incorrectly. If you have difficulty using a Web site after you change this setting, and you are sure the site is safe to use, you can add that site to your list of trusted sites. This will allow the site to work correctly.
+
+-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-
+- Add sites that you trust to the Internet Explorer Trusted sites zone
+-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-
+
+To do this, follow these steps:
+1. In Internet Explorer, click Tools, click Internet Options, and then click the Security tab.
+2. In the Select a Web content zone to specify its current security settings box, click Trusted Sites, and then click Sites.
+3. If you want to add sites that do not require an encrypted channel, click to clear the Require server verification (https:) for all sites in this zone check box.
+4. In the Add this Web site to the zone box, type the URL of a site that you trust, and then click Add.
+5. Repeat these steps for each site that you want to add to the zone.
+6. Click OK two times to accept the changes and return to Internet Explorer.
+
+Note: Add any sites that you trust not to take malicious action on your system. Two in particular that you may want to add are *.windowsupdate.microsoft.com and *.update.microsoft.com. These are the sites that will host the update, and it requires an ActiveX Control to install the update.

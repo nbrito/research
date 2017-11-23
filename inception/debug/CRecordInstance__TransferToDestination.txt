@@ -1,0 +1,39 @@
+0:017> !heap -p -a 063eb158
+	address 063eb158 found in
+	_HEAP @ 140000
+	  HEAP_ENTRY Size Prev Flags    UserPtr UserSize - state
+		063eb128 000a 0000  [07]   063eb130    00032 - (busy)
+		  ? <Unloaded_ud.drv>+610069
+		Trace: 6af6
+		7c96cf9a ntdll!RtlDebugAllocateHeap+0x000000e1
+		7c949564 ntdll!RtlAllocateHeapSlowly+0x00000044
+		7c918f01 ntdll!RtlAllocateHeap+0x00000e64
+		7e8e8926 mshtml!_MemAlloc+0x00000023
+		7e86dcf6 mshtml!_MemAllocString+0x00000049
+		7e86de4c mshtml!_MemReplaceString+0x00000019
+		7e86e0a1 mshtml!CProgSink::SetProgress+0x000000e2
+		7e86e297 mshtml!CDwnLoad::RequestProgress+0x00000029
+		7e86df0a mshtml!CDwnInfo::AddProgSink+0x00000090
+		7e86de70 mshtml!CDwnCtx::SetProgSink+0x0000002d
+		7e8c5627 mshtml!CImgHelper::SetImgCtx+0x0000019e
+		7e85bb90 mshtml!CImgHelper::FetchAndSetImgCtx+0x0000006e
+		7e85bb18 mshtml!CImgHelper::SetImgSrc+0x00000023
+		7e886855 mshtml!CImgHelper::EnterTree+0x00000127
+		7e8867a3 mshtml!CImgHelper::Notify+0x000001b6
+		7e8cf890 mshtml!CImgElement::Notify+0x0000002c
+		7e8ab94a mshtml!CSpliceTreeEngine::InsertSplice+0x00000a09
+		7e8a99e7 mshtml!CMarkup::SpliceTreeInternal+0x000000ac
+		7e8aa8ba mshtml!CDoc::CutCopyMove+0x000000d8
+		7e8aac2b mshtml!CDoc::Move+0x00000018
+		7e8ad44d mshtml!HandleHTMLInjection+0x00000187
+		7e8ad2d9 mshtml!HandleHTMLInjection+0x00000050
+		7e8aae80 mshtml!CElement::Inject+0x000002ee
+		7ea66c1f mshtml!CDBindMethodsText::BoundValueToElement+0x00000022
+		7eaf2c0d mshtml!CDBindMethodsMarquee::BoundValueToElement+0x00000017
+		7ea81d85 mshtml!CXfer::TransferFromSrc+0x000000c5
+		7ea82299 mshtml!CRecordInstance::TransferToDestination+0x0000002a
+		7ea82870 mshtml!CRecordInstance::SetHRow+0x00000045
+		7ea82fb8 mshtml!CCurrentRecordInstance::OnRowPositionChange+0x0000005d
+		7317f285 oledb32!CRowPosition::FireRowPositionChange+0x00000096
+		7317f81d oledb32!CRowPosition::SetRowPosition+0x00000117
+		7ea831f5 mshtml!CCurrentRecordInstance::InitCurrentRow+0x0000007b

@@ -1,0 +1,1 @@
+Regedit.exe /s Disable_XML_Island_backup.reg
