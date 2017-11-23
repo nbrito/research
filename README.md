@@ -9,7 +9,7 @@ This repository is a collection of tools and documents that helped the repositor
 * pop
 
 ## Credits
-[Nelson Brito](https://fnstenv.blogspot.com)
+[Nelson Brito](https://fnstenv.blogspot.com) (a.k.a. repository's owner)
 
 The names of actual information, code and/or tool mentioned herein may be the trademarks of their respective owners.
 
