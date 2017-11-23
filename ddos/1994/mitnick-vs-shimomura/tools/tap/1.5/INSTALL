@@ -1,0 +1,78 @@
+#
+# @(#)INSTALL	1.5 3/19/92
+#
+
+Step's to configure your kernel ...
+i recommend that you first try the kernel-loadable version of the driver by
+just type ,,make'' (see README)
+
+-------------------------------------------------------------------------
+1.    Add:
+
+    sundev/tap.c        optional tap device-driver
+
+    to /usr/sys/`arch -k`/conf/files
+
+-------------------------------------------------------------------------
+2.    Copy tap.c to /usr/sys/sundev/tap.c
+
+-------------------------------------------------------------------------
+3.    Add
+
+        ...
+      #include "tap.h"
+      #if NTAP > 0
+      extern struct streamtab tapcinfo;
+      #define   tapctab &tapcinfo
+      #else
+      #define   tapctab 0
+      #endif
+        ...             (at the end of the cdevsw[])
+      {
+        nodev,          nodev,          nodev,          nodev,          /*104*/
+        nodev,          nulldev,        nodev,          0,
+        tapctab,        0,
+      },
+        ...
+
+      to /usr/sys/sun/conf.c
+
+-------------------------------------------------------------------------
+4.    Add
+
+    ...
+    #include "tap.h"
+    ...
+    #if    NTAP > 0
+    extern struct streamtab tapinfo;
+    #endif
+    ...
+    #if    NTAP > 0
+        { "tap",    &tapinfo },
+    #endif
+    ...
+
+    to /usr/sys/sun/str_conf.c
+
+-------------------------------------------------------------------------
+5.    Add
+
+    pseudo-device slip2  # STREAMS tapc/tap driver/module
+
+    to your /usr/sys/`arch -k`/conf/CONFIG file.
+
+-------------------------------------------------------------------------
+6.    Configure your kernel and install and boot it
+
+      cd /usr/sys/`arch -k`/conf
+      config CONFIG
+      cd ../CONFIG
+      make
+      cp /vmunix /vmunix.old
+      cp vmunix /
+      mknod /dev/tapc0 c 104 0  # major 104 is the number from step 3. above
+      mknod /dev/tapc1 c 104 1  # perhaps remove the old loadable nodes first ?
+      fastboot
+
+-------------------------------------------------------------------------
+

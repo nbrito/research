@@ -1,0 +1,162 @@
+#	@(#)README	1.5 3/19/92
+#
+#       This is the STREAMS pushable-module/driver tap.
+#       last updated: Thu Mar 19 13:50:25 MET 1992
+
+
+        - this driver is a kernel-loadable-module. (==>no reboot required)
+        - it is a combination of a STREAMS-module and a STREAMS-driver.
+        - the pushed-tap-module pass all downstream M_DATA
+          messages comming from above to the tapc0-driver upstream
+          on the read-side. and all upstream M_DATA message comming from
+          below to the tapc1-driver upstream on the read_side.
+        - all messages coming downstream from the tapc?-driver are discarded.
+
+        tapc?   - is the driver that has a device node and
+                  that can only be read (currently).
+                  tapc0 - for downstream monitoring
+                  tapc1 - for upstream monitoring
+                  (these nodes can only opened by 1 user at the time)
+        tap     - is the pushable module.
+
+the tap-modules must manually pushed/poped on each stream to be monitored,
+independed if the tapc-driver is open or not.
+if the tapc?-driver is closed the messages are not dupclicated as long as the
+tapc?-driver is re-open.
+
+      (any USER proces)            (tapmon)
+     STREAMS device node    /dev/tapc0   /dev/tapc1
+----------------------------------------------------
+        |  ttya    |       |  tapc   |  |  tapc  |
+        +----------+       +---------+  +--------+
+             | ^           (1)| ^      (1)| ^
+             v |              v |         v |
+        ............       ...........  ..........
+        . MORE  (2).       . MORE    .  . MORE   .
+        . MODULES  .       . MODULES .  . MODULES.
+        ............       ...........  ..........
+          (3)| ^                ^           ^
+             v |                |           |
+        +----------+            |           |
+        |    \ tap |            |\.........)|(.....<..[ from other tap modules ]
+        |     \    |            |           |
+        | TAP  \---|----->------/           |\.....<..[ from other tap modules ]
+        | MODULE   |                        |
+        | PUSHED/--|----->------------------/
+        |      |   |
+        +----------+
+             | ^
+             v | (3)
+        ............    (1) - discarded (currently)
+        . MORE  (2).    (2) - e.g. ttcompat+ldterm etc.
+        . MODULES  .    (3) - duplicated stream
+        ............
+             | ^
+             v |
+        +----------+
+        |    zs    |
+----------------------------------------------------
+    physical STREAMS device
+         (terminal)
+          (person)
+
+(note: the ,,STREAMS device node'' above shown can be any streams device
+ e.g.:
+        down+up stream devices:
+                /dev/{ttyp*,tty[ab],console,loop,mux}
+        up stream devices:
+                /dev/{kbd,mouse}
+)
+
+
+
+INSTALLATION:
+        the current version is only tested under sunos 4.1.1 on a sun3/50
+        machine. but i hope the version will run on any sun machine w/ the
+        loadable-driver /dev/vd. ( the load of the pushable-streams-module
+        is is done by hand ). if the modload fails or the use of the driver
+        crashes the kernel let me know ...
+
+        to make the kernel-loadable module and automatic load into the kernel
+        type (as root);
+                # make
+        the tapmon+streams user-commands are created.(the streams command
+        utility can be used to push/pop other non-tap streams modules)
+        a possible old tap-module is automatically unloaded if a new is loaded.
+        the device node (/dev/tapc[01]) are created as expected.
+                $ streams -u tap < /dev/ttya
+                $ tapmon down
+        this push a tap-module on the /dev/ttya serial-tty and then start
+        the monitor. all data send to /dev/ttya are now duplicated to
+        your standard output.type CTRL-C to leave the tapmon.
+        note: after leaving tapmon the tap-streams-module's remains pushed.
+
+        here an example output from ,,pstat -S'' :
+
+                   LOC     WRQ       VNODE     DEVICE   PGRP SIGIO  FLAGS
+                 f05461e    f05583c   f0cdb94  59,  0      0     0  R
+                  Write side:
+                    NAME      COUNT FLG    MINPS  MAXPS  HIWAT  LOWAT
+                    strwhead      0            0      0      0      0
+                    tapc          0  R         0    INF      0      0
+                  Read side:
+                    tapc          0  R         0    INF      0      0
+                    strrhead      0  R         0    INF   5120   1024
+
+
+                   LOC     WRQ       VNODE     DEVICE   PGRP SIGIO  FLAGS
+                 f0543e0    f0550ec   f0cc9f4  12,  1    905     0
+                  Write side:
+                    NAME      COUNT FLG    MINPS  MAXPS  HIWAT  LOWAT
+                    strwhead      0            0      0      0      0
+                    tap           0  R         0    INF      0      0
+                    ttcompat      0  R         0    INF    300    200
+                    ldterm        0  R         0    INF      1      0
+                    zs            0  R         0    INF   2048    128
+                  Read side:
+                    zs            0  R         0    INF   2048    128
+                    ldterm        0  R         0    128    500    200
+                    ttcompat      0  R         0    INF   2048    128
+                    tap           0  R         0    INF      0      0
+                    strrhead      0            0    INF    300    200
+
+
+        the kernel-loadable-module can only unloaded by modunload(1) or by
+        ./unload if all tap-modules are popped and the /dev/tapc? devices
+        are closed (if you are not sure look in ,,pstat -S'' for the
+        string "tap" ). note: if the stream that have a tap-module pushed
+                              is closed the tap-module is also poped from the
+                              stream, unless tap-modules are auto-pushed
+                              configured in the kernel (this is a sunos
+                              STREAMS option, and is different in a SYSV
+                              environment).
+                $ streams -o tap < /dev/ttya
+                $ ./unload
+        this pop's the pushed module and unload's the kernel-loadable-module
+        from the kernel...
+
+
+
+        another example is (if you not already done the ./unload operation
+        above,else you must reload the tapc/tap driver with another ,,make''):
+                $ streams -o ttcompat -o ldterm \
+                        -u tap -u ldterm -u ttcompat < /dev/ttyb
+                $ tapmon down
+        now you can monitor direct above the physical device and can see
+        the line-editing functions of the ldterm and ttcompat modules.
+
+        undo last module transaction:
+                $ streams -o ttcompat -o ldterm -o tap -u ldterm \
+                        -u ttcompat < /dev/ttyb
+
+
+
+        if you want to link the tapc/tap device-driver permanently to /vmunix
+        be sure not to define TAPVD (see Makefile) and to ignore tap.h
+        (see tap.h). follow the step's in the ,,INSTALL'' file.
+
+        the only problem is the possible wrong terminal-emulation *sigh*.
+        but there is universal-terminal-emulation under X.
+
+--
+Simon Ney -- neural@cs.tu-berlin.de / simon@bbisun.uu.sub.org

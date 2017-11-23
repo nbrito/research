@@ -1,0 +1,13 @@
+#! /bin/sh
+# @(#)unload	1.5 3/19/92
+
+MIDF=MODULE_ID
+
+if ( test -f $MIDF ) then
+	
+	if(modunload -id `cat $MIDF`) then
+		rm $MIDF
+	fi
+else
+	echo "no $MIDF file present"
+fi	

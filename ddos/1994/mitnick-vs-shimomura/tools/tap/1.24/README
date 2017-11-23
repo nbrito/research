@@ -172,7 +172,7 @@ INSTALLATION:
 
         the tapmon(1)+streams(1) user-commands are created.(the streams(1)
         command can be used to push/pop other non-tap streams modules,the
-         (1) is a TAP-driver application).
+        tapmon(1) is a TAP-driver application).
         a possible old tap-module is automatically unloaded if a new is loaded
         (after multiple make commands).  the device nodes (/dev/tapc*) are
         created as expected.

@@ -1,0 +1,47 @@
+#! /bin/sh
+# @(#)load	1.5 3/19/92
+
+# --- change here ---
+CDEVICE="/dev/tapc"
+CMINORLIST="0 1"
+
+# ---- do not change below this line ----
+MIDF="MODULE_ID"
+ID=$1
+TYPE=$2
+
+if( test $# -lt 2 ) then
+	echo "Indirect Usage is: modload -exec $0 module.o"
+	exit 1
+fi
+#-----------------------------------------------------
+case $TYPE in
+
+	12345600)	
+			# DRIVER
+			BMAJOR=$3
+			CMAJOR=$4
+			for MINOR in $CMINORLIST
+			do
+				echo "$0: replace \"$CDEVICE$MINOR\"."
+				rm -f $CDEVICE$MINOR
+				mknod $CDEVICE$MINOR c $CMAJOR $MINOR
+			done
+			;;
+
+	12345606)	
+			# USER
+			;;
+
+	*)		# ILLEGAL
+			echo "$0: illegal module type \"$TYPE\" from modload"
+			exit 1
+			;;
+esac
+#-----------------------------------------------------
+if(test -f $MIDF) then
+	echo "$0: try auto-unload last module ..."
+	./unload
+fi
+echo $ID > $MIDF
+exit 0

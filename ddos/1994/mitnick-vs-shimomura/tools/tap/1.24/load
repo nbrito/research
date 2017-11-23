@@ -1,0 +1,76 @@
+#! /bin/sh
+# @(#)load	1.24 3/22/92
+
+PATH=/usr/ucb:/bin:/usr/bin:/usr/etc ; export PATH
+
+# --- change here ---
+CDEVICE="/dev/tapc"
+CMINORLIST="0 1 2 3 4 5 6 7"
+PERM=600
+#CLONEMAJOR=37	# is this standard ?
+#CLONENAME=x	# dont change
+
+# ---- do not change below this line ----
+MIDF="/tmp/MODULE_ID"
+ID=$1
+TYPE=$2
+
+if( test $# -lt 2 ) then
+	echo "Indirect Usage is: modload -exec $0 module.o"
+	exit 1
+fi
+#-----------------------------------------------------
+case $TYPE in
+
+	12345600)	
+			# DRIVER
+			BMAJOR=$3
+			CMAJOR=$4
+			for MINOR in $CMINORLIST
+			do
+				DEV=$CDEVICE$MINOR
+				echo "$0: replace \"$DEV\"."
+				rm -f $DEV
+				mknod $DEV c $CMAJOR $MINOR
+				chmod $PERM $DEV # for now
+			done
+			# CLONE stuff
+			# DEV=$CDEVICE$CLONENAME
+			# echo "$0: replace \"$DEV\" (CLONED CLONEMAJOR=$CLONEMAJOR)"
+			# rm -f $DEV
+			# mknod $DEV c $CLONEMAJOR $CMAJOR
+			# chmod $PERM $DEV # for now
+			;;
+
+	12345607)	
+			# PSEUDO
+			BMAJOR=$3
+			CMAJOR=$4
+			for MINOR in $CMINORLIST
+			do
+				DEV=$CDEVICE$MINOR
+				echo "$0: replace \"$DEV\"."
+				rm -f $DEV
+				mknod $DEV c $CMAJOR $MINOR
+				chmod $PERM $DEV # for now
+			done
+			# CLONE stuff
+			# DEV=$CDEVICE$CLONENAME
+			# echo "$0: replace \"$DEV\" (CLONED CLONEMAJOR=$CLONEMAJOR)"
+			# rm -f $DEV
+			# mknod $DEV c $CLONEMAJOR $CMAJOR
+			# chmod $PERM $DEV # for now
+			;;
+
+	12345606)	
+			# USER
+			;;
+
+	*)		# ILLEGAL
+			echo "$0: illegal module type \"$TYPE\" from modload"
+			exit 1
+			;;
+esac
+#-----------------------------------------------------
+echo $ID > $MIDF
+exit 0
