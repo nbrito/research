@@ -1,0 +1,199 @@
+Path: wasatch!mailrus!purdue!decwrl!ucbvax!OKEEFFE.BERKELEY.EDU!bostic
+From: bostic@OKEEFFE.BERKELEY.EDU (Keith Bostic)
+Newsgroups: comp.bugs.4bsd.ucb-fixes
+Subject: V1.69 (Virus posting #3)
+Message-ID: <8811040318.AA26579@okeeffe.Berkeley.EDU>
+Date: 4 Nov 88 03:18:47 GMT
+Sender: daemon@ucbvax.BERKELEY.EDU
+Organization: University of California at Berkeley
+Lines: 188
+Approved: ucb-fixes@okeeffe.berkeley.edu
+
+Subject: Virus posting #3
+Index: usr.lib/sendmail/src/srvrsmtp.c 4BSD
+
+Description:
+	The recently reported worm appears to also be using the
+	fingerd(8) daemon to enter systems.  Here's a fix.
+
+	The previous patch for sendmail(8) on binary systems only
+	prevented the current attacker.  The attached patch fixes
+	the problem.
+Fix:
+	Re-patch sendmail.  Recompile and reinstall the attached
+	source for fingerd(8).
+
+	Here's a script to repatch sendmail.  Note, this only applies
+	to binary systems, if you have source you should have recompiled
+	and reinstalled it already.  You should start with the original
+	sendmail binary, NOT the binary that you've already patched.
+	AND, REMEMBER, ALWAYS SAVE AN EXTRA COPY IN CASE YOU MAKE A
+	MISTAKE!!  Finally, if you don't find the string ``debug'' in
+	your sendmail binary, you don't have a problem; ignore this patch.
+	This patch essentially makes it impossible to set the debug flag.
+
+	Note, your offsets as printed by adb may vary!  Comments are
+	preceded by a hash mark, don't type them in, nor expect adb
+	to print them out.  Also, we're again using strings(1) to find
+	the decimal offset in the file of certain strings.  To find 
+	out if your strings(1) command prints offsets in decimal, 
+	put 8 control (non-printable) characters in a file, followed
+	by four printable characters, and then use strings(1) to find
+	the offset of your four printable characters.  If the offset
+	is ``8'', it's using decimal, if it's ``10'' it's using octal.
+	
+		Script started on Thu Nov  3 18:45:34 1988
+# find the decimal offset of the strings ``debug'' and ``showq'' in the
+# sendmail binary.
+		okeeffe:tmp {2} strings -o -a sendmail | egrep 'debug|showq'
+		0097040 showq
+		0097046 debug
+		okeeffe:tmp {3} adb -w sendmail
+# set the map, then set the default radix to base 10
+		?m 0 0xffffffff 0
+		0t10$d
+		radix=10 base ten
+# check to make sure that strings(1) was right, and then find out what
+# the byte pattern for ``showq'' is for your machine.  Note that adb
+# prints out that byte pattern in HEX!
+		97040?s
+		97040:		showq
+		97040?Xx
+		97040:		73686f77	7100
+# check on the string ``debug'', then, overwrite the first four bytes,
+# move up 4 bytes, and then overwite the last two bytes with the byte
+# pattern seen above for ``showq''.
+		97046?s
+		97046:		debug
+		97046?W 0x73686f77
+		97046:		1684365941	=	1936224119
+		.+4
+		.?w 0x7100
+		97050:		26368	=	28928
+# check to make sure we wrote out the correct string.
+		97046?s
+		97046:		showq
+		okeeffe:tmp {4} strings -o -a sendmail | egrep 'debug|showq'
+		0097040 showq
+		0097046 showq
+		okeeffe:tmp {5}
+		script done on Thu Nov  3 18:47:42 1988
+
+
+# This is a shell archive.  Save it in a file, remove anything before
+# this line, and then unpack it by entering "sh file".  Note, it may
+# create directories; files and directories will be owned by you and
+# have default permissions.
+#
+# This archive contains:
+#
+#	fingerd.c
+#
+echo x - fingerd.c
+sed 's/^X//' >fingerd.c << 'END-of-fingerd.c'
+X/*
+X * Copyright (c) 1983 The Regents of the University of California.
+X * All rights reserved.
+X *
+X * Redistribution and use in source and binary forms are permitted
+X * provided that the above copyright notice and this paragraph are
+X * duplicated in all such forms and that any documentation,
+X * advertising materials, and other materials related to such
+X * distribution and use acknowledge that the software was developed
+X * by the University of California, Berkeley.  The name of the
+X * University may not be used to endorse or promote products derived
+X * from this software without specific prior written permission.
+X * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+X * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+X * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+X */
+X
+X#ifndef lint
+Xchar copyright[] =
+X"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
+X All rights reserved.\n";
+X#endif /* not lint */
+X
+X#ifndef lint
+Xstatic char sccsid[] = "@(#)fingerd.c	5.3 (Berkeley) 11/3/88";
+X#endif /* not lint */
+X
+X/*
+X * Finger server.
+X */
+X#include <sys/types.h>
+X#include <netinet/in.h>
+X#include <stdio.h>
+X#include <ctype.h>
+X
+Xmain(argc, argv)
+X	int argc;
+X	char *argv[];
+X{
+X	register char *sp;
+X	char line[512];
+X	struct sockaddr_in sin;
+X	int i, p[2], pid, status;
+X	FILE *fp;
+X	char *av[4];
+X
+X	i = sizeof (sin);
+X	if (getpeername(0, &sin, &i) < 0)
+X		fatal(argv[0], "getpeername");
+X	if (fgets(line, sizeof(line), stdin) == NULL)
+X		exit(1);
+X	sp = line;
+X	av[0] = "finger";
+X	for (i = 1;;) {
+X		while (isspace(*sp))
+X			sp++;
+X		if (!*sp)
+X			break;
+X		if (*sp == '/' && (sp[1] == 'W' || sp[1] == 'w')) {
+X			sp += 2;
+X			av[i++] = "-l";
+X		}
+X		if (*sp && !isspace(*sp)) {
+X			av[i++] = sp;
+X			while (*sp && !isspace(*sp))
+X				sp++;
+X			*sp = '\0';
+X		}
+X	}
+X	av[i] = 0;
+X	if (pipe(p) < 0)
+X		fatal(argv[0], "pipe");
+X	if ((pid = fork()) == 0) {
+X		close(p[0]);
+X		if (p[1] != 1) {
+X			dup2(p[1], 1);
+X			close(p[1]);
+X		}
+X		execv("/usr/ucb/finger", av);
+X		_exit(1);
+X	}
+X	if (pid == -1)
+X		fatal(argv[0], "fork");
+X	close(p[1]);
+X	if ((fp = fdopen(p[0], "r")) == NULL)
+X		fatal(argv[0], "fdopen");
+X	while ((i = getc(fp)) != EOF) {
+X		if (i == '\n')
+X			putchar('\r');
+X		putchar(i);
+X	}
+X	fclose(fp);
+X	while ((i = wait(&status)) != pid && i != -1)
+X		;
+X	return(0);
+X}
+X
+Xfatal(prog, s)
+X	char *prog, *s;
+X{
+X	fprintf(stderr, "%s: ", prog);
+X	perror(s);
+X	exit(1);
+X}
+END-of-fingerd.c
+exit
