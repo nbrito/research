@@ -40,7 +40,6 @@ It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to 
 The **black magic** is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
 ## Root Cause
-
 ###  ```CRecordInstance::TransferToDestination```
 ```
 int CRecordInstance::TransferToDestination () {
@@ -68,25 +67,219 @@ int CRecordInstance::TransferToDestination () {
 
 ### ```HEAP```
 ```
-0:017> !heap -p -a 063eb158
-	address 063eb158 found in
+0:013> bc *
+0:013> bp 7ea8226f ".printf \"********************************************************************************\\n\"; g"
+0:013> bp 7ea8227a ".printf \"[TransferToDestination] Setting \'Array Object\': \'Array Elements\' @ EDI -> %08x[%d] = { \", edi, (poi(edi+08) >> 2); .for (r $t0 = 0 ; @$t0 <= (poi(edi+08) >> 2) - 1 ; r $t0 = @$t0 + 1) { .printf \" %08x, \", poi(poi(edi+0C)+(@$t0*4)); }; .printf \"}.\\n\"; g"
+0:013> bp 7ea8227d ".printf \"[TransferToDestination] Setting \'Array.Size()\': %d (@ %08x).\\n\", esi, edi+8; g"
+0:013> bp 7ea8227f ".printf \"[TransferToDestination] Setting \'Counter\': %d.\\n\", ebx; g"
+0:013> bp 7ea82282 ".printf \"[TransferToDestination] Setting \'Array.Size()\': %d @ ESI.\\n\", esi; g"
+0:013> bp 7ea82283 ".printf \"[TransferToDestination] Setting \'Array Index\': %d @ ESI.\\n\", esi; g"
+0:013> bp 7ea82288 ".printf \"[TransferToDestination]\"; .if (ebx == 0) { .printf \" Starting \"; } .else { .printf \" Restarting \"; }; .printf \"\'Loop\': \'Counter\' is %d and \'Array Index\' is %d (@ ESI).\\n\", ebx, esi; g"
+0:013> bp 7ea8228b ".printf \"[TransferToDestination] Setting \'Array[%d]\': \'Array Element\' @ %08x.\\n\", ebx, poi(eax+ebx*4); g"
+0:013> bp 7ea8228f ".printf \"[TransferToDestination] Checking \'Array[%d]\': is \'Array Element\' @ %08x NULL?\\n\", ebx, poi(eax+ebx*4); g"
+0:013> bp 7ea82294 ".printf \"[TransferToDestination] Calling \'Array[%d]\'->TransferFromSrc: \'Array Element\' @ %08x.\\n\", ebx, poi(eax+ebx*4); g"
+0:013> bp 7ea822a7 ".printf \"[TransferToDestination] Incrementing \'Counter\': %d.\\n[TransferToDestination] Comparing \'Counter\' and \'Array Index\': \'Counter\' is %d and \'Array Index\' is %d (@ ESI).\\n\", ebx, ebx, esi; .if ((esi > (poi(edi+08) >> 2) - 1) & (ebx <= esi)) { .printf \"[TransferToDestination] Warning \'Array Index\': should be %d (@ %08x) instead of %d (@ESI).\\n\", (poi(edi+8) >> 2) - 1, edi+8, esi; g; } .else { g; }"
+0:013> bp 7ea822b2 ".printf \"********************************************************************************\\n\"; g"
+0:013> g
+ModLoad: 76200000 76277000   C:\WINDOWS\system32\mshtmled.dll
+ModLoad: 72d20000 72d29000   C:\WINDOWS\system32\wdmaud.drv
+ModLoad: 72d20000 72d29000   C:\WINDOWS\system32\wdmaud.drv
+ModLoad: 72d10000 72d18000   C:\WINDOWS\system32\msacm32.drv
+ModLoad: 77be0000 77bf5000   C:\WINDOWS\system32\MSACM32.dll
+ModLoad: 77bd0000 77bd7000   C:\WINDOWS\system32\midimap.dll
+ModLoad: 68000000 68036000   C:\WINDOWS\system32\rsaenh.dll
+ModLoad: 6cc60000 6cc68000   C:\WINDOWS\System32\dispex.dll
+(de8.49c): Unknown exception - code 80040155 (first chance)
+(de8.fe0): Unknown exception - code 80040155 (first chance)
+ModLoad: 74980000 74a93000   C:\WINDOWS\System32\msxml3.dll
+ModLoad: 73160000 731d7000   C:\Program Files\Common Files\System\Ole DB\oledb32.dll
+ModLoad: 765b0000 765d5000   C:\WINDOWS\system32\MSDART.DLL
+ModLoad: 763b0000 763f9000   C:\WINDOWS\system32\comdlg32.dll
+ModLoad: 75350000 75361000   C:\Program Files\Common Files\System\Ole DB\OLEDB32R.DLL
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 064785e0[2] = {  064788d8,  06478938, }.
+[TransferToDestination] Setting 'Array.Size()': 8 (@ 064785e8).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 2 @ ESI.
+[TransferToDestination] Setting 'Array Index': 1 @ ESI.
+[TransferToDestination] Starting 'Loop': 'Counter' is 0 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[0]': 'Array Element' @ 064788d8.
+[TransferToDestination] Checking 'Array[0]': is 'Array Element' @ 064788d8 NULL?
+[TransferToDestination] Calling 'Array[0]'->TransferFromSrc: 'Array Element' @ 064788d8.
+ModLoad: 06b70000 06b79000   C:\WINDOWS\system32\idndl.dll
+[TransferToDestination] Incrementing 'Counter': 1.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Warning 'Array Index': should be 0 (@ 064785e8) instead of 1 (@ESI).
+[TransferToDestination] Restarting 'Loop': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[1]': 'Array Element' @ 06478938.
+[TransferToDestination] Checking 'Array[1]': is 'Array Element' @ 06478938 NULL?
+[TransferToDestination] Calling 'Array[1]'->TransferFromSrc: 'Array Element' @ 06478938.
+[TransferToDestination] Incrementing 'Counter': 2.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 2 and 'Array Index' is 1 (@ ESI).
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 064785e0[0] = { }.
+[TransferToDestination] Setting 'Array.Size()': 0 (@ 064785e8).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 0 @ ESI.
+[TransferToDestination] Setting 'Array Index': -1 @ ESI.
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 064d4c20[2] = {  06478848,  064788a8, }.
+[TransferToDestination] Setting 'Array.Size()': 8 (@ 064d4c28).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 2 @ ESI.
+[TransferToDestination] Setting 'Array Index': 1 @ ESI.
+[TransferToDestination] Starting 'Loop': 'Counter' is 0 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[0]': 'Array Element' @ 06478848.
+[TransferToDestination] Checking 'Array[0]': is 'Array Element' @ 06478848 NULL?
+[TransferToDestination] Calling 'Array[0]'->TransferFromSrc: 'Array Element' @ 06478848.
+[TransferToDestination] Incrementing 'Counter': 1.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Warning 'Array Index': should be 0 (@ 064d4c28) instead of 1 (@ESI).
+[TransferToDestination] Restarting 'Loop': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[1]': 'Array Element' @ 064788a8.
+[TransferToDestination] Checking 'Array[1]': is 'Array Element' @ 064788a8 NULL?
+[TransferToDestination] Calling 'Array[1]'->TransferFromSrc: 'Array Element' @ 064788a8.
+[TransferToDestination] Incrementing 'Counter': 2.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 2 and 'Array Index' is 1 (@ ESI).
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 064d4c20[0] = { }.
+[TransferToDestination] Setting 'Array.Size()': 0 (@ 064d4c28).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 0 @ ESI.
+[TransferToDestination] Setting 'Array Index': -1 @ ESI.
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 06478678[2] = {  064dc890,  064dc8f0, }.
+[TransferToDestination] Setting 'Array.Size()': 8 (@ 06478680).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 2 @ ESI.
+[TransferToDestination] Setting 'Array Index': 1 @ ESI.
+[TransferToDestination] Starting 'Loop': 'Counter' is 0 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[0]': 'Array Element' @ 064dc890.
+[TransferToDestination] Checking 'Array[0]': is 'Array Element' @ 064dc890 NULL?
+[TransferToDestination] Calling 'Array[0]'->TransferFromSrc: 'Array Element' @ 064dc890.
+[TransferToDestination] Incrementing 'Counter': 1.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Warning 'Array Index': should be 0 (@ 06478680) instead of 1 (@ESI).
+[TransferToDestination] Restarting 'Loop': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[1]': 'Array Element' @ 064dc8f0.
+[TransferToDestination] Checking 'Array[1]': is 'Array Element' @ 064dc8f0 NULL?
+[TransferToDestination] Calling 'Array[1]'->TransferFromSrc: 'Array Element' @ 064dc8f0.
+[TransferToDestination] Incrementing 'Counter': 2.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 2 and 'Array Index' is 1 (@ ESI).
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 06478678[0] = { }.
+[TransferToDestination] Setting 'Array.Size()': 0 (@ 06478680).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 0 @ ESI.
+[TransferToDestination] Setting 'Array Index': -1 @ ESI.
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 06483be0[2] = {  0648b4d0,  064d4c28, }.
+[TransferToDestination] Setting 'Array.Size()': 8 (@ 06483be8).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 2 @ ESI.
+[TransferToDestination] Setting 'Array Index': 1 @ ESI.
+[TransferToDestination] Starting 'Loop': 'Counter' is 0 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[0]': 'Array Element' @ 0648b4d0.
+[TransferToDestination] Checking 'Array[0]': is 'Array Element' @ 0648b4d0 NULL?
+[TransferToDestination] Calling 'Array[0]'->TransferFromSrc: 'Array Element' @ 0648b4d0.
+[TransferToDestination] Incrementing 'Counter': 1.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Warning 'Array Index': should be 0 (@ 06483be8) instead of 1 (@ESI).
+[TransferToDestination] Restarting 'Loop': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[1]': 'Array Element' @ 064d4c28.
+[TransferToDestination] Checking 'Array[1]': is 'Array Element' @ 064d4c28 NULL?
+[TransferToDestination] Calling 'Array[1]'->TransferFromSrc: 'Array Element' @ 064d4c28.
+[TransferToDestination] Incrementing 'Counter': 2.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 2 and 'Array Index' is 1 (@ ESI).
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 06483be0[0] = { }.
+[TransferToDestination] Setting 'Array.Size()': 0 (@ 06483be8).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 0 @ ESI.
+[TransferToDestination] Setting 'Array Index': -1 @ ESI.
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 064e04f8[2] = {  064e1650,  064e16b0, }.
+[TransferToDestination] Setting 'Array.Size()': 8 (@ 064e0500).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 2 @ ESI.
+[TransferToDestination] Setting 'Array Index': 1 @ ESI.
+[TransferToDestination] Starting 'Loop': 'Counter' is 0 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[0]': 'Array Element' @ 064e1650.
+[TransferToDestination] Checking 'Array[0]': is 'Array Element' @ 064e1650 NULL?
+[TransferToDestination] Calling 'Array[0]'->TransferFromSrc: 'Array Element' @ 064e1650.
+[TransferToDestination] Incrementing 'Counter': 1.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Warning 'Array Index': should be 0 (@ 064e0500) instead of 1 (@ESI).
+[TransferToDestination] Restarting 'Loop': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[1]': 'Array Element' @ 064e16b0.
+[TransferToDestination] Checking 'Array[1]': is 'Array Element' @ 064e16b0 NULL?
+[TransferToDestination] Calling 'Array[1]'->TransferFromSrc: 'Array Element' @ 064e16b0.
+[TransferToDestination] Incrementing 'Counter': 2.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 2 and 'Array Index' is 1 (@ ESI).
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 064e04f8[0] = { }.
+[TransferToDestination] Setting 'Array.Size()': 0 (@ 064e0500).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 0 @ ESI.
+[TransferToDestination] Setting 'Array Index': -1 @ ESI.
+********************************************************************************
+********************************************************************************
+[TransferToDestination] Setting 'Array Object': 'Array Elements' @ EDI -> 064d5aa8[2] = {  064d30e0,  064d3140, }.
+[TransferToDestination] Setting 'Array.Size()': 8 (@ 064d5ab0).
+[TransferToDestination] Setting 'Counter': 0.
+[TransferToDestination] Setting 'Array.Size()': 2 @ ESI.
+[TransferToDestination] Setting 'Array Index': 1 @ ESI.
+[TransferToDestination] Starting 'Loop': 'Counter' is 0 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[0]': 'Array Element' @ 064d30e0.
+[TransferToDestination] Checking 'Array[0]': is 'Array Element' @ 064d30e0 NULL?
+[TransferToDestination] Calling 'Array[0]'->TransferFromSrc: 'Array Element' @ 064d30e0.
+[TransferToDestination] Incrementing 'Counter': 1.
+[TransferToDestination] Comparing 'Counter' and 'Array Index': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Warning 'Array Index': should be 0 (@ 064d5ab0) instead of 1 (@ESI).
+[TransferToDestination] Restarting 'Loop': 'Counter' is 1 and 'Array Index' is 1 (@ ESI).
+[TransferToDestination] Setting 'Array[1]': 'Array Element' @ 064d3140.
+[TransferToDestination] Checking 'Array[1]': is 'Array Element' @ 064d3140 NULL?
+[TransferToDestination] Calling 'Array[1]'->TransferFromSrc: 'Array Element' @ 064d3140.
+(de8.fe0): Access violation - code c0000005 (first chance)
+First chance exceptions are reported before any exception handling.
+This exception may be expected and handled.
+eax=06d8fca8 ebx=000c0000 ecx=000c0000 edx=7e90876d esi=064d3140 edi=00000000
+eip=7ea814a1 esp=06d8fc8c ebp=06d8fc8c iopl=0         nv up ei pl zr na pe nc
+cs=001b  ss=0023  ds=0023  es=0023  fs=003b  gs=0000             efl=00010246
+mshtml!CXferThunk::PvInitVar+0x5:
+7ea814a1 ff7118          push    dword ptr [ecx+18h]  ds:0023:000c0018=????????
+0:018> !address 064d3140
+	06430000 : 06430000 - 000c6000
+					Type     00020000 MEM_PRIVATE
+					Protect  00000004 PAGE_READWRITE
+					State    00001000 MEM_COMMIT
+					Usage    RegionUsageHeap
+					Handle   00140000
+0:018> !heap -p -a 064d3140
+	address 064d3140 found in
 	_HEAP @ 140000
 	  HEAP_ENTRY Size Prev Flags    UserPtr UserSize - state
-		063eb128 000a 0000  [07]   063eb130    00032 - (busy)
-		  ? <Unloaded_ud.drv>+610069
-		Trace: 6af6
+		064d3110 000c 0000  [07]   064d3118    00048 - (busy)
+		  mshtml!CImgCtx::`vftable'
+		Trace: 680d
 		7c96cf9a ntdll!RtlDebugAllocateHeap+0x000000e1
 		7c949564 ntdll!RtlAllocateHeapSlowly+0x00000044
 		7c918f01 ntdll!RtlAllocateHeap+0x00000e64
-		7e8e8926 mshtml!_MemAlloc+0x00000023
-		7e86dcf6 mshtml!_MemAllocString+0x00000049
-		7e86de4c mshtml!_MemReplaceString+0x00000019
-		7e86e0a1 mshtml!CProgSink::SetProgress+0x000000e2
-		7e86e297 mshtml!CDwnLoad::RequestProgress+0x00000029
-		7e86df0a mshtml!CDwnInfo::AddProgSink+0x00000090
-		7e86de70 mshtml!CDwnCtx::SetProgSink+0x0000002d
-		7e8c5627 mshtml!CImgHelper::SetImgCtx+0x0000019e
-		7e85bb90 mshtml!CImgHelper::FetchAndSetImgCtx+0x0000006e
+		7e8db4e0 mshtml!_MemAllocClear+0x00000023
+		7e86fda7 mshtml!CImgInfo::NewDwnCtx+0x0000000c
+		7e8591ce mshtml!NewDwnCtx+0x00000028
+		7e859680 mshtml!CDoc::NewDwnCtx2+0x0000014e
+		7e8593b0 mshtml!CDoc::NewDwnCtx+0x00000057
+		7e85bb7d mshtml!CImgHelper::FetchAndSetImgCtx+0x0000005b
 		7e85bb18 mshtml!CImgHelper::SetImgSrc+0x00000023
 		7e886855 mshtml!CImgHelper::EnterTree+0x00000127
 		7e8867a3 mshtml!CImgHelper::Notify+0x000001b6
@@ -99,7 +292,6 @@ int CRecordInstance::TransferToDestination () {
 		7e8ad2d9 mshtml!HandleHTMLInjection+0x00000050
 		7e8aae80 mshtml!CElement::Inject+0x000002ee
 		7ea66c1f mshtml!CDBindMethodsText::BoundValueToElement+0x00000022
-		7eaf2c0d mshtml!CDBindMethodsMarquee::BoundValueToElement+0x00000017
 		7ea81d85 mshtml!CXfer::TransferFromSrc+0x000000c5
 		7ea82299 mshtml!CRecordInstance::TransferToDestination+0x0000002a
 		7ea82870 mshtml!CRecordInstance::SetHRow+0x00000045
@@ -107,19 +299,19 @@ int CRecordInstance::TransferToDestination () {
 		7317f285 oledb32!CRowPosition::FireRowPositionChange+0x00000096
 		7317f81d oledb32!CRowPosition::SetRowPosition+0x00000117
 		7ea831f5 mshtml!CCurrentRecordInstance::InitCurrentRow+0x0000007b
+		7ea83373 mshtml!CCurrentRecordInstance::InitPosition+0x00000013
+		7e9e17bc mshtml!CDataBindTask::DecideToRun+0x0000012d
+		7ea800f2 mshtml!CDataBindTask::OnRun+0x000000ea
+		7e967f2b mshtml!CTask::TaskmanRunTask+0x0000003e
 ```
-
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
 
 ## [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
 After three years, the CVE Editorial Board has decided to change the description for [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) based on this research. As a direct result, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) is much more accurate than before. Check by yourself...
-
 ### Previous
 _Use-after-free vulnerability in mshtml.dll in Microsoft Internet Explorer 5.01, 6, and 7 on Windows XP SP2 and SP3, Server 2003 SP1 and SP2, Vista Gold and SP1, and Server 2008 allows remote attackers to execute arbitrary code via a crafted XML document containing nested SPAN elements, as exploited in the wild in December 2008._
-
 ### Current
 _Use-after-free vulnerability in the ```CRecordInstance::TransferToDestination``` function in mshtml.dll in Microsoft Internet Explorer 5.01, 6, 6 SP1, and 7 allows remote attackers to execute arbitrary code via DSO bindings involving (1) an XML Island, (2) XML DSOs, or (3) Tabular Data Control (TDC) in a crafted HTML or XML document, as demonstrated by nested ```SPAN``` or ```MARQUEE``` elements, and exploited in the wild in December 2008._
-
 ### Lacking Further Information
 Even with this update, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) description still lacks further information, because nested ```DIV```, ```LABEL```, ```LEGEND```, ```MARQUEE``` and ```SPAN``` elements can also be used to reprocude the vulnerability, and they does not even need to be the same, they can be mixed. Example:
 ```
