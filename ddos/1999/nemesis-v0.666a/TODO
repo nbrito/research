@@ -1,0 +1,13 @@
+Protocols
+---------
+
+dns
+igmp
+rip
+snmp
+
+Other
+-----
+
+raw packet delivery (for SYN|FIN and XMAS packets)
+libpcap shit (sniff)

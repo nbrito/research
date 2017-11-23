@@ -1,0 +1,366 @@
+<HTML>
+<HEAD>
+  <TITLE>
+  The Nemesis Project (Libnet-based Packet Injection Toolkit)
+  </TITLE>
+</HEAD>
+
+
+<BODY
+        BGCOLOR         ="BLACK"
+        TEXT            ="WHITE"
+        LINK            ="BLUE"
+        VLINK           ="#0000CC"
+        TOPMARGIN       =0
+        LEFTMARGIN      =0
+        MARGINWIDTH     =4
+        MARGINHEIGHT	=4
+>
+
+  <center>
+  <img src="pix/nemesis.gif"  width="702" height="91" border="0" align="top">
+  </center>
+
+ <TABLE BORDER=0>
+
+  <TR><TH VALIGN=top ALIGN=RIGHT>Author:</TH>
+  <TD ALIGN=LEFT>
+      <TABLE BORDER=0>
+      <TR><TD ALIGN=LEFT>
+          obecian
+      </TD></TR>
+      <TR><TD ALIGN=LEFT>
+          <A HREF="mailto:obecian@celerity.bartoli.org">obecian@celerity.bartoli.org</A> 
+      </TD></TR> 
+      </TABLE>
+  </TD></TR>
+
+ <TR><TH VALIGN=top ALIGN=RIGHT>Graphic:</TH>
+  <TD ALIGN=LEFT>
+      <TABLE BORDER=0>
+      <TR><TD ALIGN=LEFT>
+          lordess
+      </TD></TR>
+      <TR><TD ALIGN=LEFT>
+          <A HREF="mailto:lordess@wongfaye.com">lordess@wongfaye.com</A>  
+      </TD></TR>
+      </TABLE>
+  </TD></TR>
+
+
+  <TR><TH VALIGN=top ALIGN=RIGHT>Version:</TH>
+  <TD ALIGN=LEFT>
+      <TABLE BORDER=0>
+      <TR><TD ALIGN=LEFT>
+      0.666-alpha [First public release]
+      </TD></TR>
+      </TABLE>
+  </TD></TR>
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>Description:</TH>
+  <TD ALIGN=LEFT>
+
+  <table border=0 marginwidth=0 marginheight=0><tr><td>
+  The Nemesis Project is designed to be a commandline-based, portable human IP
+  stack for UNIX/Linux.  The suite is broken down by protocol, and should allow
+  for useful scripting of injected packet streams from simple shell scripts.
+  </td></tr></table>
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>Protocols:</TH>
+  <TD ALIGN=LEFT>
+  TCP*, UDP, ICMP*, ARP, OSPF (* = datalink / IP layer support)<br>
+  DNS, IGMP, RIP and SNMP (others as integrated by Libnet) [NOT YET IMPLEMENTED]
+  <table border=0 marginwidth=0 marginheight=0><tr><td>
+  
+  </td></tr></table>
+
+<p>
+
+  </TD></TR>
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>TCP Usage:</TH>
+  <TD ALIGN=LEFT>
+
+<table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>
+
+  ./tcp [-v] [options]
+
+TCP options: 
+  [-x &lt;Source Port&gt;]
+  [-y &lt;Destination Port&gt;]
+  -f &lt;TCP Flag Options&gt;
+     -fS SYN, -fA ACK, -fR RST, -fP PSH, -fF FIN, -fU URG
+  -w &lt;Window Size&gt;
+  -s &lt;SEQ Number&gt;
+  -a &lt;ACK Number&gt;
+  -u &lt;TCP Urgent Pointer&gt;
+  -P &lt;Payload File (Binary or ASCII)&gt;
+  -b (Enable Binary Payload)
+  (-v VERBOSE - packet struct to stdout)
+
+IP options: 
+  -S &lt;Source IP Address&gt;
+  -D &lt;Destination IP Address&gt;
+  -I &lt;IP ID&gt;
+  -T &lt;IP TTL&gt;
+  -t &lt;IP tos&gt;
+  -O &lt;IP Options&gt;
+
+Data Link Options: 
+  -d &lt;Ethernet Device&gt;
+  -H &lt;Source MAC Address&gt;
+  -M &lt;Destination MAC Address&gt;
+
+</pre>
+</td></tr></table>
+
+
+  </TD></TR>
+
+  </TD></TR>
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>UDP Usage:</TH>
+  <TD ALIGN=LEFT>
+
+<table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>
+
+  ./udp [-v] [options]
+
+options: 
+  [-x &lt;Source Port&gt;]
+  [-y &lt;Destination Port&gt;]
+  -P &lt;Payload File (Binary or ASCII)&gt;
+  -b (Enable Binary Payload)
+  (-v VERBOSE - packet struct to stdout)
+
+IP options: 
+  -S &lt;Source IP Address&gt;
+  -D &lt;Destination IP Address&gt;
+  -I &lt;IP ID&gt;
+  -T &lt;IP TTL&gt;
+  -t &lt;IP tos&gt;
+  -o &lt;IP Options&gt;
+
+</pre>
+</td></tr></table>
+
+  
+  </TD></TR>
+
+  </TD></TR>
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>ICMP Usage:</TH>
+  <TD ALIGN=LEFT>
+
+<table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>
+
+  ./icmp [-v] [options]
+
+ICMP options: 
+  -i &lt;ICMP Type&gt;
+  -c &lt;ICMP Code&gt;
+  -S &lt;Sequence Number&gt;
+  -m &lt;ICMP Mask&gt;
+  -G &lt;Preferred Gateway&gt;
+  -Co &lt;Time of Originating request&gt;
+  -Cr &lt;Time request was Received&gt;
+  -Ct &lt;Time reply was Transmitted&gt;
+  -P &lt;Payload File (Binary or ASCII)&gt;
+  -b (Enable Binary Payload)
+  (-v VERBOSE - packet struct to stdout)
+
+IP options: 
+  -S &lt;Source IP Address&gt;
+  -D &lt;Destination IP Address&gt;
+  -I &lt;IP ID&gt;
+  -T &lt;IP TTL&gt;
+  -t &lt;IP tos&gt;
+  -o &lt;IP Options&gt;
+
+Data Link Options: 
+  -d &lt;Ethernet Device&gt;
+  -H &lt;Source MAC Address&gt;
+  -M &lt;Destination MAC Address&gt;
+
+</pre>
+</td></tr></table>
+
+  
+  </TD></TR>
+
+  </TD></TR>
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>ARP Usage:</TH>
+  <TD ALIGN=LEFT>
+
+<table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>
+
+  ./arp [-v] [optlist]
+
+ARP Options: 
+  -S &lt;Source IP Address&gt;
+  -D &lt;Destination IP Address&gt;
+  -P &lt;Payload File (Binary or ASCII)&gt;
+  -b (Enable Binary Payload)
+  (-v VERBOSE - packet struct to stdout)
+
+Data Link Options: 
+  -d &lt;Ethernet Device&gt;
+  -H &lt;Source MAC Address&gt;
+  -M &lt;Destination MAC Address&gt;
+
+</pre>
+</td></tr></table>
+
+  
+  </TD></TR>
+
+  </TD></TR>
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>OSPF Usage:</TH>
+  <TD ALIGN=LEFT>
+
+<table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>
+
+  ./ospf [-v] [optlist]
+
+OSPF options: 
+  -p &lt;OSPF Protocol&gt;
+     -pH HELLO, -pL LSA, -pR LSR
+  -n &lt;Neighbor Router Address&gt;
+  -i &lt;Dead Router Interval&gt;
+  -L &lt;router id (LSA)&gt;
+  -s &lt;sequence number&gt;
+  -r &lt;Advertising Router Address&gt;
+  -g &lt;OSPF LSA age&gt;
+  -m &lt;OSPF netmask&gt;
+  -O &lt;OSPF options&gt;
+  -l &lt;OSPF interval&gt;
+  -R &lt;OSPF router id&gt;
+  -A &lt;OSPF area id&gt;
+
+  -P &lt;Payload File (Binary or ASCII)&gt;
+  -b (Enable Binary Payload)
+  (-v VERBOSE - packet struct to stdout)
+
+IP Options
+  -S &lt;Source Address&gt;
+  -D &lt;Destination Address&gt;
+  -I &lt;IP ID&gt;
+  -T &lt;IP TTL&gt;
+  -t &lt;IP tos&gt;
+  -o &lt;IP Options&gt;
+
+</pre>
+</td></tr></table>
+
+  
+  </TD></TR>
+
+
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>Examples:</TH>
+  <TD ALIGN=LEFT>
+<table border=0 marginwidth=0 marginheight=0><tr><td>
+<li><table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>tcp -v -S 192.168.1.1 -D 192.168.2.2 -fS -fA -y 22 -P foo</pre>
+
+	Send TCP packet (SYN/ACK) with payload from ascii file 'foo'
+	to target's ssh port<br>from 192.168.1.1 to 192.168.2.2.
+	(-v allows a stdout visual of current injected packet)
+
+    </td></tr></table>
+
+<li><table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>udp -v -S 10.11.12.13 -D 10.1.1.2 -x 11111 -y 53 -P bindpkt -b</pre>
+
+	Send UDP packet from 10.11.12.13:11111 to 10.1.1.2's nameservice port
+    with a payload read<br>from a binary file 'bindpkt'.
+    (again -v is used in order to see confirmation of our injected packet)
+
+    </td></tr></table>
+
+<li><table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>icmp -S 10.10.10.3 -D 10.10.10.1 -G 10.10.10.3 -i 5</pre>
+  
+	Send ICMP REDIRECT FOR NETWORK packet from 10.10.10.3 to 10.10.10.1
+	with preferred<br>gateway as source address.  Here we want no output
+	to go to stdout - which would be ideal as<br> a component in a batch
+	job via shell script.
+
+    </td></tr></table>
+
+<li><table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>arp -v -d ne0 -H 0:1:2:3:4:5 -S 10.11.30.5 -D 10.10.15.1</pre>
+ 
+	Send ARP packet through device 'ne0' (eg, my OpenBSD pcmcia nic) from
+    Hardware Source<br>Address 00:01:02:03:04:05 with IP Source Address of
+	10.11.30.5 to Destination IP address 10.10.15.1.
+
+    </td></tr></table>
+
+<li><table border=0 marginwidth=0 marginheight=0><tr><td>
+<pre>ospf -v -pH -S 10.10.10.10 -D 10.9.9.4 -I 304 -i 60</pre>
+  
+	Send OSPF HELLO packet from 10.10.10.10 to 10.9.9.4 with IP ID 304
+	and a 60 second Dead Router Interval
+
+</td></tr></table>
+</td></tr></table>
+
+  </TD></TR>
+
+  <tr><td></td></tr>
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>What's New:</TH>
+  <TD ALIGN=LEFT>
+  <table border=0 marginwidth=0 marginheight=0><tr><td>
+      <LI> <table border=0 marginwidth=0 marginheight=0><tr><td>
+           First public release of The Nemesis Project (11/15/99)
+		   (bugs may be present - this IS an *ALPHA* release)
+           </td></tr></table>
+
+
+  </td></tr></table>
+  </TD></TR>
+
+  <tr><td></td></tr>
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>Platforms:</TH>
+  <TD ALIGN=LEFT>
+  <table border=0 marginwidth=0 marginheight=0><tr><td>
+  Please email the author a small note if you successfully compile
+  Nemesis on any platform not listed below.
+  <p>
+      <LI><table border=0 marginwidth=0 marginheight=0><tr><td>
+          OpenBSD 2.5, 2.6 
+           </td></tr></table>
+      <LI><table border=0 marginwidth=0 marginheight=0><tr><td>
+          FreeBSD 3.x
+           </td></tr></table>
+  </td></tr></table>
+  </TD></TR>
+
+
+  <tr><td></td></tr>
+  <TR><TH ALIGN=RIGHT VALIGN=TOP>Downloads:</TH>
+  <TD ALIGN=LEFT>
+      <TABLE BORDER=0>
+      <TR><TH ALIGN=LEFT>Source</TH>
+      </TR>
+      <TR><TD VALIGN=TOP>
+          <TABLE>
+          <TR><TD VALIGN=TOP>
+                      <A HREF="nemesis-v0.666a.tar.gz">nemesis v0.666 (alpha)</A>
+                  </TD><TD>
+                      88k
+                  </TD>
+          </TD></TR>
+          </TABLE>
+      </TD><TD VALIGN=TOP>
+      </TD>
+      </TR>
+      </TABLE>
+</TABLE>

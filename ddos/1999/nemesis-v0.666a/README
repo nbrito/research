@@ -1,0 +1,24 @@
+N E M E S I S  -  TCP/IP Packet Construction Utility (libnet based)
+=======================================================v0.666 ALPHA=======
+coded by obecian (special thx to bind for framework and making me start)
+
+* * * FIRST PUBLIC RELEASE DISCLAIMER * * *
+
+This is labeled as an ALPHA release, so do not expect it to perform as a BETA,
+or better yet, RELEASE product.  It will stay in ALPHA until the rest of the
+protocols are implemented, then work up to a 1.0 release. 
+
+If you find bugs, please report them to obecian@celerity.bartoli.org with
+"NEMESIS" in the Subject.  This was released early due to it already imposing
+a real world impact in terms of being a useful tool for a number of personal
+projects.  This release is aimed at being a great TCP/IP Stack testkit.
+
+Future releases will provide a bigger impact in the spoofing and hijacking
+arena.
+
+* * * 
+
+INSTALLATION:  Simple as typing 'make' and you're ready to play!
+
+See "nemesis.html" for info about what is supported in each protocol
+and check http://www.packetfactory.net for updates.

@@ -1,0 +1,30 @@
+N E M E S I S  -  TCP/IP Packet Construction Utility (libnet based)
+=========================================================== PRE RELEASE =======
+coded by obecian (special thx to bind for framework and making me start)
+
+
+CHANGELOG
+`````````
+
+11.10.99    Finishing OSPF.  Tied in both ip layer and dll layer options into
+            respective protocols.
+11.05.99    -v must now be specified on all protocols to get ANY output to
+            stdout.  This is done to facilitate injecting several packets
+            in sequence via shell scripts without a mess thrown back to the
+            user.  
+10.31.99    Fixed OSPF and ARP for changes in Libnet 1.0 release.
+            All ICMP types/respective codes implemented.
+10.10.99    Rebuilt everything -- Nemesis is now a group of tools rather
+            than one.  Each protocol has a unique bin.  Less command
+            switches =)  built under 0.99g.
+		
+09.19.99    OSPF mostly in place.
+09.09.99    TCP payload from file implemented (rough, but working).
+
+09.04.99    IP/TCP(all flags)/ICMP(some types)/UDP/ARP implemented
+            privately released version 0.666 and announced at ToorCon '99.
+
+08.X+n.99   bind started implementing route's samples and framework
+            project now being worked on solely by obecian.
+
+08.XX.99    Project thought up to use Libnet for portability.
