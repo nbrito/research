@@ -1,0 +1,941 @@
+#!/bin/sh
+# This is a shell archive (shar 3.32)
+# made 03/19/1992 21:24 UTC by root@bbisun
+# Source directory /usr/local/src/DEVICE-DRIVER/tap
+#
+# existing files WILL be overwritten
+#
+# This shar contains:
+# length  mode       name
+# ------ ---------- ------------------------------------------
+#   7380 -r--r--r-- README
+#   2013 -r--r--r-- INSTALL
+#   1074 -r--r--r-- Makefile
+#    818 -r-xr-xr-x load
+#    171 -r-xr-xr-x unload
+#   6105 -r--r--r-- tap.c
+#    228 -r--r--r-- tap.h
+#    836 -r--r--r-- tapmon.c
+#   1337 -r--r--r-- streams.c
+#
+if touch 2>&1 | fgrep 'amc' > /dev/null
+ then TOUCH=touch
+ else TOUCH=true
+fi
+# ============= README ==============
+echo "x - extracting README (Text)"
+sed 's/^X//' << 'SHAR_EOF' > README &&
+X#	@(#)README	1.5 3/19/92
+X#
+X#       This is the STREAMS pushable-module/driver tap.
+X#       last updated: Thu Mar 19 13:50:25 MET 1992
+X
+X
+X        - this driver is a kernel-loadable-module. (==>no reboot required)
+X        - it is a combination of a STREAMS-module and a STREAMS-driver.
+X        - the pushed-tap-module pass all downstream M_DATA
+X          messages comming from above to the tapc0-driver upstream
+X          on the read-side. and all upstream M_DATA message comming from
+X          below to the tapc1-driver upstream on the read_side.
+X        - all messages coming downstream from the tapc?-driver are discarded.
+X
+X        tapc?   - is the driver that has a device node and
+X                  that can only be read (currently).
+X                  tapc0 - for downstream monitoring
+X                  tapc1 - for upstream monitoring
+X                  (these nodes can only opened by 1 user at the time)
+X        tap     - is the pushable module.
+X
+Xthe tap-modules must manually pushed/poped on each stream to be monitored,
+Xindepended if the tapc-driver is open or not.
+Xif the tapc?-driver is closed the messages are not dupclicated as long as the
+Xtapc?-driver is re-open.
+X
+X      (any USER proces)            (tapmon)
+X     STREAMS device node    /dev/tapc0   /dev/tapc1
+X----------------------------------------------------
+X        |  ttya    |       |  tapc   |  |  tapc  |
+X        +----------+       +---------+  +--------+
+X             | ^           (1)| ^      (1)| ^
+X             v |              v |         v |
+X        ............       ...........  ..........
+X        . MORE  (2).       . MORE    .  . MORE   .
+X        . MODULES  .       . MODULES .  . MODULES.
+X        ............       ...........  ..........
+X          (3)| ^                ^           ^
+X             v |                |           |
+X        +----------+            |           |
+X        |    \ tap |            |\.........)|(.....<..[ from other tap modules ]
+X        |     \    |            |           |
+X        | TAP  \---|----->------/           |\.....<..[ from other tap modules ]
+X        | MODULE   |                        |
+X        | PUSHED/--|----->------------------/
+X        |      |   |
+X        +----------+
+X             | ^
+X             v | (3)
+X        ............    (1) - discarded (currently)
+X        . MORE  (2).    (2) - e.g. ttcompat+ldterm etc.
+X        . MODULES  .    (3) - duplicated stream
+X        ............
+X             | ^
+X             v |
+X        +----------+
+X        |    zs    |
+X----------------------------------------------------
+X    physical STREAMS device
+X         (terminal)
+X          (person)
+X
+X(note: the ,,STREAMS device node'' above shown can be any streams device
+X e.g.:
+X        down+up stream devices:
+X                /dev/{ttyp*,tty[ab],console,loop,mux}
+X        up stream devices:
+X                /dev/{kbd,mouse}
+X)
+X
+X
+X
+XINSTALLATION:
+X        the current version is only tested under sunos 4.1.1 on a sun3/50
+X        machine. but i hope the version will run on any sun machine w/ the
+X        loadable-driver /dev/vd. ( the load of the pushable-streams-module
+X        is is done by hand ). if the modload fails or the use of the driver
+X        crashes the kernel let me know ...
+X
+X        to make the kernel-loadable module and automatic load into the kernel
+X        type (as root);
+X                # make
+X        the tapmon+streams user-commands are created.(the streams command
+X        utility can be used to push/pop other non-tap streams modules)
+X        a possible old tap-module is automatically unloaded if a new is loaded.
+X        the device node (/dev/tapc[01]) are created as expected.
+X                $ streams -u tap < /dev/ttya
+X                $ tapmon down
+X        this push a tap-module on the /dev/ttya serial-tty and then start
+X        the monitor. all data send to /dev/ttya are now duplicated to
+X        your standard output.type CTRL-C to leave the tapmon.
+X        note: after leaving tapmon the tap-streams-module's remains pushed.
+X
+X        here an example output from ,,pstat -S'' :
+X
+X                   LOC     WRQ       VNODE     DEVICE   PGRP SIGIO  FLAGS
+X                 f05461e    f05583c   f0cdb94  59,  0      0     0  R
+X                  Write side:
+X                    NAME      COUNT FLG    MINPS  MAXPS  HIWAT  LOWAT
+X                    strwhead      0            0      0      0      0
+X                    tapc          0  R         0    INF      0      0
+X                  Read side:
+X                    tapc          0  R         0    INF      0      0
+X                    strrhead      0  R         0    INF   5120   1024
+X
+X
+X                   LOC     WRQ       VNODE     DEVICE   PGRP SIGIO  FLAGS
+X                 f0543e0    f0550ec   f0cc9f4  12,  1    905     0
+X                  Write side:
+X                    NAME      COUNT FLG    MINPS  MAXPS  HIWAT  LOWAT
+X                    strwhead      0            0      0      0      0
+X                    tap           0  R         0    INF      0      0
+X                    ttcompat      0  R         0    INF    300    200
+X                    ldterm        0  R         0    INF      1      0
+X                    zs            0  R         0    INF   2048    128
+X                  Read side:
+X                    zs            0  R         0    INF   2048    128
+X                    ldterm        0  R         0    128    500    200
+X                    ttcompat      0  R         0    INF   2048    128
+X                    tap           0  R         0    INF      0      0
+X                    strrhead      0            0    INF    300    200
+X
+X
+X        the kernel-loadable-module can only unloaded by modunload(1) or by
+X        ./unload if all tap-modules are popped and the /dev/tapc? devices
+X        are closed (if you are not sure look in ,,pstat -S'' for the
+X        string "tap" ). note: if the stream that have a tap-module pushed
+X                              is closed the tap-module is also poped from the
+X                              stream, unless tap-modules are auto-pushed
+X                              configured in the kernel (this is a sunos
+X                              STREAMS option, and is different in a SYSV
+X                              environment).
+X                $ streams -o tap < /dev/ttya
+X                $ ./unload
+X        this pop's the pushed module and unload's the kernel-loadable-module
+X        from the kernel...
+X
+X
+X
+X        another example is (if you not already done the ./unload operation
+X        above,else you must reload the tapc/tap driver with another ,,make''):
+X                $ streams -o ttcompat -o ldterm \
+X                        -u tap -u ldterm -u ttcompat < /dev/ttyb
+X                $ tapmon down
+X        now you can monitor direct above the physical device and can see
+X        the line-editing functions of the ldterm and ttcompat modules.
+X
+X        undo last module transaction:
+X                $ streams -o ttcompat -o ldterm -o tap -u ldterm \
+X                        -u ttcompat < /dev/ttyb
+X
+X
+X
+X        if you want to link the tapc/tap device-driver permanently to /vmunix
+X        be sure not to define TAPVD (see Makefile) and to ignore tap.h
+X        (see tap.h). follow the step's in the ,,INSTALL'' file.
+X
+X        the only problem is the possible wrong terminal-emulation *sigh*.
+X        but there is universal-terminal-emulation under X.
+X
+X--
+XSimon Ney -- neural@cs.tu-berlin.de / simon@bbisun.uu.sub.org
+SHAR_EOF
+$TOUCH -am 0319222092 README &&
+chmod 0444 README ||
+echo "restore of README failed"
+set `wc -c README`;Wc_c=$1
+if test "$Wc_c" != "7380"; then
+	echo original size 7380, current size $Wc_c
+fi
+# ============= INSTALL ==============
+echo "x - extracting INSTALL (Text)"
+sed 's/^X//' << 'SHAR_EOF' > INSTALL &&
+X#
+X# @(#)INSTALL	1.5 3/19/92
+X#
+X
+XStep's to configure your kernel ...
+Xi recommend that you first try the kernel-loadable version of the driver by
+Xjust type ,,make'' (see README)
+X
+X-------------------------------------------------------------------------
+X1.    Add:
+X
+X    sundev/tap.c        optional tap device-driver
+X
+X    to /usr/sys/`arch -k`/conf/files
+X
+X-------------------------------------------------------------------------
+X2.    Copy tap.c to /usr/sys/sundev/tap.c
+X
+X-------------------------------------------------------------------------
+X3.    Add
+X
+X        ...
+X      #include "tap.h"
+X      #if NTAP > 0
+X      extern struct streamtab tapcinfo;
+X      #define   tapctab &tapcinfo
+X      #else
+X      #define   tapctab 0
+X      #endif
+X        ...             (at the end of the cdevsw[])
+X      {
+X        nodev,          nodev,          nodev,          nodev,          /*104*/
+X        nodev,          nulldev,        nodev,          0,
+X        tapctab,        0,
+X      },
+X        ...
+X
+X      to /usr/sys/sun/conf.c
+X
+X-------------------------------------------------------------------------
+X4.    Add
+X
+X    ...
+X    #include "tap.h"
+X    ...
+X    #if    NTAP > 0
+X    extern struct streamtab tapinfo;
+X    #endif
+X    ...
+X    #if    NTAP > 0
+X        { "tap",    &tapinfo },
+X    #endif
+X    ...
+X
+X    to /usr/sys/sun/str_conf.c
+X
+X-------------------------------------------------------------------------
+X5.    Add
+X
+X    pseudo-device slip2  # STREAMS tapc/tap driver/module
+X
+X    to your /usr/sys/`arch -k`/conf/CONFIG file.
+X
+X-------------------------------------------------------------------------
+X6.    Configure your kernel and install and boot it
+X
+X      cd /usr/sys/`arch -k`/conf
+X      config CONFIG
+X      cd ../CONFIG
+X      make
+X      cp /vmunix /vmunix.old
+X      cp vmunix /
+X      mknod /dev/tapc0 c 104 0  # major 104 is the number from step 3. above
+X      mknod /dev/tapc1 c 104 1  # perhaps remove the old loadable nodes first ?
+X      fastboot
+X
+X-------------------------------------------------------------------------
+X
+SHAR_EOF
+$TOUCH -am 0319222092 INSTALL &&
+chmod 0444 INSTALL ||
+echo "restore of INSTALL failed"
+set `wc -c INSTALL`;Wc_c=$1
+if test "$Wc_c" != "2013"; then
+	echo original size 2013, current size $Wc_c
+fi
+# ============= Makefile ==============
+echo "x - extracting Makefile (Text)"
+sed 's/^X//' << 'SHAR_EOF' > Makefile &&
+X# @(#)Makefile	1.5 3/19/92
+X#
+X#     --- kernel loadable-module tap streams-module/driver ---
+X#
+X# SEE ALSO
+X#	modload(8)
+X#	modunload(8)
+X#	modstat(8)
+X#	vd(4)
+X#
+X# TAPVD should be undefined if the driver is linked to /vmunix
+X# TAPVDDUAL must be defined only if a driver is already linked to /vmunix
+X#           and a additional loadable-driver should be loaded w/o confusing
+X#	    duplicate module-names ( "tapc"/"tap" strings are changed
+X#	    to "tapcvd"/"tapvd" )
+X
+XINSDIR=		/usr/local/bin
+X
+XFILES=		README INSTALL Makefile \
+X		load unload tap.c tap.h tapmon.c streams.c
+X
+XCFLAGS=		-O -DKERNEL -DTAPVD 
+X
+Xall:		execs $(FILES) streams tapmon module
+X
+Xmodule:		tap.o  
+X		modload -exec ./load tap.o
+X		modstat
+X
+Xtap.c:		tap.h
+X
+Xexecs:		load unload
+X		chmod a+x load unload
+X		> execs
+X
+Xedit:
+X		sccs edit $(FILES)
+X		chmod a+x load unload
+X
+Xdelta:
+X		sccs delta $(FILES)
+X
+Xinstall:	streams tapmon
+X		install -s -m 755 -o bin -g bin streams $(INSDIR)
+X		install -s -m 755 -o bin -g bin tapmon $(INSDIR)
+X
+Xclean:
+X		rm -f 	execs tap.o tap tapmon streams
+X
+Xshar:		$(FILES)
+X		shar -c $(FILES) > tap.shar
+X
+SHAR_EOF
+$TOUCH -am 0319222092 Makefile &&
+chmod 0444 Makefile ||
+echo "restore of Makefile failed"
+set `wc -c Makefile`;Wc_c=$1
+if test "$Wc_c" != "1074"; then
+	echo original size 1074, current size $Wc_c
+fi
+# ============= load ==============
+echo "x - extracting load (Text)"
+sed 's/^X//' << 'SHAR_EOF' > load &&
+X#! /bin/sh
+X# @(#)load	1.5 3/19/92
+X
+X# --- change here ---
+XCDEVICE="/dev/tapc"
+XCMINORLIST="0 1"
+X
+X# ---- do not change below this line ----
+XMIDF="MODULE_ID"
+XID=$1
+XTYPE=$2
+X
+Xif( test $# -lt 2 ) then
+X	echo "Indirect Usage is: modload -exec $0 module.o"
+X	exit 1
+Xfi
+X#-----------------------------------------------------
+Xcase $TYPE in
+X
+X	12345600)	
+X			# DRIVER
+X			BMAJOR=$3
+X			CMAJOR=$4
+X			for MINOR in $CMINORLIST
+X			do
+X				echo "$0: replace \"$CDEVICE$MINOR\"."
+X				rm -f $CDEVICE$MINOR
+X				mknod $CDEVICE$MINOR c $CMAJOR $MINOR
+X			done
+X			;;
+X
+X	12345606)	
+X			# USER
+X			;;
+X
+X	*)		# ILLEGAL
+X			echo "$0: illegal module type \"$TYPE\" from modload"
+X			exit 1
+X			;;
+Xesac
+X#-----------------------------------------------------
+Xif(test -f $MIDF) then
+X	echo "$0: try auto-unload last module ..."
+X	./unload
+Xfi
+Xecho $ID > $MIDF
+Xexit 0
+SHAR_EOF
+$TOUCH -am 0319222092 load &&
+chmod 0555 load ||
+echo "restore of load failed"
+set `wc -c load`;Wc_c=$1
+if test "$Wc_c" != "818"; then
+	echo original size 818, current size $Wc_c
+fi
+# ============= unload ==============
+echo "x - extracting unload (Text)"
+sed 's/^X//' << 'SHAR_EOF' > unload &&
+X#! /bin/sh
+X# @(#)unload	1.5 3/19/92
+X
+XMIDF=MODULE_ID
+X
+Xif ( test -f $MIDF ) then
+X	
+X	if(modunload -id `cat $MIDF`) then
+X		rm $MIDF
+X	fi
+Xelse
+X	echo "no $MIDF file present"
+Xfi	
+SHAR_EOF
+$TOUCH -am 0319222092 unload &&
+chmod 0555 unload ||
+echo "restore of unload failed"
+set `wc -c unload`;Wc_c=$1
+if test "$Wc_c" != "171"; then
+	echo original size 171, current size $Wc_c
+fi
+# ============= tap.c ==============
+echo "x - extracting tap.c (Text)"
+sed 's/^X//' << 'SHAR_EOF' > tap.c &&
+X/*
+X * tap streams-module/driver kernel-loadable-module
+X *
+X * this is a combination of a STREAMS-module and a STREAMS-driver.
+X * it pass module downstream M_DATA message upstream to the driver.
+X *
+X * Simon Ney -- neural@cs.tu-berlin.de / simon@bbisun.uu.sub.org
+X */
+X
+X#include "tap.h"
+X#if    NTAP > 0
+X#include <sys/types.h>
+X#include <sys/stream.h>
+X#include <sys/stropts.h>
+X#include <sys/param.h>
+X#include <sys/errno.h>
+X#include <sys/user.h>
+X#ifdef TAPVD
+X#include <sys/conf.h>
+X#include <sun/vddrv.h>
+X#endif TAPVD
+X
+X#ifndef lint
+Xstatic	char sccsid[] = "@(#)tap.c	1.5 3/19/92";
+X#endif
+X/* 
+X * --- DRIVER --- 
+X */
+X
+X#ifdef TAPVDDUAL
+Xstatic struct module_info cminfo = { 0, "tapcvd", 0, INFPSZ, 0, 0 };
+X#else
+Xstatic struct module_info cminfo = { 0, "tapc", 0, INFPSZ, 0, 0 };
+X#endif
+X
+Xstatic int tapcopen(), tapcrput(), tapcwput(), tapcclose();
+X
+Xstatic struct qinit crinit = {
+X    tapcrput, NULL, tapcopen, tapcclose, NULL, &cminfo, NULL
+X};
+X
+Xstatic struct qinit cwinit = {
+X    tapcwput, NULL, NULL, NULL, NULL, &cminfo, NULL
+X};
+X
+X#ifdef TAPVD /* so we can have a permanent link AND loadable version */
+Xstruct streamtab tapcvdinfo = { &crinit, &cwinit, NULL, NULL };
+X#else
+Xstruct streamtab tapcinfo = { &crinit, &cwinit, NULL, NULL };
+X#endif
+X/*
+X * --- MODULE --- 
+X */
+X
+X#ifdef TAPVDDUAL
+Xstatic struct module_info minfo = { 0, "tapvd", 0, INFPSZ, 0, 0 };
+X#else
+Xstatic struct module_info minfo = { 0, "tap", 0, INFPSZ, 0, 0 };
+X#endif
+X
+Xstatic int tapopen(), taprput(), tapwput(), tapclose();
+X
+Xstatic struct qinit rinit = {
+X    taprput, NULL, tapopen, tapclose, NULL, &minfo, NULL
+X};
+X
+Xstatic struct qinit winit = {
+X    tapwput, NULL, NULL, NULL, NULL, &minfo, NULL
+X};
+X
+X#ifdef TAPVD /* so we can have a permanent link AND loadable version */
+Xstruct streamtab tapvdinfo = { &rinit, &winit, NULL, NULL };
+X#else
+Xstruct streamtab tapinfo = { &rinit, &winit, NULL, NULL };
+X#endif
+X
+Xstruct tap {
+X	queue_t *tap_queue;	/* set on driver open */
+X};
+X
+X/*
+X * /dev/tapc? minor device number assignment
+X */
+X
+X#define TAPDEV0	0	/* downstream module data */
+X#define TAPDEV1	1	/* upstream module data */
+Xstatic struct tap  tap_tap[NTAP];	/* static for now */
+Xstatic int tap_cnt = NTAP;
+X
+X/* 
+X * --- loadable module support --- 
+X */
+X
+X#ifdef TAPVD
+Xstatic int tapisopen;	/* keep track of the pushed-module open/close count */
+X
+Xextern int nodev();
+X
+Xstatic struct cdevsw		tap_cdevsw = { 
+X	nodev, nodev, nodev, nodev, nodev, nodev, nodev, 0, 
+X	&tapcvdinfo, 0
+X};
+X
+Xstatic struct vdldrv tapvdldrv = {
+X	VDMAGIC_DRV, "tapc/tap", 0, 0, 0, 0, 0, 0, &tap_cdevsw, 0, 0	
+X};
+X
+X
+X/*
+X * this is the loadable-STREAMS-module kernel-module-loader
+X */
+Xstatic	struct fmodsw *saved_fmp;
+X
+Xstatic struct fmodsw *loadfmodsw(name,str)
+Xchar *name;
+Xstruct streamtab *str;
+X{
+X	struct fmodsw *fmp;
+X	int i;
+X	extern struct fmodsw fmodsw[];
+X	extern int fmodcnt;
+X
+X	fmp = fmodsw;
+X	for(i=0;i<fmodcnt;i++,fmp++){
+X		if(fmp->f_str==0){
+X			strcpy(fmp->f_name,name);
+X			fmp->f_str = str;
+X			return(fmp);
+X		}
+X	}
+X	printf("tap: loadfmodsw: no free slot for '%s'\n",name);
+X	return(0);
+X}
+X
+Xstatic unloadfmodsw(fmp)
+X	struct fmodsw *fmp;
+X{
+X	fmp->f_name[0] = '\0';
+X	fmp->f_str = 0;
+X}
+X
+X/*
+X * this is the driver entry point routine. the name of the default entry
+X * point is xxxinit. it can be changed by using the "-entry" command to
+X * modload.
+X */
+Xxxxinit(function_code,vdp,vdi,vds)
+Xunsigned int function_code;
+Xstruct vddrv *vdp;
+Xaddr_t vdi;
+Xstruct vdstat *vds;
+X{
+X	int i;
+X
+X	switch(function_code){
+X	case VDLOAD:
+X		vdp->vdd_vdtab = (struct vdlinkage *) &tapvdldrv;
+X		if(saved_fmp){
+X			printf("tap: xxxinit:already loaded\n");
+X			return(ENXIO);
+X		}
+X#ifdef TAPVDDUAL
+X		if(!(saved_fmp=loadfmodsw("tapvd",&tapvdinfo))){
+X#else
+X		if(!(saved_fmp=loadfmodsw("tap",&tapvdinfo))){
+X#endif
+X			return(ENXIO);
+X		}
+X		break;
+X	case VDUNLOAD:
+X		if(tapisopen)
+X			return(EBUSY);
+X		for(i=0;i<tap_cnt;i++)
+X			if(tap_tap[i].tap_queue)
+X			return(EBUSY);
+X		if(saved_fmp)
+X			unloadfmodsw(saved_fmp);
+X		break;
+X	case VDSTAT:
+X		break;
+X	default:
+X		return(EIO);
+X	}
+X	return(0);	/* return success */
+X}
+X#endif TAPVD
+X
+X/* --- MODULE --- */
+X
+Xstatic int tapopen(q, dev, flag, sflag)
+X	queue_t *q;
+X	dev_t   dev;
+X	int    	flag;
+X	int	sflag;
+X{
+X#ifdef TAPVD
+X	tapisopen++;
+X#endif TAPVD
+X	return(0);	/* return success */
+X}
+X
+X
+Xstatic int tapwput(q, mp)
+X	queue_t    *q;    
+X	mblk_t    *mp;   
+X{
+X	mblk_t    *bp;   	
+X	queue_t    *uq = tap_tap[TAPDEV0].tap_queue;    
+X	
+X	if(uq){		/* dup if tapc is open */
+X		if(mp->b_datap->db_type==M_DATA){
+X			if((bp=dupmsg(mp))!=NULL){	/* duplicate message */
+X				putnext(uq,bp);
+X			}
+X		}
+X	}
+X	putnext(q,mp);
+X}
+X	
+Xstatic int taprput(q, mp)
+X	queue_t    *q;    
+X	mblk_t    *mp;   
+X{
+X	mblk_t    *bp;   	
+X	queue_t    *uq = tap_tap[TAPDEV1].tap_queue;    
+X	
+X	if(uq){		/* dup if tapc is open */
+X		if(mp->b_datap->db_type==M_DATA){
+X			if((bp=dupmsg(mp))!=NULL){	/* duplicate message */
+X				putnext(uq,bp);
+X			}
+X		}
+X	}
+X	putnext(q, mp);
+X}
+X
+Xstatic int tapclose(q, flag)
+X	queue_t    *q;
+X	int    flag;
+X{
+X#ifdef TAPVD
+X	tapisopen--;
+X#endif TAPVD
+X}
+X
+X/* --- DRIVER --- */
+Xstatic int tapcopen(q, dev, flag, sflag)
+X	queue_t *q;
+X	dev_t   dev;
+X	int    	flag;
+X	int	sflag;
+X{
+X	struct tap *tap;
+X
+X	if(sflag)	/* check if non-driver open */
+X		return(OPENFAIL);
+X	dev = minor(dev);
+X	if(dev>= tap_cnt)
+X		return(OPENFAIL);
+X	if(q->q_ptr){
+X		u.u_error = EBUSY;	/* only 1 user of tapc at a time */
+X		return(OPENFAIL);
+X	}
+X	tap = &tap_tap[dev];
+X	q->q_ptr = (char *)tap;
+X	tap->tap_queue = q;
+X	return(dev);	
+X}
+X
+Xstatic int tapcwput(q, mp)
+X	queue_t    *q;    
+X	mblk_t    *mp;   
+X{
+X	switch(mp->b_datap->db_type){
+X	case M_IOCTL: {		/* NAK all ioctl's */
+X		struct iocblk *iocp;
+X
+X		iocp = (struct iocblk *)mp->b_rptr;
+X		mp->b_datap->db_type=M_IOCNAK;
+X		qreply(q,mp);
+X		break;
+X	}
+X	case M_FLUSH:
+X		if(*mp->b_rptr & FLUSHW)
+X			flushq(q,0);
+X		if(*mp->b_rptr & FLUSHR){
+X			flushq(RD(q),0);
+X			*mp->b_rptr &= ~FLUSHW;
+X			qreply(q,mp);
+X		} else
+X			freemsg(mp);
+X		break;
+X	default:		/* discard all messages */
+X		freemsg(mp);
+X	}
+X}
+X	
+Xstatic int tapcrput(q, mp)
+X	queue_t    *q;    
+X	mblk_t    *mp;   
+X{
+X	putnext(q, mp);	
+X}
+X
+Xstatic int tapcclose(q, flag)
+X	queue_t    *q;
+X	int    flag;
+X{
+X	struct tap *tap;
+X
+X	tap = (struct tap *) q->q_ptr;
+X	tap->tap_queue = NULL;
+X}
+X
+X#endif  NTAP
+SHAR_EOF
+$TOUCH -am 0319222092 tap.c &&
+chmod 0444 tap.c ||
+echo "restore of tap.c failed"
+set `wc -c tap.c`;Wc_c=$1
+if test "$Wc_c" != "6105"; then
+	echo original size 6105, current size $Wc_c
+fi
+# ============= tap.h ==============
+echo "x - extracting tap.h (Text)"
+sed 's/^X//' << 'SHAR_EOF' > tap.h &&
+X/* 
+X * @(#)tap.h	1.5 3/19/92
+X */
+X
+X/*
+X * NOTE:
+X * this header file is only needed for the loadable version of the driver
+X * if the driver is linked permanently to vmunix this file is generated 
+X * by config(1)
+X */
+X#define NTAP 2
+SHAR_EOF
+$TOUCH -am 0319222092 tap.h &&
+chmod 0444 tap.h ||
+echo "restore of tap.h failed"
+set `wc -c tap.h`;Wc_c=$1
+if test "$Wc_c" != "228"; then
+	echo original size 228, current size $Wc_c
+fi
+# ============= tapmon.c ==============
+echo "x - extracting tapmon.c (Text)"
+sed 's/^X//' << 'SHAR_EOF' > tapmon.c &&
+X#include <stdio.h>
+X#include <fcntl.h>
+X#include <sys/filio.h>
+X#define STDOUT	1
+X
+X#ifndef lint
+Xstatic	char sccsid[] = "@(#)tapmon.c	1.5 3/19/92";
+X#endif
+X
+Xusage(myname)
+Xchar *myname;
+X{
+X	fprintf(stderr,"Usage: %s down|up\n",myname);
+X	exit(1);
+X}
+X
+Xmain(argc,argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	char *tapcname;
+X	int f;
+X	int s;
+X	int n;
+X	char buf[512];
+X
+X	if(argc!=2){
+X		usage(argv[0]);
+X	}
+X	if(!strcmp(argv[1],"down"))
+X		tapcname="/dev/tapc0";
+X	else if(!strcmp(argv[1],"up"))
+X		tapcname="/dev/tapc1";
+X	else
+X		usage(argv[0]);
+X
+X	if((f=open(tapcname,O_RDONLY))<0){
+X		perror(tapcname);
+X		exit(1);
+X	}
+X	s=sizeof(buf);
+X	while(read(f,buf,1)==1){
+X		write(STDOUT,buf,1);
+X		if(ioctl(f,FIONREAD,&n)==(-1)){
+X			perror("FIONREAD");
+X			exit(1);
+X		}
+X		n = (n<s)?n:s;
+X		if(read(f,buf,n)!=n){
+X			perror(tapcname);
+X			exit(1);
+X		}
+X		write(STDOUT,buf,n);
+X	}
+X	exit(0);
+X}
+SHAR_EOF
+$TOUCH -am 0319222092 tapmon.c &&
+chmod 0444 tapmon.c ||
+echo "restore of tapmon.c failed"
+set `wc -c tapmon.c`;Wc_c=$1
+if test "$Wc_c" != "836"; then
+	echo original size 836, current size $Wc_c
+fi
+# ============= streams.c ==============
+echo "x - extracting streams.c (Text)"
+sed 's/^X//' << 'SHAR_EOF' > streams.c &&
+X
+X#include <stdio.h>
+X#include <sys/stropts.h> 
+X
+X#ifndef lint
+Xstatic	char sccsid[] = "@(#)streams.c	1.5 3/19/92";
+X#endif
+X
+Xint silence = 0;
+X
+Xpop(fd,namewanted)
+Xchar *namewanted;
+X{
+X	char name[64];
+X
+X	if(ioctl(fd, I_LOOK, name) != -1) {
+X		if(!strcmp(name,namewanted)){
+X			if(!silence)
+X				fprintf(stderr,"popping module: %s\n", name);
+X			if(ioctl(fd,I_POP,0) == -1)
+X				if(!silence)
+X					perror("ioctl I_POP");
+X		}else{
+X
+X			if(!silence)
+X				fprintf(stderr,
+X				"module %s not pop,module %s is on stack top\n",
+X				namewanted,name);
+X		}
+X	} else {
+X		if(!silence)
+X			fprintf(stderr,"no module on stack\n");
+X	}
+X}
+X
+Xpush(fd,name)
+Xchar *name;
+X{
+X	if(!silence)
+X		fprintf(stderr,"pushing module: %s\n", name);
+X	if (ioctl(fd, I_PUSH, name) < 0) 
+X		if(!silence)
+X			perror(name);
+X}
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar **argv;
+X{
+X	int c,errflg=0;
+X	extern char *optarg;
+X	extern int optind;
+X
+X	while ((c = getopt(argc, argv, "so:u:")) != -1){
+X		switch (c) {
+X		case 'o':
+X			pop(0,optarg);
+X			break;
+X		case 'u':
+X			push(0,optarg);
+X			break;
+X		case 's':
+X			silence = ~silence;
+X			break;
+X		case '?':
+X		default:
+X			errflg++;
+X		}
+X	}
+X	if (errflg||optind!=argc||argc==1) {
+X		(void)fprintf(stderr, 
+X			"Usage: %s [-s] [-o module-to-pop] [-u module-to-push] ...\n",
+X			argv[0]);
+X		(void)fprintf(stderr,
+X			"       the order of all options is important\n");
+X		exit (2);
+X	}
+X}
+SHAR_EOF
+$TOUCH -am 0319222092 streams.c &&
+chmod 0444 streams.c ||
+echo "restore of streams.c failed"
+set `wc -c streams.c`;Wc_c=$1
+if test "$Wc_c" != "1337"; then
+	echo original size 1337, current size $Wc_c
+fi
+exit 0
+
+-- 
+Simon Ney -- neural@cs.tu-berlin.de -- simon@bbisun.uu.sub.org
+
+
