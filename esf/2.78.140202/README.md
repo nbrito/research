@@ -680,9 +680,40 @@ LICENSE
        integrate SQL Fingerprint NG into proprietary applications and
        appliances. These licenses generally include a perpetual license as
        well as providing for priority support and updates as well as helping
+       to fund the continued development of SQL Fingerprint NG technology.
+       Please email the AUTHOR for further information.
+
+       If you received these files with a written license agreement or
+       contract stating terms other than the terms above, then that
+       alternative license agreement takes precedence over these comments.
+
+       Source is provided to this software because the AUTHOR believes users
+       have a right to know exactly what a program is going to do before they
+       run it. This also allows you to audit the software for security holes,
+       but none have been found so far.
+
+       Source code also allows you to port SQL Fingerprint NG to new
+       platforms, fix bugs, and add new features and new protocol modules. You
+       are highly encouraged to send your changes to the AUTHOR for possible
+       incorporation into the main distribution. By sending these changes to
+       AUTHOR, it is assumed that you are offering the SQL Fingerprint NG
+       Project, and its AUTHOR, the unlimited, non-exclusive right to reuse,
+       modify, and relicense the code. SQL Fingerprint NG will always be
+       available Open Source, but this is important because the inability to
+       relicense code has caused devastating problems for other Free Software
+       projects (such as KDE and NASM). The AUTHOR also occasionally relicense
+       the code to third parties as discussed above. If you wish to specify
+       special license conditions of your contributions, just say so when you
+       send them.
+
+DISCLAIMER OF WARRANTY
+       This program is distributed in the hope that it will be useful, but
+       WITHOUT ANY WARRANTY; without even the implied warranty of
+       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE (see the GNU
+       General Public License <http://www.gnu.org/licenses/> for more
+       details).
 
 
 
 perl v5.18.2                      2014-02-02                            ESF(1)
-
 ```
