@@ -12,7 +12,7 @@ VERSION
        reliable and accurate technique, based on its sophisticated algorithm,
        to identify Microsoft SQL Server versions.
 
-       If you are interested on the Version 3 of SQL Fingerprint NG
+       If you are interested on the Version 4 of SQL Fingerprint NG
        ("TECHNOLOGY PREVIEW"), which applies sophisticated algorithm to also
        identify vulnerabilities, please, contact the AUTHOR.
 
