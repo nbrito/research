@@ -1,0 +1,24 @@
+
+  The U-Kuang system is currently setup in a minimum configuration; e.g.
+it assumes only that world modes/permissions are to be used.  To fully
+use the system, if the password checkers and the home-directory checker
+come back with any positive results (i.e. with an account that can be
+broken), modify the init_kuang file to reflect this.
+  To use this system to it's full capabilities, be sure to read the
+manual, kuang.man.ms.
+
+This directory contains the various programs and shell scripts
+that make up the Kuang security checking system.
+
+The file, kuang.man.1, documents the system in the style of a UNIX
+manual page.  The file, kuang.mss, is a draft of a paper on
+this system.
+
+
+To run the system:
+
+0. Execute 'make' to build the programs.
+1. Read kuang.man.1
+2. Modify the file, init_kuang, to set the initial set of privileges.
+3. Execute "sh kuang" (or run the COPS system.)
+

@@ -1,0 +1,84 @@
+:
+#
+#  Usage: cron.chk
+#
+#  This checks pathnames and files inside the cron files /usr/lib/crontab
+# for writability.
+#
+#  Mechanism:  The commands inside the file /usr/lib/crontab are executed
+# by root.  This shell script greps for commands/paths that begins with
+# "/" and takes each potential problem-string and uses the program
+# "is_writable" to determine if it is world writable.  All results are
+# echoed to standard output.
+#  In addition, it throws away everything that has a /tmp, /dev/null, or
+# tty in the writable string, and everything after a ">"; e.g. if crontab
+# is writing to a file it doesn't care.
+#
+#  Cron.chk will try to find a file in /usr/lib/crontab first (bsd),
+# and then if it isn't there, it will look in the any alternate
+# possible locations next -- right now, /usr/spool/cron/crontab -- to
+# see if a directory exists, and, if it does, it checks all the cron
+# files in turn.
+#
+#  WARNING!
+#
+#  Spurious messages can occur; a more stringent method (if perhaps less
+# careful of a check) would be to test just the 6th field, instead of
+# all the fields after the fifth.  Also throwing away /tmp, etc. could
+# be a mistake.
+#
+
+#  Location of stuff:
+AWK=/bin/awk
+SED=/bin/sed
+ECHO=/bin/echo
+EGREP=/usr/bin/egrep
+TEST=/bin/test
+CAT=/bin/cat
+
+#  Possible location of crontab file:
+cron=/usr/lib/crontab
+#  alternate reality locations of crontab file:
+alt_cron="/usr/spool/cron/crontabs"
+
+if $TEST ! -s $cron
+	then
+	cron=""
+	for i in "$alt_cron"
+		do
+		if $TEST -d $i
+			then
+			cron=`$ECHO $alt_cron/*`
+			fi
+		done
+
+	if $TEST  -z "$cron"
+		then
+		exit
+		fi
+	fi
+
+# finally, do the checking -- maybe for one, maybe for lots of
+# cron-ites:
+
+for cron_kid in $cron
+	do
+	./chk_strings $cron_kid
+	# A typical crontab entry might look something like this:
+	#
+	#   0,15,30,45 * * * * /bin/sh /usr/adm/newsyslog
+	#
+	risky_stuff=`$AWK '{for (i=6;i<NF;i++) printf("%s ", $i); \
+		if (NF!=6) printf("%s\n",$NF)}' $cron_kid |
+			$SED -e 's/>.*//' -e 's/;//g' |
+			$AWK '{ for (i=1; i<=NF; i++) 
+					if (substr($i,1,1)=="/") print $i}'`
+	for i in $risky_stuff ; do
+		if $TEST `$ECHO $i | $EGREP "/tmp|/dev/null|tty"` ; then
+			continue
+			fi
+		if ./is_writable $i ; then
+			$ECHO "Warning!  $i (in $cron_kid) is World writable!"
+			fi
+		done
+	done	# for all the cron-kids

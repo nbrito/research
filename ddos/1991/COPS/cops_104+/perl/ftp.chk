@@ -1,0 +1,214 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/bin/perl -S $0 $argv:q'
+        if 0;
+
+#  Usage: ftp.chk
+#
+#   This shell script checks to see if you've set up (mainly anonymous)
+# ftp correctly.  There seems to be some different types of ftp's 
+# around; for instance, some allow "chmod" -- and if the home dir is 
+# owned by "ftp", you're toast.  So I've tried to err on the side of
+# safety...
+#
+#   See the man page for a more detailed description, here's what this
+# checks for:
+#
+# - User ftp exists in the password file.
+# - root (or all root equivalents) are in ftpusers file.
+# - Home directory for ftp should exist, and not be /
+# - The ~ftp/etc/{passwd|group} should not be the same as the real ones.
+# - Various critical files/directories should exist, and have correct
+#   permissions and owners; variables "$primary" and "$secondary" can be set
+# to whomever you want owning the files:
+#
+#  File/Dir          Perms           Owner      Other
+#  =========         ======          ======     ======
+#  ~ftp              non-w.w.        root
+#           or
+#  ~ftp              555             ftp	if no chmod command exists
+#
+#     All of these are ftp owned iff no chmod exists...
+#
+#  ~ftp/bin          non-w.w.        root/ftp
+#  ~ftp/bin/ls       111             root/ftp
+#  ~ftp/etc          non-w.w.        root/ftp
+#  ~ftp/etc/passwd   non-w.w.        root/ftp   0 size or nonexistant
+#  ~ftp/etc/group    non-w.w.        root/ftp   0 size or nonexistant
+#  ~ftp/pub          non-w.w.        root/ftp
+#  ~ftp/incoming     world-writable  root/ftp   This can be set to "pub"
+#  ~ftp/.rhosts      non-w.w.        root       0 size, is optional
+#  ~ftp/*            non-w.w.                   other dirs/files in ~ftp
+#
+#
+
+require 'is_able.pl';
+require 'file_mode.pl';
+require 'glob.pl';
+require 'fgrep.pl';
+require 'pass.cache.pl';
+require 'file_owner.pl';
+require 'pathconf.pl';
+
+$CMP="/bin/cmp" unless defined $CMP;
+
+package ftp;
+
+#   Primary and secondary owners of the ftp files/dirs; if you *don't* have
+# chmod, you can probably change the secondary owner to "ftp".  If you have
+# chmod in your ftp, definitely have secondary to some other account (root
+# is fine for this.)
+$primary = "root" unless defined $primary;
+$secondary = "ftp" unless defined $secondary;
+
+# some might have this as ftpd; is the account in /etc/passwd
+$ftpuid = "ftp";
+
+# system files
+$ftpusers = "/etc/ftpusers";
+$passwd = $'PASSWD || "/etc/passwd";
+$group = $'GROUP || "/etc/group";
+
+#   ftp's home:
+$ftproot = &'uname2dir($ftpuid);
+$anonymous = $ftproot ne '';
+
+$ftprhosts = "$ftproot/.rhosts";
+$ftpbin = "$ftproot/bin";
+$ftpls = "$ftpbin/ls";
+$ftpetc = "$ftproot/etc";
+$ftppasswd = "$ftpetc/passwd";
+$ftpgroup = "$ftpetc/group";
+
+$W = 'Warning!  ' unless defined $W;
+
+#   the pub/incoming stuff; by default, pub is *not* world writable, incoming
+# is; if you want pub to be world writable, just change incoming to "pub"
+$incoming = "pub";
+
+@crit_files=($ftpgroup,
+	     $ftppasswd,
+	     $ftpls);
+
+if (-s $ftpusers) {
+    # check to see if root (or root equivalents) is in ftpusers file
+    @all_roots = split(" ", $'uid2names{0});
+    for $i (@all_roots) {
+	if (length($user2passwd{$i}) == 13 && ! &'fgrep($ftpusers, "^$i$")) {
+	    print "Warning!  $i should be in $ftpusers!\n";
+	}
+    }
+}
+
+#  do the anonymous ftp checking stuff now?
+die unless $anonymous;
+
+#   if the user ftp doesn't exist, no-anon stuff....
+# if $TEST -z $ftproot -a "$anonymous" = "yes" ; then
+
+die "${W}Need user $ftpuid for anonymous ftp to work!\n" if ($ftpuid eq "");
+
+#   if the user ftp doesn't exist, no-anon stuff....
+if (! -d $ftproot || $ftproot eq "") {
+    die "${W}Home directory for ftp doesn\'t exist!\n";
+}
+if ($ftproot eq "/") {
+    print qq:${W}$ftproot ftp's home directory should not be "/"!\n:;
+}
+
+#   want to check all the critical files and directories for correct
+# ownership.  Some versions of ftp don't need much of anything... no 
+# etc directory or password/group files.
+#   others need etc directory & password/group files.  Experiment.
+#
+push(@crit_files, $ftpbin, $ftpetc);
+for $i (@crit_files) {
+    $owner = &'Owner($i);
+
+    if ($owner eq 'BOGUS') {
+	print "${W}Critical anon-ftp file $i is missing!\n";
+	next;
+    }
+
+    $owner = $'uid2names{$owner};
+
+    if ($owner !~ /\b$primary\b|\b$secondary\b/) {
+       print "${W}$i should be owned by $primary or $secondary, not $owner!\n";
+    }
+}
+
+#  Don't want the passwd and group files to be the real ones!
+if (&'Owner($ftppasswd) ne 'BOGUS' &&
+    $passwd ne $ftppasswd && 
+    ! system "$CMP -s $passwd $ftppasswd") 
+{
+    print "${W}$ftppasswd and $passwd are the same!\n";
+}
+
+if (&'Owner($ftpgroup) ne 'BOGUS' &&
+    $group ne $ftpgroup && 
+    ! system "$CMP -s $passwd $ftpgroup") 
+{
+    print "${W}$ftpgroup and $group are the same!\n";
+}
+
+#   ftproot is special; if owned by root; should be !world writable;
+# if owned by ftp, should be mode 555
+
+if (&'Owner($ftproot) ne 'BOGUS') {
+    $owner = $'uid2names{&'Owner($ftproot)};
+    $perms=&'Mode($ftproot);
+    if ($owner !~ /\b$primary\b|\b$secondary\b/) {
+	print "${W}$ftproot should be owned by $primary or $secondary, not $owner!\n";
+    }
+
+    # ftp-root should not be world-writable:
+    &'is_able($ftproot, "w", "w");
+
+    # if ftp owns root-dir, then mode should be 555:
+    if ($owner eq $ftpuid && $perms ne 00555) {
+	print "${W}$ftproot should be mode 555!\n";
+    }
+}
+
+#
+# check the .rhosts file:
+if (-f $ftprhosts) {
+    if (-s $ftprhosts) {
+	print "${W}$ftprhosts should be be empty!\n";
+    }
+    $owner=$'uid2names{&'Owner($ftprhosts)};
+    if ($owner ne $primary && $owner ne $secondary) {
+	print "${W}$ftprhosts should be owned by $primary or $secondary!\n";
+    }
+}
+
+# finally, some permissions of miscellaneous files:
+if (($perms=&'Mode($ftpls)) & 0666) {
+    printf "${W}Incorrect permissions (%04o) on $ftpls!\n", $perms;
+}
+
+if (($perms=&'Mode($ftppasswd)) & 0333) {
+    printf "${W}Incorrect permissions (%04o) on $ftppasswd!\n", $perms;
+}
+
+
+if (($perms=&'Mode($ftpgroup)) & 0333) {
+    printf "${W}Incorrect permissions (%04o) on $ftpgroup!\n", $perms;
+}
+
+#   Finally, the ~ftp/{pub|incoming|whatever} stuff:
+opendir(FTPDIR, $ftproot) || die "can't opendir $ftproot: $!\n";
+
+@all_dirs=grep(-d, readdir(FTPDIR));
+
+local($is_able'silent) = 1;  
+for $i (@all_dirs) {
+    if ($i ne $incoming && &'is_able($ftproot . "/$i", "w", "w")) {
+	print "${W}Anon-ftp directory $i is World Writable!\n";
+    }
+}
+
+1;
+# end of script

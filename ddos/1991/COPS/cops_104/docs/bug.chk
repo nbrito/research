@@ -1,0 +1,73 @@
+.TH CARP 1 "February 16, 1992"
+.UC 4
+.SH NAME
+bug.chk \- bug date testing tool
+.SH SYNOPSIS
+.B bug.chk
+[
+architecture
+]
+.SH DESCRIPTION
+.I bug.chk
+uses publically available (available via anonymous ftp from 
+cert.sei.cmu.edu) data to determine if a security bug is present.  The
+way it does this is by checking the modification time of the program in
+question against the cert advisory date (or patch date, if available),
+and, if it is older than that, it flags it as a potential
+bug/vulnerability (the awk program "bug_cmp" is used to check dates).
+It attempts to determine the machine type run on
+automatically, but, failing that, can be run with the machine type
+as an argument.
+.PP
+There are numerous problems with this approach!  One, no actual check
+is done; whether or not the bug actually does exist has nothing to
+do with the date.  Also, if someone changes, updates, or even touches
+the file, then this is pretty worthless.  A far better check would
+be to either try to exploit the bug or to have lists of all good and
+bad crc's for the files in questions, and just test against it.  Still,
+this seems to be a good compromise for the time being.  However,
+updates should be made for each new CERT advisory as they are made
+public.
+.PP
+Right now, it either uses your argument as an architecture type, or
+tries to figure out what kind of platform you're running
+on (see the program "platform"), and then looks at the bugs known
+for your host in a file named "bug.chk.architecture_type".
+.PP
+Bugs bug.chk currently tries to look at:
+.br
+.IP
+Morris Worm threats: sendmail, login, fingerd, and ftpd.
+.IP
+Generic BSD problem: rdist.
+.IP
+IBM/AIX tftpd.
+.IP
+Apollo -- /usr/apollo/bin/crp
+.IP
+Ultrix/DEC -- chroot, /usr/bin/mail.
+.IP
+NeXT -- restore0.9, npd, BuildDisk, npd, and perms on /private/etc.
+.IP
+SGI -- /usr/sbin/Mail, /usr/sbin/fmt.
+.IP
+Sun -- sendmail, restore, TIOCCONS, sel_svc, lpd, bin_mail,
+telnetd/rlogind, makeinstall/winstall, mountd,
+divide/multiply by 0, nfs, loadmodule.
+.IP
+SVR4 -- /bin/login, /usr/etc/rexecd.
+.br
+.PP
+Note that many of the bugs that Sun has reported either have
+not been publically reported and fixed by other vendors, even though
+they usually exist on their hosts.  I don't think that Sun's
+OS is designed any worse than any other OS; instead, I think
+that Sun is more open in reporting them to their constituents
+and CERT, as well as having the largest user base to beat on
+their boxes.
+.SH "SEE ALSO"
+CERT advisories, available via anon-ftp from cert.sei.cmu.edu,
+or by calling (412) 268-7090.  Perusing the source code might
+be beneficial as well.
+.SH BUGS
+Easily fooled, doesn't actually do anything :-)

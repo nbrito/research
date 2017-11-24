@@ -1,0 +1,226 @@
+.TH KUANG 1 "4 October 1990"
+.SH NAME
+kuang \- find security problems through rule based analysis
+.SH SYNOPSIS
+.B kuang
+.RB "[\|" \-v  "\|]"
+.RB "[\|" \-d "\|]"
+.RB "[\|" \-l "\|]"
+.RB "[\|" \-k known"\|]"
+.RB "[\|" \-f filedata "\|]"
+.RB "[\|" \-P "\|]"
+.RB "[\|" \-G "\|]"
+.RB "[\|" \-p passwd "\|]"
+.RB "[\|" \-g group "\|]"
+.RB "[\|" 
+.IR u.username | g.groupname "\|]"
+.br
+.SH DESCRIPTION
+.LP
+.B kuang
+uses rule based analysis to examine the current security configuration
+of a site and determine whether certain security problems exist.
+
+.B kuang 
+contains embedded rules that describe the projection model and
+some of the attacker tricks used on Unix systems.  It uses these rules
+to reason backward from a desired goal (such as "grant u.root"),
+generating potential "attack" plans from the rules and file system
+state and then evaluating them to see whether they are reachable
+according to the state recorded in the password and group files and in
+the ownership and modes of the file systems.
+
+By default, 
+.B kuang 
+uses "grant u.root" as its initial goal.  You can change that by
+specifying a username (u.username) or groupname (g.groupname) on the
+command line.  Normally 
+.B kuang
+determines a plan to be successful if it determines that anyone
+(u.other) can become the initial goal.  
+
+The 
+.B \-v
+option causes 
+.B kuang
+to print a message about every plan added to the evaluation list.
+This can help one to understand how 
+.B kuang 
+works.  The 
+.B \-d 
+option causes 
+.B kuang
+to print a message when it evaluates a plan to determine whether to
+retain it and add onto it or ignore it.  Beware - these options will often
+produce lots of output.
+
+Normally 
+.B kuang
+only registers success when it finds that everyone on the system can
+become the target uid or gid.  With the 
+.B \-l
+option, 
+.B kuang
+will list every uid that can access the goal.  This provides a more
+complete picture of the state of security - you might deem it a
+problem if several users can become root, even if u.other cannot.  
+With the
+.B \-k
+option, it reads users that are known to be compromised (guessed
+password, writeable startup files, or whatever) into a file, like:
+
+u 216
+u romig
+df
+g staff
+
+and so on.  Then start kuang as "kuang -k known".  If you omit the u
+or g, it defaults to uid.  You can give names or IDs for uids and
+groups.  You can also list files.  This gets put on a list that is 
+used to decide whether a plan is successful or not.  If a plan 
+reaches an step that is in the known list, it succeeds.
+
+One might adopt the view that each uid should only be accessible by
+itself and root, and that each gid should be accessible only by the
+members of that group and root.  One can then compare the expected
+access list for a given uid or gid against the 
+.B kuang
+generated list to find security problems that 
+.B kuang
+wouldn't ordinarily tell you about.
+
+The goals that 
+.B kuang
+use seem cryptic, but are really pretty straightforward.  Each goal
+consists of a list of <action> <object> pairs.  Typical actions are
+user, group, write and replace.  Typical objects are user names,
+group names and file names.  The goal
+"user root" (or u.root) means to have access to the root UID (0), or
+in other words, to be able to run any program using that uid.  
+Similarly,
+"group staff" (or g.staff) means to have access to group staff.
+The long goal
+"user bill  group graphics replace /n/shoe/0/fred replace
+/n/shoe/0/fred/.profile user fred group staff" means become
+user bill, get access to the graphics group, replace the file
+/n/shoe/0/fred, replace /n/shoe/0/fred/.profile, become fred,
+grant access to the staff group.  The problem that allows this to
+happen is that the /n/shoe/0 directory is writeable by the graphics
+group, meaning that anyone in that group can replace the .profile file
+for the fred user and gain access to that account and the groups it
+belongs to when fred next logs in.  Ooops.
+
+To do a thorough job, 
+.B kuang 
+really needs to be able to access all of
+the controlling files of all users.  In some environments, home
+directories are located in NFS mounted file systems where the client
+doesn't have root access.  
+
+The problem is that some home directories may be
+protected so that group foo can read/write them, but OTHER can't.
+.B kuang 
+running as some user not in group foo won't be able to read or
+search the directory, creating a blind spot that may hide security
+problems (for example, if group foo can write that user's .login and
+gain access to some other important priv...)  Running 
+.B kuang
+as root
+won't help unless we are running on the server that exports that
+file system, since root==nobody through NFS here.  Of course, then
+you'll find other blind spots on other servers, meaning that you'll
+never be able to see a complete picture of how things are from any
+spot on the net.  Running 
+.B kuang
+on every machine might not even
+help, since the blind spots might prevent them from seeing viable
+paths to Success on any of the machines.  Sigh.
+
+Soooo we've added a 
+.B -f 
+option that causes 
+.B kuang 
+to preload owner, group and mode information for a list of files.
+Each line of the file should be of the form "type uid gid mode name".
+.B type
+is ignored by 
+.B kuang.
+.B uid 
+and 
+.B gid
+are the user and group ID numbers, in decimal.
+.B mode
+is the permissions for the file, in octal.  And 
+.B name
+is the name of the file.  We've also added a program called
+.B get-cf
+that can be run as root on a server to create a file of the above form
+for the control files for the user's with home directories on that
+server.  Then you can run 
+.B get-cf 
+on every server as root, concatenate all the data together, and
+preload it into Perl.  This will fix the shadow problems mentioned
+above and should also speed things up since you won't need to do all
+the file system references.
+.B kuang -f file
+will use a DBM database in place of a text file if file.dir exists.
+
+.B Kuang
+needs to read the entire password and group databases before it
+starts, so that it has a complete idea of what users are in what groups
+and so on.  This can be somewhat slow on systems using YP, since by
+default 
+.B kuang
+uses the getpwent and getgrent routines to get the information (which
+is tedious on a YP client).  
+The 
+.B -P
+and 
+.B -G
+options cause 
+.B kuang
+to read /etc/passwd (/etc/group) and to use ypcat to read the rest of
+the passwd (group) YP maps, which can be much faster.  In addition, 
+the 
+.B -p 
+and 
+.B -g 
+options cause 
+.B kuang 
+to read the named files instead of /etc/passwd.
+
+.SH "SEE ALSO"
+"Rule Based Analysis of Computer Security", Robert W. Baldwin, MIT,
+June 1987.
+
+The README file that comes with 
+.B kuang
+describes many of the design considerations, problems and future
+plans.
+
+.SH NOTES
+.LP
+This version of 
+.B kuang
+is based on the shell script versions that Dan Farmer included with
+the 
+.B COPS 
+security package, which in turn were based on code written by  Robert
+Baldwin himself.
+
+You should read the other documentation that should come with this
+version and modify the rules in 
+.B kuang
+to suite your site.
+
+.SH BUGS
+.LP
+Probably many.
+
+The 
+.B -P
+and 
+.B -G 
+options don't work right if you use +@ constructions with YP.  They do
+work right if you use a simple "+:" entry, however.
+

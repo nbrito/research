@@ -1,0 +1,80 @@
+:
+#
+#  is_able.chk
+#
+#   This shell script checks the permissions of all files and directories
+# listed in the configuration file "is_able.lst", and prints warning messages
+# according to the status of files.  You can specify world or group readability
+# or writeability.  See the config file for the format of the configuration
+# file.
+#
+#   Mechanism:  This shell script parses each line from the configure file,
+# changes into the directory the file is in, and then uses the "is_able" 
+# program to check if any of the directories in question are writable by 
+# world/group.  All results are written to standard output.
+#
+TEST=/bin/test
+ECHO=/bin/echo
+AWK=/bin/awk
+SED=/bin/sed
+
+config_file=is_able.lst
+
+# where the test is run:
+old_dir=`pwd`
+
+if $TEST ! -f "$config_file" ; then
+	$ECHO "Config file $config_file doesn't exist!"
+	exit
+	fi
+
+#  Read from $dir_list (e.g. "is.chk.lst") what files/dirs to check.
+#
+# Comments are lines starting with a "#".
+#
+# /path/to/{dir|file}   World/Group     Read/Write/Both
+# as above              {W|w|G|g}       {R|r|W|w|B|b}
+#
+$AWK '/^#/ {
+	next;}
+	{ world=group=read=write=both=0; \
+	# need 3 fields, or format error
+	if (NF != 3) next; \
+	if ($2 != "W" && $2 != "w" && $2 != "G" && $2 != "g") next; \
+	if ($3!="R"&&$3!="r"&&$3!="W"&&$3!="w"&&$3!="B"&&$3!="b") next; \
+	for (f=1;f < NF; f++) printf("%s ", $f); \
+	print $NF;
+	}' $config_file |
+while read targets
+	do
+	#   Use sed, 'cause awk lets me down (line too long) -- then realize
+	# I should have used sed anyway.  Lazy bum.
+	foo=`echo "$targets" | $SED 's/\(.*\)....$/\1/'`
+	args=`echo "$targets" | $SED 's/.*\(...\)$/\1/'`
+
+	#  I added this, to change into the directory before checking
+	# for writability; the reason?  With long dir pathnames that had
+	# lots of files inside, the shell would blow up, trying to expand
+	# all the full paths, and stuff it into a single variable.  For
+	# instance, a line like this in $config_file:
+	#
+	#  /usr/foo/bar/cowabunga/* w w
+	#
+	#  Would expand to "/usr/foo/bar/cowabunga/ls /usr/..."  Need full
+	# pathnames, tho!  And it can still blow up, tho it's tougher.
+	#
+	dir=`echo "$targets" | $SED 's/\(.*\\)\/[^ ]* .*$/\1/'`
+
+	if $TEST -n "$dir" -a -d "$dir" ; then
+		cd $dir
+		fi
+
+	for f in $foo
+		do
+#		echo $dir $f $args
+		$old_dir/is_able $f $args
+		done
+	cd $old_dir
+	done
+
+# end of script

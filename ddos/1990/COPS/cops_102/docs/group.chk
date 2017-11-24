@@ -1,0 +1,23 @@
+.TH GROUP.CHK 1 "December 31, 1989"
+.UC 4
+.SH NAME
+group.chk  \- Checks group file(s) for inconsistencies.
+.SH SYNOPSIS
+.B group.chk
+.SH DESCRIPTION
+.I group.chk
+checks the group files -- /etc/group and ypgroup if yellow pages are being
+used -- for incorrect number of fields, duplicate groups, non-alphanumeric
+group names, blank lines, and non-numeric group id's. 
+.SH FILES
+.Ps
+/etc/group
+group.chk uses the process id as a temporary file name for the ypchecking.
+.Pe
+.SH "SEE ALSO"
+.Ps
+group(5)
+.Pe
+Awk part based on _passwd_ from _The AWK Programming Language_, page 78.
+.SH BUGS
+It doesn't use the exact syntax of yellow pages to check for errors.

@@ -1,0 +1,274 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  Pass.chk -- a password guesser.  Functionally equivalent to the original
+# cops password guesser.  The -P option doesn't work right now (alpha release,
+# don't you know :-), since we're doing funky things with password caching,
+# but this will change soon.
+#
+#  Usage: $0 [options] dictionary
+#
+#	-P pfile	password file (not working)
+#	-p		print found passwords (incompatible with -M)
+#       -d		check prefix/suffix of digits [0-9]
+#       -g		check all words in gcos, plan, project, signature files
+#	-r 		reverse the word tests
+#	-s 		check all single chars as passwords
+#	-u 		output the current user being checked
+#	-U 		try uppercase word tests
+#	-v		verbose, print advisory information
+#	-x 		check guess+prefix/suffix with strange chars added on
+#	-0 (zero)	change all o's ("oh"'s) to 0 (zeros)
+#	-1 (one)	change all i's to 1 (ones)
+#	-m 		misspell words -- chop off first and last chars,
+#			if > 3 chars.  E.g. "dinner" ==> "inner" and "dinne"
+#
+# Originally written by Tim Tessin with lots more features, etc., etc., etc.
+# I ripped out all of his extra functionality that duplicated some of the
+# other cops stuff, and some things that just didn't fit, and added some
+# code to finish the simulation of the old checker. -- dan
+# 
+
+require "getopts.pl";
+# can probably just do "|| &usage;" since &usage is only used once. ;-)
+&Getopts("p0dgrsuUv1P:mx") || print STDERR "Usage: $0 -p0xdgrsuUPvm\n";
+
+# diff password file?
+if (defined($opt_P)) { $'GET_PASSWD = "/bin/cat $opt_P"; }
+require "pass.cache.pl";
+
+$Passwd = "/etc/passwd";
+@strange_things = (" ", ";", ",", ".", "!", "@", "#", "$",
+                     "%", "^", "&", "*", "(", ")", "-", "_", 
+                     "=", "+", "[", "]", "{", "}", "'", "\"",
+                     "|", "`", "~", ">", "<");
+
+# unbuffer output
+select (STDOUT); $| = 1;
+
+$dups = 0;		# duplicate name entries
+$new = 0;		# new entries
+$changed = 0;		# password (and other data) changed
+$deleted = 0;		# deleted entries
+$updated = 0;		# data other than password changed
+$nlog = 0;		# number of log entries, used for print decisions
+$ntest = 0;
+$ndone = 0;
+
+for $uid (keys %uname2passwd) {
+	next if length($pass = $uname2passwd{$uid}) != 13;
+	next unless $pass; # shall we report null passwd's, too?  ;-)
+	if ($try = &dopwd()) {
+		$pwd = ($opt_p) ? $try : "";
+		# printf "Username: %-8s  <password guessed>  $pwd\n",$P[0];
+		printf "Warning!  $uid password Problem: Guessed: %s\t\t$pwd\n",$P[0];
+		}
+	$ndone++;
+	}
+
+1;
+# end of program
+
+
+######################## Support Subroutines ###########################
+# dopwd tests each password entry against several simple checks and all
+# the words in the dictionaries specified.  The simple checks consists
+# of trying the username as the password ('joe' accounts), words derived
+# from the gecos fields (usually first and last names).
+
+sub dopwd {
+    $tries = 0;
+
+    print "$uid\n" if ($opt_u);
+
+    # try user name
+    ($try = &testpwd($uid,$pass)) && return $try;
+    # try uiduid
+    if (length($uid) < 8) {
+	($try = &testpwd($uid . $uid,$pass)) && return $try;
+	}
+
+    # do gcos field?
+    if ($opt_g) {
+	@gcos = split(/[.,& -]/,$uname2gcos{$uid});
+	foreach $i (@gcos) {
+	    next unless $i;		# skip null split values
+	    ($try = &testpwd($i,$pass)) && return $try;
+	}
+
+	# Try names from misc files
+	#
+	undef %words;
+	# files to check
+	@files2chk = ("/.project", "/.plan", "/.signature");
+	$home = $uname2dir{$uid};
+	for $i (@files2chk) {
+	    open (FOOFILE, $home . $i);
+	    while (<FOOFILE>) {
+		chop;
+		@line = split(/([.,;\s])/);
+		for $j (@line) {
+		    $words{$j}=$j unless $j=~/[\s]/;
+		}
+	    }
+	    close FOOFILE;
+	}
+	for $k (values %words) {
+	    # print "word $k\n";
+	    ($try = &testpwd($k,$pass)) && return $try;
+	}
+    }
+
+# do dictionaries
+# save state of upper/reverse so individual dicts can temporarily
+# override.
+foreach $i (@ARGV) {
+	if (open (DICT,$i)) {
+		while (<DICT>) {
+			chop;
+			if ($try = &testpwd($_,$pass)) {
+				close DICT;
+				return $try;
+				}
+			}
+		close DICT;
+		}
+	}
+return 0;
+}
+
+
+# small subroutines to help the main password cracker.  All are labeled
+# p_xxx, where xxx is the identifying name.
+#
+
+# if leading character is upper-case, also try lower case version
+sub p_lc {
+    local($try) = @_;
+    local($ntry);
+    if ( $try =~ /^[A-Z]/ ) {
+	($ntry = $try) =~ y/A-Z/a-z/;
+	push(@total_guesses, $ntry);
+    }
+}
+
+# reverse check
+sub p_rev {
+    local($try) = @_;
+    local($ntry);
+    $ntry = reverse $try;
+    if ($ntry ne $try) {
+	push(@total_guesses, $ntry);
+    }
+}
+
+# uppercase check
+sub p_up {
+    local($try) = @_;
+    local($ntry);
+    ($ntry = $try) =~ y/a-z/A-Z/;
+    if ($ntry ne $try) { push(@total_guesses, $ntry); }
+}
+
+# testpwd checks a word to see if it matches the encrpted password
+# if the word is capitalized, the lowercase version is tried as well
+
+sub testpwd {
+local ($try,$pass) = @_;
+local (@total_guesses);
+
+push(@total_guesses, $try);
+
+# free (lower case) check if first letter is uppercase
+&p_lc($try);
+# reverse?
+if ($opt_r) { &p_rev($try); }
+# uppercase?
+if ($opt_U) { &p_up($try); }
+
+# single digit tacked on to beginning and end
+if ($opt_d) {
+	if (length ($try) < 8) {
+		foreach $i ('0'..'9') {
+			$ntry = $i.$try;
+			push(@total_guesses, $ntry);
+			if ($opt_r) { &p_rev($ntry); }
+			if ($opt_U) { &p_up($ntry); }
+			}
+		foreach $i ('0'..'9') {
+			$ntry = $try.$i;
+			push(@total_guesses, $ntry);
+			if ($opt_r) { &p_rev($ntry); }
+			if ($opt_U) { &p_up($ntry); }
+			}
+		}
+	}
+
+# change o's to 0's ("oh"'s to zeros)
+if ($opt_0) {
+	if (($ntry = $try) =~ s/o/0/g) { push(@total_guesses, $ntry); }
+	}
+if ($opt_1) {
+	if (($ntry = $try) =~ s/i/1/g) { push(@total_guesses, $ntry); }
+	}
+
+# misspell words -- truncate first and last letter, if > 3 chars
+# thanks to  William Vajk, learn@ddsw1.MCS.COM, who posted this idea.
+if ($opt_m) {
+	$len = length($try);
+	if ($len > 3) {
+		($ntry = $try) =~ s/^.//; push(@total_guesses, $ntry);
+		if ($len < 9) {
+			($ntry = $try) =~ s/.$//; push(@total_guesses, $ntry);
+			}
+		}
+	}
+
+# weird things!  Tacked on to beginning and end
+if ($opt_x) {
+	if (length ($try) < 8) {
+		foreach $i (@strange_things) {
+			$ntry = $i.$try;
+			push(@total_guesses, $ntry);
+			if ($opt_r) { &p_rev($ntry); }
+			if ($opt_U) { &p_up($ntry); }
+			}
+		foreach $i (@strange_things) {
+			$ntry = $try.$i;
+			push(@total_guesses, $ntry);
+			if ($opt_r) { &p_rev($ntry); }
+			if ($opt_U) { &p_up($ntry); }
+			}
+		}
+	}
+
+# do single letters, #'s, if needed
+if ($opt_s && $uid ne $last_user) {
+	$last_user = $uid;
+	foreach $i (@strange_things) { push(@total_guesses,$i); }
+	foreach $i (0..9) { push(@total_guesses, $i); }
+	foreach $i (A..Z) { push(@total_guesses, $i); }
+	foreach $i (a..z) { push(@total_guesses, $i); }
+	}
+
+if ($opt_v) {
+	foreach $i (@total_guesses) {
+		print "Trying \"$i\" on $uid\n";
+		$epw = crypt($i,$pass);
+		($epw eq $pass) && return $i;
+		}
+	}
+else {
+	foreach $i (@total_guesses) {
+		$epw = crypt($i,$pass);
+		($epw eq $pass) && return $i;
+		}
+	}
+undef @total_guesses;
+
+return 0;
+}

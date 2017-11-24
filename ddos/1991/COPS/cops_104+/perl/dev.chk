@@ -1,0 +1,103 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  dev.chk [-g]
+#
+#   This shell script checks the permissions of all devs listed in the
+# file /etc/fstab (the "mount" command would be a preferable way of
+# getting the file system name, but the syntax of the output is variable
+# from machine to machine), and flags them if they are readable by using
+# the "is_readable" command.  It also checks for unrestricted NFS
+# mountings.  By default, dev_check will flag devs only if world readable
+# or writable.  The -g option tells it to print out devs that are also
+# group readable/writable.
+#   As an aside, the fact that NFS mounted dirs are world readable isn't
+# a big deal, but they shouldn't be world writable.  So do two checks here,
+# instead of one.
+#
+#  Two types of /etc/fstab formats I've seen so far:
+#
+# "old" --
+#  spec:file:type:freq:passno:name:options
+#      NFS are indicated by an "@"
+#
+# "new" --
+#  fsname dir type opts freq passno
+#      NFS are indicated by an ":"
+#
+# tchrist@convex.com
+#
+
+require 'is_able.pl';
+
+$MTAB    = '/etc/fstab' unless defined $MTAB;
+$EXPORTS = '/etc/exports' unless defined $EXPORTS;
+$TAB_STYLE = 'new' unless defined $TAB_STYLE;  # or 'old'  
+
+&usage if @ARGV > 1;
+
+sub usage { die "Usage: $0 [-g]\n"; }
+
+if (@ARGV == 1) {
+    if ($ARGV[0] eq '-g') {
+	$group++;
+    } else {
+	&usage;
+    } 
+} 
+
+
+open MTAB || die "can't open $MTAB: $!\n";
+
+while (<MTAB>) {
+    next if /^#/;
+    chop;
+    if ($TAB_STYLE eq 'new') {
+	($dev, $fs) = split;
+	next unless $fs;
+	if ($dev =~ /:/) {
+	    push(@nfs_devs, $fs);
+	} else {
+	    push(@local_devs, $dev);
+	} 
+    } else {
+	($dev, $fs) = split(/:/);
+	next unless $fs;
+	if ($dev =~ /@/) {
+	    push(@nfs_devs, $fs);
+	} else {
+	    push(@local_devs, $dev);
+	} 
+    } 
+
+} 
+
+if (open EXPORTS) {
+    while (<EXPORTS>) {
+	next if /^\s*#/;
+	next if /\S\s+\S/;
+	next if /^\s*$/;
+	chop;
+	print "Warning!  NFS file system $_ exported with no restrictions.\n";
+    } 
+} 
+
+# WARNING: we may hang if server down....
+#
+for (@nfs_devs, @local_devs) {
+    &is_able($_, 'w', 'w');
+    next unless $group;
+    &is_able($_, 'g', 'w');
+} 
+
+for (@local_devs) {
+    &is_able($_, 'w', 'r');
+    next unless $group;
+    &is_able($_, 'g', 'r');
+} 
+
+1;

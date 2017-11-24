@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+#   By wietse@wzv.win.tue.nl (Wietse Venema).  This will be folded into
+# the rest of cops and the uucp stuff, when I get a breath to take.
+#
+#
+# This script does almost nothing if there is no UUCP account.
+# On some systems, even local users can uucp files from selected
+# directories only. Often, these are also UUCP login directories,
+# and often they are world-writable. Use /tmp as a final resort.
+
+for i in /usr/spool/uucppublic /usr/spool/uucp /tmp
+do
+	if touch $i/XX.$$ 2>/dev/null
+	then
+	    cd $i
+	    break;
+	fi
+done
+
+# I forgot how COPS deals with the presence or absence of NIS...
+
+(cat /etc/passwd ; ypcat passwd) 2>/dev/null | 
+	awk -F: '/uucp/ { print $1,$(NF-1) }' | while read user home
+	do
+	    uucp XX.$$ !$home/YY.$$ 2>/dev/null &&
+		echo uucp copies files to home directory $home of account $user
+	done
+
+# Clean up; too bad we cannot unlink the files we may have installed...
+
+rm -f XX.$$ $home/YY.$$

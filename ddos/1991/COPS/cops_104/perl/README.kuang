@@ -1,0 +1,188 @@
+This is a perl version of Dan's version of Bob Baldwin's Kuang program
+(originally written as some shell scripts and C programs). 
+
+The original intent was to improve the speed of kuang, which is
+especially important for installations like ours with several thousand
+accounts and NFS things and all that.  The shell version of Kuang used
+C programs to add rules, get a groups members, determine the writers
+of a file, and so on, which really slowed things down.
+
+		"no" problems	/etc staff writeable
+		-------------	--------------------
+shell kuang	2:14 (14)	12:26 (98)	0.1 p/s
+perl kuang	1:10 (18)	 2:34 (588)	3.8 p/s
+
+--- Steve Romig, CIS, Ohio State, October 1990
+
+------------------------------------------------------------------------------
+
+Some Features
+---- --------
+
+  Caches passwd/group file entries in an associative array for faster
+  lookups.  This is particularly helpful on insecure systems using YP
+  where password and group lookups are slow and you have to do alot of
+  them...:-)
+
+  Can specify target (uid or gid) on command line.
+
+  Can use -l option to generate PAT for a goal.
+
+  Can use -f to preload file owner, group and mode info, which is
+  helpful in speeding things up and in avoiding file system
+  'shadows'...  See the man page for details.
+
+Future plans, things to fix:
+----------------------------
+
+- In a large environment (like ours, 260+ machines, 30+ file systems
+  on as many servers, 2000 password file entries served by YP) it
+  would be nice to 'precompute' successful plans that would be common
+  to all systems.  In particular, plans for becoming most of the users
+  with home directories on the NFS file systems would be useful, since
+  we don't really want to recheck these on each host.  You wouldn't
+  want the plan to be too deep - probably shouldn't span more than 2
+  uids (1 on each end: grant u.romig grant g.staff write ~foo/.login
+  grant u.foo).  I'm thinking that you could feed a list of these
+  precomputed plans to kuang and add some code that causes it to
+  splice in relevent plans where it can to short cut the planning
+  steps.  For example, if one of the plans in uids.next is something
+  like "grant u.foo ...", and I have the precomputed plan mentioned
+  above, I could splice the two: "grant u.romig grant g.staff write
+  ~foo/.login grant u.foo ..." and skip all the normal steps that
+  would've been taken to get there.
+
+- Hmmm...thinking about it, it seems like some of the steps are a bit
+  too implicit...maybe the rules should be broken out a bit more.
+  That will cost in processing time, though.
+
+- Would be really, really nice to be able to deal with PATH variables
+  - location of ., who can write elements of path, etc.  Basic rule is
+  "anyone who can replace anything in any of path directories or the
+  path directories themselves can become that PATH's user..."  This
+  can be really messy though - in our environment, the path for a user
+  will depend on the architecture type of the machine that he is
+  logged into, and to get the path, you'd have to read and interpret
+  his .login (including variable assignments, source's and
+  conditionals).  Urf.  One wonders whether it might be better to have
+  something running as root that su's to each username in turn and
+  gets the path that way...
+
+- ignore plans that start with "uid root", unless that's the only element - root
+  can get to anything, and hopefully nothing can get to root...?
+
+- remove duplicate names from uid2names and gid2names...
+
+- with ~/.login world writeable - only follows group path, but not OTHER.
+
+- add plans to asseccible list.
+
+Done
+----
+
+- Need to find all plans that lead to compromise, not just a plan.
+
+- An earlier version scanned the password file looking for generally
+  accesible accounts (no password), which would be added to the
+  uids.known list (in addition to -1, "other").  I had planned on also
+  adding a password checker which would allow us to also add accounts
+  with easily guessed passwords.  Eventually I nuked the code that
+  scanned the password file to speed things up, and further reflection
+  reveals that it isn't wise to add the password scanning to kuang
+  itself.  At some point we should add a comand line option that
+  allows us to add additional uid's (or gid's?) to the uids.known
+  list.  That way the user could run some other tool to scan the
+  password file and generate a list of accessible accounts, which
+  could then be fed to kuang.  Makes it faster on clients using YP
+  since most of the password file is the same for all N clients, why
+  scan it N times.  Means that user can do smarter things to/with the
+  password file checks (list all accounts with no password or easily
+  guessed password, filter out "ok" entries (eg, sync) and etc.)
+
+- We aren't dealing with uid's and gid's correctly.  If there are
+  several entries that list the same UID, but with different names,
+  directories and shells, we'll only check plans for becoming one of
+  them, rather than any of them.  Hmmm...this is easier than I
+  thought, when we evaluate some plan for granting a particular uid,
+  we need to evaluate plans for all usernames that can become that
+  uid.  Just stick a loop in there somewhere...get CF's for each of
+  username's in turn.  Bah, harder than I thought, since it'd have to
+  scan the whole password file to figure which username/home directories
+  can become which uid's.  Similarly with groups.
+
+  Current plan: by default, kuang will have to scan the whole password
+  and group files so it can be sure to get all possible ways to become
+  some uid or gid.  Internally, really need several lists:
+
+	mapping from uid to list of usernames that have that uid
+	mapping from a username to home directory, shell
+	mapping from gid to list of uids that have access to that
+	  gid when they login (either member of group with that gid or
+	  given as login group in passwd file)
+	mapping from gid to list of group names for that gid
+
+  Course, this means that we have to read the whole password and group
+  file, most of which will be common to many machines (like in a YP
+  environment).  We could preload the tables above from files created
+  once, containing the brunt of the YP info, and then augment that
+  withthe local passwd and group info on each host when kuang is
+  invoked, but then we need to correctly interpret funky YP things
+  like +@netgroup:::*:..., which means that the uid has a name but no
+  password here...and similarly with shell substitutions and so on.
+  Bah. 
+
+- The kuang described in Baldwin's dissertation is somewhat different
+  in nature from this one.  The original computes a Privilege Access
+  Table (PAT) which describes for each uid and gid which uids have
+  access to that uid.  To assess security, we compare this against the
+  security policy for the site, which similarly describes which uid's
+  are supposed to have access to each uid and gid.  A sample SP might
+  be that each uid should be accessible only by itself and root, and
+  each gid should be accessible only to the members of that group and
+  root.  If the PAT listed additional uid's for some priv, that would
+  constitute a violation of the Security Policy for the site.
+
+  The current kuang is different.  It registers Success (a problem was
+  found) if it determines that some uid in the uids.known list (-1,
+  "other" by default) can access the target privilege.  It may find
+  along the way that extra uids can access some uid, but these aren't
+  reported as specific problems unless they are added to the
+  uids.known list. 
+
+  We could do something similar to the kuang described in the paper by
+  setting uids.known to be all the uids that aren't in the security
+  policy table for the target uid, and running kuang against the
+  target.  This would report success for each uid that could access
+  the target.  You could do similar things with groups - uids.known
+  would be all the uids that aren't members of the group...
+
+  Alternately, we could simply have kuang record the list of uids that
+  can access the target priv and print the list when its done.  That
+  way you could iterate kuang against all uids and gids and compare
+  the resulting PAT against your security policy and record the
+  differences.  You'd probably want to record the plan for each uid
+  reported also.
+
+  On our system this would mean running kuang roughly 2500
+  times to check 1 host, and we have about 300 hosts...urf...assuming
+  that each kuang invocation has to check 50 plans, that's a total of
+  125,000 plans per host, or about an hour of real time...not as bad
+  as it could be, though.
+
+- It would be nice to add to the list of rules.  It would be especialy
+  nice to extract the rules from the code so that we can create site
+  specific rule files (for example, we use X11r4 here, and many users
+  have a .Xinitrc that contains shell commands that get executed when
+  they login.)
+
+  Easiest way to do this would be to extract the rules as Perl code so
+  we can take advantage of conditionals and so on, and include them
+  within the body of kuang somehow.  A sample rule in perl:
+
+	if (&shell($uid) eq "/bin/csh") {
+	    &addto("files", &home($uid)."/.login", 
+			"replace .login $plan");
+	}
+
+  which simply means "if the user's shell is csh, then try to replace
+  his .login file." 

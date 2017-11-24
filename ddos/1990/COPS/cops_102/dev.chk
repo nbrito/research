@@ -1,0 +1,129 @@
+:
+#
+#  dev.chk [-g]
+#
+#   This shell script checks the permissions of all devs listed in the
+# file /etc/fstab (the "mount" command would be a preferable way of
+# getting the file system name, but the syntax of the output is variable
+# from machine to machine), and flags them if they are readable by using
+# the "is_readable" command.  It also checks for unrestricted NFS
+# mountings.  By default, dev_check will flag devs only if world readable
+# or writable.  The -g option tells it to print out devs that are also
+# group readable/writable.
+#   As an aside, the fact that NFS mounted dirs are world readable isn't
+# a big deal, but they shouldn't be world writable.  So do two checks here,
+# instead of one.
+#
+# (p.s. /dev/?mem and some misc files used to be checked here, but they
+# are now checked in is_able.chk)
+#
+#  Two types of /etc/fstab formats I've seen so far:
+#
+#  spec:file:type:freq:passno:name:options
+#      NFS are indicated by an "@"
+#
+#  fsname dir type opts freq passno
+#      NFS are indicated by an ":"
+#
+#  I check for the second; comment that code out (lines 83-84), and
+# uncomment the other style (lines 79-80), if you have the first type.
+#
+AWK=/bin/awk
+SED=/bin/sed
+LS=/bin/ls
+ECHO=/bin/echo
+TEST=/bin/test
+
+# locations of vital stuff...
+mtab=/etc/fstab
+exports=/etc/exports
+
+group=no
+
+if $TEST $# -gt 1
+	then
+	$ECHO "Usage: $0 [-g]"
+	exit 2
+fi
+
+if $TEST $# -eq 1
+	then
+	if $TEST "X$1" = "X-g"
+		then
+		group=yes
+	else
+		$ECHO "Usage: $0 [-g]"
+		exit 2
+	fi
+fi
+
+#  Testing filesystems and devices for improper read/write permissions...
+
+# grab devices from "/etc/fstab"....
+#  Format of /etc/fstab:
+#
+#  spec:file:type:freq:passno:name:options
+#     NFS mounted:
+#  uther@foobar.edu:/usr/spaf:ect....
+#
+#  Or, the default means of checking:
+#
+#  filesystem   directory   type   options   freq   pass
+#     NFS mounted:
+#  uther:foobar.edu /usr/spaf....
+#
+#   kill comments, then get the device/filesystem in question.
+#
+# First style:
+# nfs_devs=`$SED 's/^#.*//' $mtab | $AWK -F: '/@/ {print $2}'`
+# local_devs=`$SED 's/^#.*//' $mtab | $AWK -F: '/@/ {continue}{print $1}'`
+#
+# Default style:
+nfs_devs=`$SED 's/^#.*//' $mtab | $AWK '/:/ {print $2}'`
+local_devs=`$SED 's/^#.*//' $mtab | $AWK '/:/ {continue}{print $1}'`
+
+all_devs=$nfs_devs" "$local_devs
+
+# Alternate way; grab devices from "mount [-p]"....
+#   Format of output from mount (some machines use -p option, some
+# don't.  Check your local man page... you might have to add a "-F:" or
+# something, depending on your output:
+# crit_devs=`/etc/mount -p|$AWK 'index($1, "/")==1
+#					{print $1} \
+#				}'`
+
+#
+# However, do check for single line entries in /etc/exports:
+if $TEST -s $exports
+	then
+	$AWK '{while(getline >0) if ($0 !~ /^#/ && NF == 1) \
+		printf("Warning!  NFS file system %s exported with no restrictions.\n",$0)}' $exports
+	fi
+
+#
+#  Have to get them in the format that "is_able" likes:
+#
+#  filename {world|group} {writeable|readable|both}
+#
+# all things check world/group writability
+for i in $all_devs
+	do
+	./is_able $i w w
+	if $TEST "$group" = "yes"
+		then
+		./is_able $i g w
+		fi
+	done
+
+#  For local devices, we want to make sure that no one can bypass
+# security by reading straight from the device:
+for i in $local_devs
+	do
+	./is_able $i w r
+	if $TEST "$group" = "yes"
+		then
+		./is_able $i g r
+		fi
+	done
+
+# end of script

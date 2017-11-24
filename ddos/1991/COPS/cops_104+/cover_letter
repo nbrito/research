@@ -1,0 +1,136 @@
+
+ Women and men of the net, greetings...
+
+  Gone are the days when COPS was sleek, trim, and new.  It has joined
+the ranks of modern software -- bloated, overladen with potentially
+useless features, overhyped and underloved.  Here are the latest changes,
+additions, and bug fixes to COPS -- this brings it up to version 1.04, for
+those who care.  I skipped version 1.03 because the beta copy that I put
+out is so hopelessly out of date that it didn't make a lot of sense to
+continue with 1.03.  Anyway, my personal stash (the latest copy) should
+be available via anon-ftp at archive.cis.ohio-state.edu (128.146.8.52),
+in ~pub/cops/1.04.  In this header, I'll go through some thoughts,
+background notes, then finally get to the changes made, so if you don't
+want to listen to me, just unpack the shar files, read the README file,
+follow instructions, and you should be ready to roll.
+
+  For those who don't know, COPS is a static security checking tool that
+checks common (mostly) procedural problems of a Un*x system.  It basically
+takes a snapshot of a system, and then generates a report of it's findings.
+On a purely empirical basis, over the years it has successfully discovered
+problems that could compromise root on more than 3/4 or more of the systems
+I've run it on; of course, the idea here is not to break root, but to let
+someone fix the problems it shows.  Note, of course, that it gives info
+indiscriminately, to whoever runs it.  Decide if you do or don't want to
+learn about the information it can give about your system, but remember --
+someone else probably already has it.
+
+  After writing COPS, I started working for CERT.  I had always suspected,
+but didn't know, that most breakins were caused by pretty trivial problems...
+now I *know* it's true (or at least the ones we've found out about :-)).
+In the breakins I've seen while working for CERT, using COPS probably could
+have prevented 60-75% of them.  The most common problems?  Poor passwords,
+guest accounts, accounts with no passwords, and improperly managed systems
+(+ in host.equiv, poorly set up remote daemons, etc.)  Interestingly, to
+me at least, I wrote the original intro to COPS over two years ago.
+How times don't change... I was worried this would be fairly obsolete soon,
+but it looks like it'll be good at least for another few years.
+
+   The kit is broken into modules, each one driven by a master shell script;
+you can usually get it running within 30 minutes or less if you've never used
+it before (5 or 10 if you only scan the README); if you've used it in the
+past, you can set it up on a new machine in a minute or two.  With no
+modifications, it usually takes somewhere 2 to 30 minutes to generate a
+report; however, the password cracking program can add lots of time to this,
+depending on the options.  There is also a SUID finder, which can also take
+a long time (hours) to run, since it does a "find" on "/".  There's a new
+option that tells it not to mail a report if the results are the same as
+the last report, so you can just stuff it into cron and wait until a report
+comes around.  Of course, if someone breaks in, changes cron, and you just
+rely on COPS, then you're f*cked anyway.  Use it as a tool, not as a crutch.
+
+   Ok, changes... The main thing is that the whole thing (more or less)
+has been ported to perl; both shell and perl versions are included and
+will probably be supported in the future.  They have various differences,
+some intentional, some not, but I have attempted to keep them as similar
+as possible.  Tom Christiansen did a large part of the work on this part
+(thanks again, tom!), but there were several people involved in the perl
+work... see "README.perl" and the perl subdirectory for more info.  Warning;
+the perl version, for a variety of reasons (mostly detailed in "README.2.pl"
+is not as robust as the shell version.
+
+  There is one new major module here -- "bug.chk" (all of this is
+in the subdirectory "bugs").  This takes most of the CERT security
+announcements (those relating to bugs and vulnerabilities, at least) and
+attempts to see if your host might have the problem.  Some problems come
+up with a good way to check for these problems, not the least of which is
+that I am taking a very conservative route (i.e.  probably not a very good
+way of handling it) to see if a host has bugs.  See the man page for
+"bug.chk" for more details.
+
+  In addition, there is a new program, a kind of "personal-cops",
+called "checkacct" (found in the directory of the same name.)  This 
+interactive program does a variety of checks, some done in cops, some not
+(searching for individual S[UG]ID files, writable user directories,
+.rhosts parsing/checking) that can be run by an individual to check
+their account security.  This was done by some friends at purdue,
+most notably shabbir safdar.
+
+  Here are the rest of the major changes I can think of:
+
+-- a new program, "carp" (look in the "carp" subdirectory), looks at
+COPS output from several machines (presumably from your network) and
+attempts to give a kind of scoresheet of what it found wrong with your
+system, with weighted values.  It outputs either standard text, postscript,
+and has an X (as in windows, not that you'll have to be 18 to look at)
+previewer.  Like all new features, I'm not sure if this is particularily
+useful (perhaps more for impressing management with pretty pictures, but
+it might be good for seeing trends or interesting tidbits not otherwise
+discernable), but time (or, rather, you, the users) will tell.  Let me
+know what you think.  This is *ONLY* useable with "cops -v" output!
+
+-- a filter for COPS (originally named by default "cops_filter") makes
+it possible to get rid of those pesky "Warning!  /dev/printer is _World_
+writable!" messages.  Use "cops -f cops_filter" to use.
+
+-- Code has been cleaned up, tons of flags/options have been added to make
+things easier to use, documentation has been updated.
+
+-- a fast crypt is included, stolen right from that wonderful password
+cracker everyone knows and loves, Crack.  I'm not about to say you
+should use my password cracker instead of crack -- if you can use crack,
+use it!  However, it might prove to be a easy/painless alternative if
+you decide that crack doesn't fit your time constraints or something.
+You can try uncommenting lines 91 and 92 in the makefile for this.
+
+-- a more powerful version of perl kuang is included.
+
+-- a new directory, "extra_src" has been created, and contains a few
+miscellaneous programs that couldn't quite fit in with the rest of this
+release, but are fairly important or useful in their own right.  Some
+of these programs will go into future versions of COPS.  There is a
+README file that briefly describes the programs there.  BTW, if you use
+uucp, make sure you look here!
+
+-- two mini-papers have been put in the "extensions" directory.  One
+is a very useful article on how to harden your uucp site, the other
+is a good paper on how to write a SUID program correctly.
+
+   The easiest thing to do is unpack everything, scan the README file,
+read either the README.shell or README.perl file (depending on which one
+you'd like to use), and finally look at the README.final file.  Alternately,
+you can read the "quick_start" file if you're impatient.  If you're not totally
+sure that the pathnames to the executables are correct, then you should
+run "reconfig" (if you have a sysV based machine, or are just suspicious
+of your system, you should do this anyway.)  After all that, just
+type "./cops", and blast off.  Finally, to steal an ending from the README
+file of a few years ago...
+
+  "So good luck, and I hope you find COPS useful as we plunge into UNIX
+of the 1990's.
+
+   dan farmer
+   January 31, 1989"
+
+ -- dan
+   March 6, 1992

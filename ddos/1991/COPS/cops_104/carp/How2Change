@@ -1,0 +1,11 @@
+
+  To add or delete checks to the base model, you'll need to add or delete
+two lines near the bottom of carp.table (see comments in that file as
+to exact instructions.)  In addition, you'll also have to add/delete the
+check to "carp" too; see comments in that source file for more info.  Both
+files use "bug.chk" as a sample program you may wish to add in the check.
+
+  Why would you want to add/delete stuff?  Well, bug.chk isn't there
+by default, and other checks may or may not apply.  Use your own judgment,
+as always...
+

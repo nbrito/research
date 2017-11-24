@@ -1,0 +1,137 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  Usage: misc.chk.pl [-d]
+#
+# composer@chem.bu.edu
+# based on original shell script
+#
+#  This shell script checks a variety of miscellaneous potential
+# security problems that really don't belong anywhere else.
+#
+#  Right now this looks for to see if tftp & rexd are enabled,
+# to check if the uudecode alias is in the mail alias file and
+# not commented out, and if uudecode can create a SUID file.
+#
+#  Mechanism:  tftp.chk will try to get /etc/motd from the localhost.
+# Not much too it; just connect and try to get it.  For rexd, just
+# look in the /etc/inetd.conf file to see if it's enabled (e.g., not
+# commented out).
+#
+#  Warning:  it may take a minute or so to complete the test, since tftp
+# might take a while to get the test file, or it may take a while to time
+# out the connection (which is what usually happens if the test fails.)
+
+package main;
+require 'chk_strings.pl';
+require 'fgrep.pl';
+require 'hostname.pl';
+
+if ($ARGV[0] eq '-d') {
+    #$chk_strings'debug = 1;  # verbose debugging
+    $misc_chk'debug = 1;
+    shift;
+}
+
+die "Usage: $0 [-d]\n" if @ARGV > 0;
+
+
+$TFTP="/usr/ucb/tftp" unless defined $TFTP;
+$UUDECODE="/usr/bin/uudecode" unless defined $UUDECODE; 
+
+package misc_chk;
+
+# look for uudecode alias in $aliases
+#$aliases="/usr/lib/aliases" if -f "/usr/lib/aliases";
+$aliases = ( -f '/usr/lib/aliases' && '/usr/lib/aliases' )
+	|| ( -f '/etc/aliases'	   && '/etc/aliases' )
+	|| 'BOGUS';
+$uu="decode";
+
+# look for rexd in $inetd; this file could be "/etc/servers", too!
+if (!defined($inetd)) {
+	$inetd = ( -f '/etc/inetd.conf' && '/etc/inetd.conf') ||
+		 ( -f '/etc/servers' && '/etc/servers') ||
+		 'BOGUS';
+	}
+$rexd="rexd";
+
+# tmp and target file (for tftp test)
+$target="/etc/motd";
+$tmp="./tmp.$$";
+
+# should probably generalize routine for chking for pats in file at some point
+
+#  Read from $inetd to see if daemons are running.
+# Comments are lines starting with a "#", so ignore.
+# Checking for rexd:
+#
+print "Checking for $rexd in $inetd\n" if $debug;
+if (@matches = grep(!/^\s*#/, &'fgrep($inetd, $rexd))) {
+    print "Warning!  $rexd is enabled in $inetd!\n";
+}
+
+# Check to see if anything started inetd.conf is writable;
+print "Checking for writable dirs in $inetd\n" if $debug;
+&'chk_strings($inetd);
+
+# Checking for uudecode alias:
+print "Checking for $uu alias in $aliases\n" if $debug;
+print "Warning!  $uu is enabled in $aliases!\n"
+    if &'fgrep($aliases, "^\s*$uu:");
+
+# uucode stuff -- thanks to pete shipley...
+print "Checking uudecode out\n" if $debug;
+if (-x $'UUDECODE) {
+    open(UU, "| $'UUDECODE");
+    print UU <<EOD_;
+begin 4755 ./foobar.$$
+ 
+end
+EOD_
+    close(UU);
+}
+
+&'is_able($'UUDECODE,'s','s');	# check if uudecode is SUID
+$is_able'silent = 1;
+print "Warning!  $'UUDECODE creates setuid files!\n"
+   if &'is_able("./foobar.$$",'s','s');
+$is_able'silent = 0;
+unlink("./foobar.$$");
+
+#  The rest is all for tftp stuff:
+#
+#   Get the local hostname...
+$hostname = &'hostname;
+
+#   Do the dirty work -- check tftp for the localhost, if it was found;
+# this might take a bit, since tftp might have to time out.
+
+print "Checking out tftp on $hostname\n" if $debug;
+if (-x $'TFTP) {
+    open(SAVOUT, ">&STDOUT");	# suppress file not found
+    open(SAVERR, ">&STDERR");	# it's not as bad as it looks..
+    open(STDOUT, ">/dev/null") || die "Can't redirect stdout: $!\n";
+    open(STDERR, ">&STDOUT") || die "Can't dup stdout: $!\n";
+    close(STDOUT); close(STDERR);
+    open(TFTP, "| $'TFTP");
+print TFTP <<_XXX_;
+connect $hostname
+get $target $tmp
+quit
+_XXX_
+    close(TFTP);
+    open(STDERR, ">&SAVERR"); close(SAVERR);
+    open(STDOUT, ">&SAVOUT"); close(SAVOUT);
+} # > /dev/null 2> /dev/null
+
+print "Warning!  tftp is enabled on $hostname!\n" if -s $tmp;
+unlink $tmp;
+
+# end of script
+
+1;

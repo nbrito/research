@@ -1,0 +1,108 @@
+
+  Brief Info-Capsule of COPS programs and files (release 1.02):
+-------------------------------------------------------------------------
+   Programs and some important files that are included in this release:
+-------------------------------------------------------------------------
+
+   cops			A driving shell script for most of the programs
+			below.  It tosses output to /dev/null except
+			what it wants, and mails any pertinent output
+			to the users $SECURE_USER listed in the COPS file.
+			Usage: cops
+
+   suid.chk		Checks the system for _changes_ in SUID status.
+			This is the one program that should be run as
+			superuser.  You must first run a find on all
+			SUID programs from the / directory, and then use
+			that as a "stop file" (see man page below.)
+   suid.man		Manual for COPS.suid
+   findsuid.stop	The database originally set up with "find".
+			Usage: suid.chk
+
+
+   makefile		A makefile for programs enclosed.
+			Type "make" to make 'em (see Makefile for more
+			information.)
+
+   chk_strings		Checks for writable paths/files in a file.
+			Usage: chk_strings <file>
+
+   cron.chk		Checks for writable paths/files in /usr/lib/crontab.
+			Usage: cron.chk
+
+   dev.chk		Checks /dev/*mem and all devs listed by "/etc/fstab"
+   			command for world read/writability (respectively.)
+			In addition, checks a small group of files for
+			non-world readability (/usr/adm/sulog, etc.)
+			Usage: dev.chk [-g]
+			(-g checks for group read/writability as well)
+
+   dir.chk		Checks directories listed in "dirs.chklst"
+			for writability.
+   dir.chklst		List of directories for above.
+			Usage: dir.chk [-g]
+			(-g checks for group writability as well)
+
+   file.chk		Checks files listed in "files.chklst"
+			for writability.
+   file.chklst		List of directories for above.
+			Usage: file.chk [-g]
+			(-g checks for group writability as well)
+
+   group.chk		Checks /etc/group for non-unique groups, invalid
+			fields, non-numeric group ids, etc.
+			Usage: group.chk
+
+   home.chk.c		Checks all users home-dirs listed in /etc/passwd
+			for bad modes (basically world write, strangeness).
+			Usage: home.chk
+
+   rc.chk		Checks all commands and paths listed in /etc/rc*
+			for writability.
+			Usage: rc.chk
+
+   reconfig		Changes the paths for the programs used in COPS.
+			Example: changes /bin/awk --> /usr/bin/awk
+   file.paths		Data file for reconfig (created by reconfig.)
+			Usage: reconfig
+
+   is_readable		Checks a file/directory and determines readability
+			status; returns a "0" if is readable, a "1"
+			otherwise.
+			Usage: is_readable [-g] filename
+   
+   is_writable		Checks a file/directory and determines writability
+			status; returns a "0" if is writable, a "1"
+			otherwise.
+			Usage: is_writable [-g] filename
+   
+   kuang		The U-Kuang expert system.  Read the accompanying
+			instructions in kuang.man.  It basically checks
+			to see if a given user (by default root) is
+			compromisible, given that certain rules are true
+			(i.e. /etc/passwd writable gives root access, etc.)
+			Usage: kuang
+   init_kuang		Contains the targets for the kuang system.
+
+   misc.chk             Checks various miscellaneous things -- tftp, decode
+			alias, rexd.
+			Usage: misc.chk
+
+   passwd.chk		Checks /etc/passwd for non-unique uids, invalid
+			fields, non-numeric user ids, etc.
+			Usage: passwd.chk
+
+   pass.chk		Checks /etc/passwd for crummy passwords.
+   pass.words		Data file for pass.chk; use "pass -w pass.words"
+   			to use them. Defaults to checking for the users' id.
+			Usage: pass.chk [-flags]
+
+   pass_diff.chk	A wrapper for pass.chk.  Only checks passwords in
+			accounts that have changed, though.
+			Usage: pass_diff.chk [-flags]
+
+   user_chk.c		Checks all users listed in /etc/passwd; looks at
+			.login/.cshrc/.rhosts/.profile, etc., for bad 
+			modes (basically world write, strangeness).
+			Usage: user_chk
+

@@ -1,0 +1,106 @@
+BEGIN { test = 0 }
+
+# assumes all checks print out something like:
+#
+# "**** foo.chk ****"
+#
+# when the verbose flag is true
+#
+/^\*\*\*\*/ { check = $2 }
+
+{if (test == 1) testing = $0 " " }
+
+#
+#  IMPORTANT - exception list!
+#
+#  Be very careful of regular expressions and other awk stuff...
+# ()'s, *'s, ?'s, /'s, etc. are all trouble.  Backquote if in doubt.
+#
+#  Sample list:
+#
+#  Hassled by mail warning?
+# /Warning!  \/usr\/spool\/mail is _World_ writable!/ {next}
+#
+#  Brave... or stupid?
+# _World_ writable!/ {next}
+#
+#  Kill off YP messages...
+#  /YG/ {next}
+#  /YP/ {next}
+
+#
+# START THE CHECKING
+#
+# level 0 checks:
+#
+/A "+" entry in/ {print FILENAME, check, testing "0"; next }
+# Assume bugs are all bad :-)
+/ould have a hole\/bug/ {print FILENAME, check, testing "0"; next }
+# kuang telling us we're in deep yoghurt, or something like that...
+/DO ANYTHING/ {print FILENAME, check, testing "0"; next }
+# writable password file really sucks:
+/\/etc\/passwd.*_World_/ {print FILENAME, check, testing "0"; next }
+
+# level 1 checks:
+#
+/uudecode is suid!/ {print FILENAME, check, testing "1"; next }
+/rexd is enabled in/ {print FILENAME, check, testing "1"; next }
+/User.*home directory.*is mode/ {print FILENAME, check, testing "1"; next }
+/User.*:.*is mode/ {print FILENAME, check, testing "1"; next }
+/tftp is enabled on/ {print FILENAME, check, testing "1"; next }
+/uudecode is enabled in/ {print FILENAME, check, testing "1"; next }
+/Password file, line.*is blank/ {print FILENAME, check, testing "1"; next }
+/Password file, line.*nonnumeric user id:/ {print FILENAME, check, testing "1"; next }
+/(in cron_file) is World writable!/ {print FILENAME, check, testing "1"; next }
+/File.*(inside root executed file) is _World_ writable!/ {print FILENAME, check, testing "1"; next }
+/File.*(in .*) is _World_ writable!/ {print FILENAME, check, testing "1"; next }
+/Directory.*is _World_ writable and in roots path!/ {print FILENAME, check, testing"1"; next }
+/ftp's home directory should not be/ {print FILENAME, check, testing "1"; next }
+/and.*ass.*are the same/ {print FILENAME, check, testing "1"; next }
+/should be mode 555/ {print FILENAME, check, testing "1"; next }
+/should be be empty/ {print FILENAME, check, testing "1"; next }
+
+# level 2 checks:
+#
+/is _World_ writable!/ {print FILENAME, check, testing "2" }
+/Duplicate Group(s) found in/ {print FILENAME, check, testing "2"; next }
+/Group.*has duplicate user/ {print FILENAME, check, testing "2"; next }
+/Group file, line.*onnumeric group id:/ {print FILENAME, check, testing "2"; next }
+/Group file, line.*blank/ {print FILENAME, check, testing "2"; next }
+/Group file, line.*does not have 4 fields:/ {print FILENAME, check, testing "2"; next }
+/Group file, line.*nonalphanumeric user id:/ {print FILENAME, check, testing "2"; next }
+/Group file, line.*group has password:/ {print FILENAME, check, testing "2"; next }
+/Password Problem: Guessed:/ {print FILENAME, check, testing "2"; next }
+/Password Problem: null passwd:/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*no password:/ {print FILENAME, check, testing "    2"; next }
+/Duplicate uid.* found in/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*user.*has uid = 0 and is not root/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*nonalphanumeric login:/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*invalid login directory:/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*nonnumeric group id:/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*negative user id:/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*does not have 7 fields:/ {print FILENAME, check, testing "2"; next }
+/Password file, line.*uid.*chars/ {print FILENAME, check, testing "2"; next }
+/User.*home directory bar is not a directory!/ {print FILENAME, check, testing "2"; next }
+/NFS file system.*exported with no restrictions!/ {print FILENAME, check, testing "2"; next }
+/Root's umask set to/ {print FILENAME, check, testing "2"; next }
+/is in roots path/ {print FILENAME, check, testing "2"; next }
+/uudecode creates setuid files!/ {print FILENAME, check, testing "2"; next }
+/ROOT owned SUID file/ {print FILENAME, check, testing "2"; next }
+/UserSUID file is type/ {print FILENAME, check, testing "2"; next }
+# ftp.chk's...
+/should be in/ {print FILENAME, check, testing "2"; next }
+/should exist/ {print FILENAME, check, testing "2"; next }
+/Need user.*for anonymous ftp to work/ {print FILENAME, check, testing "2"; next }
+/Home directory for ftp doesn't exist/ {print FILENAME, check, testing "2"; next }
+/and.*oup.*are the same/ {print FILENAME, check, testing "2"; next }
+/File.*is missing/ {print FILENAME, check, testing "2"; next }
+/should be owned by.*or/ {print FILENAME, check, testing "2"; next }
+/Incorrect permissions on "ls" in/ {print FILENAME, check, testing "2"; next }
+/Incorrect permissions on "passwd" in/ {print FILENAME, check, testing "2"; next }
+/Incorrect permissions on "group" in/ {print FILENAME, check, testing "2"; next }
+/Anon-ftp directory.*is World Writable/ {print FILENAME, check, testing "2"; next }
+
+#
+#  PRINT *SOMETHING* if can't find anything... just for the result file...
+{if (check != "") print FILENAME, check, testing "3"; next }

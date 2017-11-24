@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+#  DEC module for bug/vulnerability checking
+#
+ECHO=/bin/echo
+TEST=/bin/test
+LS=/bin/ls
+LS_OPTS="-slagL"
+ARCH=/bin/arch
+GREP=/bin/grep
+AWK=/bin/awk
+BUG="$AWK -f ./bug_cmp"
+
+if $TEST ! -f ./bug_cmp ; then
+	$ECHO "Must have bug compare module, ./bug_cmp, to run..."
+	exit 2
+	fi
+# what is the date?  We just need the month and year...
+# Format: Fri Feb  7 14:16:55 PST 1992
+if $TEST $# -eq "2" ; then
+        real_date="$1 $2"
+else
+        real_date=`$DATE | $AWK '{print $2, $NF}'`
+        fi
+
+# chroot
+#
+#   I think you could add a check to see if this was suid root, but
+# I can't remember...
+#
+# Ultrix 4.0 and 4.1
+chroot="/usr/bin/chroot"
+fix_date="1 May 1991"
+cert_advis="CA-91:05"
+
+if $TEST -f "$chroot" ; then
+	cur_date=`$LS $LS_OPTS $chroot | $AWK '{print $8, $7, $9}'`
+	$ECHO $chroot $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# /usr/bin/mail
+#
+# Fixed in 4.2
+mail="/usr/bin/mail"
+fix_date="23 Aug 1991"
+cert_advis="CA-91:13"
+
+if $TEST -f "$mail" ; then
+	cur_date=`$LS $LS_OPTS $mail | $AWK '{print $8, $7, $9}'`
+	$ECHO $mail $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# finis

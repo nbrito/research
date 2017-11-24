@@ -1,0 +1,52 @@
+
+
+    For additional information, help on various subjects, etc., there
+are various resources available on the net.  By no means is this list
+exclusive:
+
+   alt.security -- high noise, but has some real gems in here.  If
+you had to read one newsgroup/mailing list for security, this is it.
+If you don't read it, you're endangering your system by not keeping
+up on the latest methods used to attack and defend systems...
+
+   comp.risks -- a moderated newsgroup that talks about the risks of
+computing, often discussing computer security.
+
+   comp.unix.wizards -- a high noise free-for-all group that has
+some choice tidbits of information.  Now that this is gone, you might
+check out comp.unix.esoterica, or any of the other weird new names.
+*I* voted to keep comp.unix.wizards :-)
+
+   Security Mailing list -- moderated by Neil Gorsuch, fits and bursts
+of information that can be gotten nowhere else.  Hard to join the elite
+who are on the list, and a long wait for acceptance.  Security programs
+can be snarfed off of this list at times.
+
+   CERT -- the Computer Emergency Response Team has a mailling list
+devoted to the development of security tools.  As quoted from
+their initial mailing:
+
+"The Computer Emergency Response Team Coordination Center (CERT/CC) has
+established a new Internet mailing list named CERT-TOOLS.  This new
+mailing list is now available.
+
+The purpose of this new mailing list is to encourage the exchange of
+information on security tools and security techniques.  The list
+should not be used for security problem reports.
+[...]
+Mailing list problems, additions, changes, and deletions requests should
+be sent to:
+        cert-tools-request@cert.sei.cmu.edu
+
+[...]
+CERT/CC is planning to collect many of the tools and will make the
+archive available via anonymous ftp on the cert.sei.cmu.edu system.
+A trusted archive service will also be available for tools not intended
+for general public usage.
+
+All mail intended to be redistributed should be mailed to:
+	cert-tools@cert.sei.cmu.edu
+
+Computer Emergency Response Team
+Email: cert@cert.sei.cmu.edu
+Telephone: 412-268-7090 (answers 24 hours a day)"

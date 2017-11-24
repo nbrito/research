@@ -1,0 +1,36 @@
+.TH PASS_DIFF.CHK 1 "Jan 4, 1991"
+.UC 4
+.SH NAME
+pass_diff.chk  \- Checks passwords of accounts that have changed their passwords
+since the last run.
+.SH SYNOPSIS
+.B pass_diff.chk
+[
+options
+]
+.SH DESCRIPTION
+.I pass_diff.chk
+is a front end for the
+.I pass.chk
+program.  All it does is run a diff on the last password file checked, and
+pass the accounts with changed passwords to
+.I pass.chk,
+along with any options it is called with.  It will not run
+.I pass.chk
+at all if no difference was found.
+.PP
+.SH FILES
+.EX 0
+old_passwd
+passwd.diff
+pass.chk
+.EE
+.SH "SEE ALSO"
+pass.chk(1)
+.SH BUGS
+It calls
+.I pass.chk
+with the -P option in order to pass the difference from the last run.  So
+calling
+.I pass_diff.chk
+with the -P option is pointless.

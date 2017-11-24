@@ -1,0 +1,8 @@
+
+  On some sequents, I don't know why, but you'll want to have this
+line uncommented out in the makefile (line 25):
+
+SEQFLAGS   = -lseq
+
+  Also, in "src/crc_check.c", you may need to uncomment lines 36-38.
+

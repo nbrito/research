@@ -1,0 +1,847 @@
+.ps 12
+.vs 12
+.PH ````
+.nr W 80
+.in 0
+.ce 3
+\fBKuang: Rule-Based Security Checking\fP
+Robert W. Baldwin
+MIT, Lab for Computer Science Programming Systems Research Group
+
+.PP
+The security of data in a particular computer depends both on the
+integrity of the computer's protection mechanism and on the consistent
+uses of those mechanisms by the users of that computer.  Software
+verification and specification technology addresses the integrity
+problem, but very little has been done to insure that the protection
+mechanisms are being used consistently.  This paper describes a
+rule-based system that finds inconsistencies in the set of protection
+decisions made by the users of an information system.
+
+.PP
+\fBIntroduction\fP
+.PP
+The trend in commercial computer systems has been to increase the the
+number of mechanisms that allow users to execute commands and to
+increase the number of mechanisms that allow users to share
+information.  All of these mechanisms must be considered to be part of
+the protection system.  For example, if users can specify a set of
+commands that will be executed automatically every night, then the
+database that contains these commands, and the program that processes
+the database must be considered part of the protection system.  Even
+if the program has been certified to work correctly, the access list
+for the command database and the set of privileges available to the
+processing program must be considered to be part of the protection
+configuration \**
+.FS
+The protection configuration is a subset of the
+access matrix.  The access matrix specifies how each user can access
+each object.  I use the term
+.ul
+protection configuration
+to refer to the portion of the access matrix concerning the objects 
+used by any piece of the protection system.
+.FE
+of that computer.  The problem
+considered in this paper is ensuring that the protection configuration
+is consistent with the user's security goals.
+.PP
+The goal of flexible information processing and sharing makes
+computers more useful, but that goal also makes protection systems
+larger and more complex.  The large number of interactions between the
+pieces of the protection system makes it hard for the users to make
+protection decisions correctly.  This is particularly true when parts
+of an information system are managed by novices (e.g., personal work
+stations).  Users need automated tools for analyzing the interactions
+between the pieces of a large protection system.
+.PP
+This paper describes a class of systems, called Kuang-type \**
+.FS
+This
+project was inspired by William Gibson's book
+.ul
+Neuromancer
+, which won the 1984 Nebula award for best science fiction novel.
+Gibson's book describes innovative ways to visualize the structure of
+information systems.  In particular, it describes a program called a
+Kuang Grade Mark 11 Ice Breaker (
+.ul
+ice
+refers to the mechanisms used
+to protect access to information).  The program described in this memo
+is a greatly simplified version of that ice breaker program.
+.FE
+systems, for analyzing large protection configurations.  
+This class of systems is illustrated by a Simple Unix Kuang program
+(SU-Kuang) that answers a question about a Unix protection
+configuration.  The question is "what if an attacker had access to a
+given set of privileges (groups), could that attacker become
+super-user?".  SU-Kuang allows a system manager to perform a simple
+what-if analysis of a protection configuration, and in this mode it
+helps the manager make protection decisions.  A typical use of SU-Kuang
+is to run it periodically to see if access to the group, World, (i.e.,
+minimum privileges) is sufficient to become super-user.  In this mode
+Kuang functions as an automatic security checker.  SU-Kuang is just one
+possible tool for helping users cope with the complexity of a large
+protection system.  Some other desirable tools are mentioned at the
+end of this paper.
+.PP
+The heart of the SU-Kuang program is a set of rules that describe the
+Unix (BSD4.2) protection system from the point of view of an
+attacker.  For example, one rule says that if an attacker can write
+the file /etc/passwd (the authentication database), then that attacker
+can become super-user.  To decide whether to use this rule, an
+attacker would examine the protection configuration of the target
+machine to see what privileges are required to write the file
+/etc/passwd.  Using similar rules, SU-Kuang can answers the what-if
+question by performing a backward chaining search of the protection
+configuration (see figure
+.ul
+goal-tree
+).  Given a goal, like become
+super-user, SU-Kuang examines all the rules to produce a list of
+subgoals that would be sufficient to meet its goal.  Recursively, each
+of the subgoals can be processed to produce a list of sub-subgoals.
+The process continues until there are no new goals.  At each step, if
+a goal can be achieved using the initial privileges of the attacker,
+SU-Kuang prints out a message that describes the sequence of steps
+that leads from the initial goals to the target goal.
+.sp
+.sp
+.nf
+             Become Super-User
+             /                     \\
+            /                       \\
+   Replace /etc/passwd      Write /.rhosts
+        /        \\                      .
+       /          \\                    . .
+ Become Staff   Write /etc
+     .                                   .
+    . .                                 . .
+   .   .                               .   .
+
+
+.fi
+(Example of a goal-tree used by SU-Kuang.  The nodes of the tree
+are goals desired by an attacker.
+The children of each node are the subgoals that are sufficient to
+achieve the parent goal.  The goal-tree used by SU-Kuang is a pure
+OR-tree.  Any one of the subgoals is sufficient to grant the parent goal.)
+
+.PP
+Notice that SU-Kuang does not find holes in the Unix operating system.
+It finds mistakes in the protection configuration.  For example,
+SU-Kuang found a security hole on an MIT machine that resulted from
+two incorrect decisions about who should have write access to start-up
+command files.  SU-Kuang points out holes by describing the sequence
+of steps used to exploit the hole.  The sequence SU-Kuang printed was:
+"member MIT, write ~tom/.cshrc, member A_STAFF, write ~dick/.login,
+member STAFF, write /etc, replace /etc/passwd, become ROOT".  This
+means that the attacker had access to the group MIT, which all users
+are in.  The MIT group had write access to one of the start-up command
+files executed automatically when the user Tom (not his real
+name) logged in.  Anyone in the MIT group could add commands to Tom's
+start-up command file, and have these commands executed with Tom's
+privileges next time Tom logged into the machine.  Tom is a member of
+the Athena Staff group, which is not particularly privileged.  However,
+the A_STAFF group does have write access to one of Dick's start-up
+command files, and Dick is a member of the Staff group, which is one
+of the most privileged groups.  In fact, members of the staff group
+can write the directory that contains the password database.  Write
+access to the directory allows staff members to delete and recreate
+the password database.  By creating a password database that has a
+known password for the super-user account, members of the staff group
+can acquire super-user privileges.
+.PP
+My experience running SU-Kuang is that these mistakes are created
+periodically because the users do not understand the interactions
+between the numerous pieces of the Unix protection system.  However,
+it is not complicated to write a program that can explore all the
+possible interactions.  SU-Kuang itself is a simple program, and
+generating the rules that describe the pieces of the protection system
+is also easy (see section
+.ul
+rules
+).  The simplifying idea is to
+describe the protection system in terms of how an attacker can
+manipulate it.  Using this framework, performing the analysis is easy.
+.PP
+I consider any system that uses attacker-oriented rules to be a
+Kuang-type system.  The remainder of this paper describes the Unix
+Kuang system I built to determine whether a given set of privileges is
+sufficient to become super-user.  The nature of the rules and the
+process used to deduce them is illustrated in section
+.ul
+rules
+, which lists the set of rules used to model Unix.  The model used by
+SU-Kuang was incomplete in several ways, so section
+.ul
+extensions
+describes some of the features of Unix that were not
+modeled.  The incomplete model turned out to be very effective at
+finding security holes, so section
+.ul
+experience
+presents the
+lessons learned from running SU-Kuang on the computers at MIT.  The last
+section discusses other kinds of Kuang systems and their benefits.
+.PP
+\fBRules to model Unix\fP
+.PP
+The first step in generating attacker-oriented rules is to determine
+the types of goals that are relevant to an attacker of the target
+system.  These goal types can be deduced from the basic protection
+model of the operating system, so before presenting the rules, the
+Unix protection model is summarized.  The second step is to make a
+list of the pieces of the protection system and to examine each one in
+terms of the goals an attacker could achieve using each piece.
+The pieces of the Unix protection system that were included in the
+prototype's model are listed below along with the rules used to
+describe each piece.
+.PP
+\fBSummary of the Unix protection model\fP
+.PP
+The Unix protection model concerns processes and files.  Associated
+with each process is one user identifier UID, and one or more group
+identifiers (GIDs).  The UID and GIDs are generally inherited when one
+process forks another.  One exception is that the super-user (UID =
+0) can change the UID and GIDs of his current process.  The other
+exception is that a user can associate a UID and GID with a program
+stored in the file system.  When anyone runs such a program, the
+process executing that program will run with the stored user and/or
+group IDs.
+.PP
+Associated with each file is one UID, one GID, and nine permission
+bits.  The nine permission bits are divided into three groups to
+specify the read, write, and execute rights for the file's owner
+(specified by the UID), for the members of the file's group (specified
+by the GID), and for all others (the World group).  Directories are a
+special case of files.  For a directory, read permission allows a
+process to list a directory, write permission allows a process to
+create or delete files in that directory, and execute permission
+allows a process to resolve names in that directory even if the
+directory is unreadable.
+.PP
+When a process accesses a file or directory it is given either owner,
+group, or world access permissions, but only one of those three.
+Owner access is granted if the process and file UIDs match; Group
+access is granted if the process and file UIDs are different but the
+file's GID is in the list of GIDs for the process; otherwise, World
+access is granted.  The super-user has full access to all files and
+directories.  Only the owner or the super-user can change the access
+permissions of a file.
+.PP
+\fBThree types of attacker goals\fP
+.PP
+The Unix protection model deals with users, groups, and files, so
+those are the three types of goals that will concern an attacker.  The
+canonical user goal is "execute one of the attacker's programs with a
+particular UID".  For example, the top level goal is "execute a
+program chosen by the attacker under UID zero (i.e., as
+super-user)".  It is important that the attacker be able to specify
+the program to be executed with super-user privileges.  The login
+program runs as super-user, and anyone can run it.  The attacker wants
+to specify the computation performed with super-user privileges.  One
+scheme for getting access to super-user privileges is to write the
+command file that is executed automatically when the super-user logs
+in.
+.PP
+Group ID goals are similar.  The canonical form of a GID goal is
+"execute an arbitrary program with a particular group ID".  One
+possible way to achieve this goal is to add the attacker's UID to the
+list of users allowed to access the desired group.  This authorization
+database is stored in the file /etc/group.
+.PP
+The canonical file goal is "obtain read/write/replace access to a particular
+file".  Achieving a file goal usually involves getting access to a
+particular group or user ID.  However, if the attacker wants to replace
+a file, one way to do that is to delete the old file and create a new
+one.  That can be done if the attacker has write or replace access to
+the directory that contains the target file.
+.PP
+In summary, SU-Kuang considers three types of goals for an attacker of
+Unix: user, group, and file.  Each type of goal can lead to subgoals
+of the same or different type.
+.PP
+\fBSome pieces of the Unix protection system\fP
+.PP
+This section presents the rules that describe many of the pieces of the
+Unix protection system.  Section
+.ul
+extensions
+describes the
+significant pieces that were left out of the prototype's model.  The
+pieces of the Unix protection system include all programs, like 
+.ul
+login,
+that have the set user/group ID property.  It also  includes programs
+like 
+.ul
+cron
+(cron executes commands in the future) that
+are forked off by processes that run with special user or group IDs.
+Finally, programs like 
+.ul
+sh
+(a command interpreter) must be included
+in the protection system because when they are started they execute
+commands from a file using the privileges of the user invoking them.
+.PP
+Each rule describes how a piece of the protection system can be
+used by an attacker to achieve a desired goal in terms of the ability
+to achieve a subgoal.  The method used to achieve a goal given the
+subgoal may require that some condition be true.  For that reason the
+rules include a condition that can be tested to decide if the subgoal
+should be pursued.  The conditions are general predicates on the state
+of the protection configuration.  For example, the rule that says that
+an attacker can become the super-user by writing the password file,
+has the condition that the password file is writable by someone other
+than the super-user.
+.PP
+In the rules listed below, the notation \*Q/d/f\*U means a
+pathname for the file \*Qf\*U in the directory with pathname \*Q/d\*U.
+The goal, \*Qbecome U\*U, means to execute an arbitrary command under the
+user ID \*QU\*U.  The goal, \*Qmember G\*U, means the same thing for
+group \*QG\*U.  The goal, \*Qwrite /d/f\*U, means being able to write the
+file \*Q/d/f\*U.  Finally, \*Qreplace /d/f\*U, means being able to write
+\*Q/d/f\*U or being able to delete \*Q/d/f\*U and recreate it.
+.PP
+\fBThe file system\fP
+.PP
+Most programs in the protection system use the file hierarchy to
+locate their databases.  If the file hierarchy can be modified, then
+the protection system can be tricked into using the wrong database
+files.  The file hierarchy itself must be treated as one of the
+main databases in the protection configuration.
+.PP
+The notation \*QOwner(/d/f)\*U refers to the UID associated with the
+file \*Q/d/f\*U.  Similarly \*QGroup(/d/f)\*U refers to the file's GID.
+The expression \*QGroupWrite(/d/f)\*U is true if the file \*Q/d/f\*U can
+be written by the members of \*QGroup(/d/f)\*U.  The expression
+\*QWorldWrite(/d/f)\*U is true if the file can be written by members of
+the World group (i.e., all users).
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal/Note>
+.PP
+Replace /d/f Write /d/f
+.PP
+Replace /d/f Replace /d\**
+.FS
+The condition stops the
+recursion at the root directory of the file system.
+.FE
+.PP
+Write /d/f Become Owner(/d/f)\**
+.FS
+The owner of a file can
+always change the access permissions to allow owner write access.
+.FE
+.PP
+Write /d/f GroupWrite(/d/f) Member Group(/d/f)
+.PP
+Write /d/f WorldWrite(/d/f) Member World\**
+.FS
+This subgoal is
+is achievable by all users provided they can get to the file.  The
+notable exceptions are users logged in via anonymous ftp or uucp
+connections.  These users have restricted access to the file
+hierarchy.
+.FE
+.sp
+}
+.PP
+\fBlogin\fP
+.PP
+The login program uses two database to set the UID and GIDs of the
+user's command interpreter.  The contents of
+these databases and the protection of the databases themselves
+must be considered part of the protection configuration.
+.PP
+The user name \*Qroot\*U refers to the super-user.  The label, \*QU\*U, stands
+for an arbitrary UID including \*Qroot\*U.  The label, \*QG\*U, stands for
+an arbitrary GID.  The expression \*QUIDS(G)\*U expands to all the
+UIDs authorized to use the group \*QG\*U according to the files
+/etc/group or /etc/passwd.
+
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal/Note>
+
+Become U Replace /etc/passwd\**
+.FS
+This rule matches the goal \*QBecome root\*U.
+.FE
+
+Member G Replace /etc/group
+
+Member G Become UIDS(G)\**
+.FS
+The subgoal means to try to become any member of the group \*QG\*U.
+.FE
+.sp
+}
+.PP
+\fBrsh, rlogin, rcp\fP
+.PP
+Berkeley Unix includes several remote execution commands that greatly
+improve the usability of multiple Unix hosts connected by a network.
+The underlying authentication protocol does not resist an attacker
+that can transmit arbitrary messages on the network, but even if that
+problem was fixed, the databases used by these programs would have to
+be considered as part of the protection system.
+.PP
+The file /etc/hosts.equiv lists the names of the hosts that are
+trusted by the target machine's administrators.  If a user has an
+account on the target machine, and on one of the trusted hosts, then
+that user can log into the target machine from the trusted machine
+without supplying a password.  Users can list additional hosts (or
+other users) that they trust in a file (.rhosts) in their home
+directory.
+.PP
+The expression \*QNotEmpty(/d/f)\*U is true if the file /d/f exists and
+it is not empty.  The label, \*Q~U\*U, refers to the home directory of user
+\*QU\*U.
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal/Note>
+.PP
+Become U (~U/.rhosts) /etc/hosts\**
+.FS
+If there is
+a host listed in the user's remote access database and the host name
+table is replaceable, then an attacker can make his host appear to be
+the host listed in the user's database.  This assumes that the
+attacker has super-user privileges on some host that can talk to the
+target host, because the attacker will need to create an account with
+the target's user name.  This attack will become obsolete when hosts
+start using a distributed name server rather than a fix hostname
+database.  However, the name server will open other avenues of attack.
+.FE
+.PP
+Become U Write ~U/.rhosts\**
+.FS
+The remote execution routines insist that the target user be the owner
+of the database file, so replace access is not sufficient to use this
+attack.
+.FE
+.PP
+Become U root Replace /etc/hosts.equiv\**
+.FS
+Remote execution with super-user privileges is only accepted from
+the hosts listed in ~root/.rhosts, so replacing the hosts.equiv file
+cannot be used to directly gain access to super-user privileges.
+.FE
+.sp
+}
+.PP
+\fBshells\fP
+.PP
+Several command interpreters, called shells, have been written for
+Unix.  Different users can use different shells, but all shell have
+some mechanism for executing a list of commands when a user logs in.
+The files that specify these initialization commands are a part of the
+protection configuration that each user can change.
+.PP
+The expression \*QExists(/d/f)\*U is true if the file /d/f exists.
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal/Note>
+.PP
+Become U Exists(~U/.login) Replace ~U/.login\**
+.FS
+This file contains the commands read when a user logs in.
+The conditional should really test to see if the user is actually using
+the /bin/csh command interpreter.  If csh is being used, then
+this rule will work even if the file .login doesn't exist, so
+the conditional is overly strict.
+.FE
+.PP
+Become U Exists(~U/.cshrc) Replace ~U/.cshrc\**
+.FS
+This file is read each time a /bin/csh is executed such as at login
+and when a command file is executed.  The conditional is also overly
+strict.
+.FE
+.PP
+Become U Exists(~U/.profile) Write ~U/.profile\**
+.FS
+Same trick for the /bin/sh command interpreter.
+.FE
+.sp
+}
+.PP
+\fBcron\fP
+.PP
+Cron is a program that is forked off when a Unix system is booted.
+This means that it runs with super-user privileges.  Cron reads a
+database (/usr/lib/crontab) that describes the commands that should be
+executed periodically.  By default these commands are executed with
+\*Qroot\*U privileges.
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal/Note>
+
+Become root none Replace /usr/lib/crontab
+.sp
+}
+.PP
+\fBsendmail\fP
+.PP
+The Unix mail system has many features that allow flexible forms of
+information sharing.  The most interesting feature (to system builders
+and to attackers) is that receiving mail can trigger the invocation of
+a program which is passed the mail message as its input.  The file
+/usr/lib/aliases specifies the human readable form of a binary
+database that describes mailing lists, mail forwarding, and programs
+to invoke when mail is received by certain mailboxes.  Being able to
+modify this database allows an attacker to get access to other
+people's user and group IDs because the mail sending program runs with
+the privileges of the user who invokes it.  If the destination of the
+message is on the same host as the source, then the receiving program
+(also sendmail) will run with the invoker's privileges.  If the source
+of the message is on another computer, then sendmail will run under
+the UID \*Qdaemon\*U.
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal/Note>
+.PP
+Become daemon none Replace /usr/lib/aliases\**
+.FS
+This assumes
+that the command to build the binary database can be executed by
+everyone, or that it is executed automatically when the mailer detects
+that the binary database is out of date.  There should also be rules
+to see if the binary database can be written directly.
+.FE
+.PP
+Become root none Replace /usr/lib/aliases\**
+.FS
+Assumes that
+\*Qroot\*U sends mail to some user on this machine.  Such users can be
+found by scanning the mail logs, which are usually World readable.  If
+such a user exists, the aliases database can be set up to tell sendmail to
+deliver mail to the recipient and invoke the attacker's program.  Next
+time root sends mail to that user, the attacker's program will be
+invoked with root privileges.  The program would test to see if it was
+running with \*Qroot\*U privileges, and if so plant a trap door such as
+making /.rhosts publicly writable.
+.FE
+.sp
+}
+.PP
+\fBboot\fP
+.PP
+When a Unix reboots, it executes the commands in the file /etc/rc.
+This file usually executes the commands in the file /etc/rc.local.
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal/Note>
+
+Become root Exists(/etc/rc) Replace /etc/rc
+
+Become root Exists(/etc/rc.local) Replace /etc/rc.local
+}
+.PP
+\fBExtensions to the Unix model\fP
+(extensions)
+.PP
+This section lists some of the important pieces of the Unix protection
+system that were left out of the SU-Kuang's model.  Most of these
+pieces could be added easily.
+.PP
+The major deficiency of the model is that it does not include all of the
+programs that run with super-user privileges.  Each of these
+programs must be modeled if there is some way that an attacker could
+use the programs' databases to get access to root privileges.
+.PP
+Locating all the programs that run with super-user privileges is not
+easy.  Many ordinary programs are executed inside of command files
+that are run with root privileges.  This points out another
+shortcoming of SU-Kuang.  It does not look inside of command files.
+For example, on system restart, Unix executes the commands in the file
+/etc/rc with super-user privileges.  That file executes additional
+commands in the file /rc.local, so those commands also runs as root.
+The prototype has an explicit rule that covers this case, whereas it
+should deduce this and other cases by parsing the commands in /etc/rc.
+.PP
+The prototype does not understand search paths.  On Unix, as with most
+systems, users do not specify the full pathname of the programs they
+want to execute.  Instead, users specify a sequence of directories
+that should be searched to find the program.  Often users tell their
+command interpreter to first look in a private directory of commands,
+and quite often that directory is writable by any member of the user's
+primary group.  If an attacker can write a user's private command
+directory, then the attacker can plant a trojan horse on that user.
+For example, the user may want to execute /usr/local/gnuemacs, but the
+user may end up executing the attacker's program in
+/usr/smith/@_bin/gnuemacs.  To model this attack, SU-Kuang would need to
+be able to read each user's startup command file to determine each
+user's search path.
+.PP
+The file goals considered by the model only include write and replace
+access to a file.  Read access is not considered.  To include read
+access, each piece of the protection system must be re-examined to see
+if it could provide read access to an arbitrary file.  For example,
+the Unix finger program, which displays information about users, runs
+with super-user privileges so it can read an information file (.plan)
+in the specified user's home directory.  Unfortunately, some
+implementations of the finger program allow the .plan file to be a
+symbolic link to another file, and thus the finger program allows read
+access to any file on the system.
+.PP
+The rules that model the file system do not include the fact that the
+disks can be accessed via the raw device files.  Reading and writing
+the device files can be used to read and write arbitrary blocks on the
+disks.  These files should only be accessible to the super-user, but
+often anyone can read them.  If so, an attacker can read any file on
+the disk.
+.PP
+A different kind of deficiency in the model is that it does not allow
+the attacker to guess at passwords.  On a system that allows users to
+pick their own passwords, an attacker can usually guess a few of the
+passwords.  Assuming that an attacker can read the password file,
+\**
+.FS
+Protecting the password file from users logged in on a guest
+account or using anonymous file transfer is a good idea.  However,
+protecting it from ordinary users is hard.  Many programs need read
+access to the non-password information kept in that file, and making
+all those programs run with special privileges may create more
+problems than it solves.
+.FE
+the attacker can test passwords at the rate of about ten per second.\**
+.FS
+There are lots of tricks that speed up the execution of
+the Unix salted DES function on a 32 bit machine.
+.FE
+A 2000 word dictionary of common passwords can be processed at the
+rate of a few minutes per account.
+.PP
+As in any kind of modeling, the better the model, the better the
+results.  Fortunately, in the case of Unix, making the model more
+detailed does not require using a more complicated framework. The
+rule-based framework of SU-Kuang is flexible enough to model all the
+features described in this section.
+.PP
+\fBPrototype Implementation\fP
+(implementation)
+.PP
+The SU-Kuang program described in this paper is easy to
+implement.  The primary inputs to the program are a list of groups
+(privileges) accessible to the attacker (including the special group
+\*QWorld\*U), and the target goal (usually \*Qbecome root\*U).  The
+program examines the protection configuration of the machine it is
+running on, so this can be considered a secondary input.  The
+primary output is a list of the ways that an attacker can achieve the
+target goal from the initial privileges.  Internally, the program
+builds a goal-tree based on a set of rules that are compiled into the
+program.  When a node of the goal-tree can be directly achieved using
+the initial privileges, the program prints out the sequence of steps
+that describe the path from the given node of the goal-tree to the
+root of the goal-tree.
+.PP
+In classic Unix style, the prototype was initially implemented by a
+set of shell scripts (command files).  Later, to improve performance,
+some of the shell scripts were re-written in C.  The top level
+shell script keeps track of the goal-tree, and invokes other shell
+scripts to generate successive levels of the goal-tree.  For each of the
+three kinds of goals (user, group, and file), there is a shell script
+that reads a list of goals of that kind and produces a list of
+subgoals.
+.PP
+Associated with each node of the goal-tree is a human readable comment
+that describes the path from each node to the root of the goal-tree.
+This comment is appended to a list of 'successes' if the
+associated goal can be directly achieved using the initial privileges
+of the attacker.  Since each comment specifies the sequence of steps
+an attacker could use to achieve the target goal given the current
+goal, it is easy to derive the comments for subgoals from the comments
+of parent goals.  The subgoal comments is the parent goal's comment
+plus an indication of which rule was used to derive the subgoal.
+.PP
+The basic data abstraction used by SU-Kuang is a goal-table.  There
+are three goal-tables, one for each type of goal.  The operations on a
+goal table are: 
+.ul
+new, 
+.ul
+addto, and 
+.ul
+next.  The 
+.ul
+new
+operation creates an empty goal table.  It takes a set of initial
+goals that are directly achievable by the attacker.  The 
+.ul
+addto
+operation adds a goal and a comment to the table.  If the goal is
+already in the table, the table is not changed.  If the goal is in the
+set of directly achievable goals, then 
+.ul
+addto also appends the
+comment to the file that contains a list of successes.  The operation,
+.ul
+next, examines a goal-table and returns any goal-comment pair that
+it has not already returned.  The 
+.ul
+addto
+operation is effectively
+the inner loop of a rule interpreter.
+.PP
+The goal-table abstraction is implemented by four files.  One file
+keeps track of all of the goals in the table and it is used to avoid
+duplicate goals.  Another file holds the list of goals initially
+available to the attacker.  Two files are used to support the next
+operation.  One file records all the goal-comment pairs that have been
+returned by the next operations, the other file lists the goal-comment
+pairs that have been added to the table but not yet selected by the
+next operation.
+.PP
+Using the goal-table abstraction it is easy to express rules as lines
+of a shell script.  Figure
+.ul
+shell
+rule shows a rule and its shell
+script implementation.  The conditional part of the rules are
+expressed by shell script conditionals (e.g., \*Q-z\*U means that a file
+exists and has a length of zero, \*Q!\*U and \*Q&&\*U mean logical
+negation and conjunction).
+.sp
+Rules{
+.sp
+.ul
+<Goal/Condition/Subgoal>
+
+Become root NotEmpty(/.rhosts) Replace /etc/hosts
+.sp
+}
+
+.nf
+# $User and $OldComment are set by the goal-table next operation.
+# $FileGoals refers to the goal-table object for file type goals.
+if (($User == "root") && (! -z /.rhosts))  then
+    set NewComment="Fake HostAddress, $OldComment"
+    set SubGoal="Replace /etc/hosts"
+    addto $FileGoals $SubGoal $NewComment
+endif
+.fi
+Sample rule and corresponding shell script line.
+
+.PP
+The implementation of SU-Kuang is straight forward.  The only reason
+for describing it in this paper is to demonstrate how easy it is to
+process the attacker-oriented rules that describe a protection system.
+.PP
+\fBExperience\fP
+(experience)
+.PP
+The SU-Kuang system has been run on a large number of
+sites managed by personnel with a wide range of skills and interests
+in security.  It has almost always found a hole.  A Kuang that
+incorporates the extensions described in section
+.ul
+extensions
+would find more holes.
+.PP
+I believe that holes are created because users do not understand how
+the various pieces of the protection system interact.  The main
+evidence for this is that fact that most holes are found in the
+protection databases that are maintained by ordinary users (e.g.,
+.login and .rhosts).  Also, users who have recently been given special
+privileges tend to create holes that allow anyone to achieve
+super-user privileges.  When I tell users about the problems SU-Kuang
+finds, they often do not understand what was wrong with the decision
+they made.
+.PP
+Users create security holes periodically.  When I ran SU-Kuang
+periodically on one computer that had a large complicated protection
+configuration (e.g., the authorization databases included 300 users
+and 25 groups), SU-Kuang found new holes every week or two.  Often
+these new holes were created when someone modified a security
+database.  One common procedure for modifying a database is to first
+rename the original, then copy of the original into a file with the
+proper name, and finally edit the copy.  The motivation for the first
+rename step is to preserve the timestamp that indicates when the
+database was last written.  Unfortunately, the file copy step does not
+copy the protection information from the original database.  The
+protection for the copy is determined by the defaults for the
+currently running process.  It is not determined by the original.  The
+file UID is set to the UID of the process that performs the copy,
+and the GID is set to the GID of the directory that contains
+the file.  The permission bits are set to a default value specified in
+the copier's login command file.
+.PP
+The holes found by SU-Kuang point out that it is hard to set up multiple
+separate security groups under BSD4.2 Unix.  For example, a group
+that allows its members to install programs in the /etc directory,
+also allows its members to replace the authentication database in
+/etc/passwd.  The fact that users run with their full privileges (i.e.,
+they can access multiple groups in the same process), makes Berkeley
+Unix easier to use than other versions of Unix that force users to
+access one group at a time.  However, that same feature makes it
+easier for an attacker to plant a trojan horse on a user that is a
+member of a lower privilege group (e.g., the implementors of some
+project) and a member of a high privilege group (e.g., staff).
+.PP
+The impression I have gotten from running SU-Kuang is that most of the
+features that make Unix easy to use also make Unix hard to secure.
+However, SU-Kuang does make it easier to build a secure protection
+configuration for Unix.	
+
+.PP
+\fBDiscussion\fP
+(conclusions)
+.PP
+To increase the usefulness of computers, systems designers have
+provided an increasing number of mechanisms that allow users to
+execute commands and share information.  Since these new mechanisms
+must be considered part of the protection system, this trend has made
+protection systems larger and progressively harder to understand.  As
+a protection system becomes more complex, it becomes unlikely that
+all the protection decisions are made correctly, and these mistakes
+can ruin the overall security of the information and resources
+controlled by computers.  The commercial environment presents a
+special problem because usability is the primary goal of commercial
+information systems, but security cannot be neglected.  There needs to
+be some way to manage the complexity of the protection systems that arise
+on information systems that stress usability.
+.PP
+This paper presents one approach for achieving both usability and
+security.  The idea is to use rule-based systems to analyze the
+interactions between all the decisions that make up a computer's
+protection configuration.  If analyzing a protection configuration is
+easy, then the manager of a system can ensure that the system meets
+the security objectives of its users.  A program that performs a
+simple analysis of a Unix protection configuration was presented to
+illustrate that this sort of rule-based system is easy to build if
+the protection system is described from the attacker's viewpoint.
+This simple Unix analysis system, called SU-Kuang, answered the
+question "given access to a particular set of privileges,
+can an attacker achieve super-user privileges?".  Using SU-Kuang,
+a security manager could ensure that a system did not allow ordinary
+user to achieve super-user privileges.
+.PP
+SU-Kuang is just one of many helpful Kuang-type systems.  For example,
+many security objectives are expressed in terms of limiting the set of
+people who have access to particular privileges.  A Kuang-type system
+that computed the set of privileges accessible to each user would help
+a security manager determine whether the security objectives are being
+met.  Even better, if the bulk of the security objectives can be
+expressed in computer understandable form, then the bulk of the work
+of checking computer security could be automated.
+

@@ -1,0 +1,132 @@
+
+  Brief Info-Capsule of COPS programs and files (release 1.03):
+-------------------------------------------------------------------------
+   Programs and some important files that are included in this release:
+-------------------------------------------------------------------------
+
+   cops			A driving shell script for most of the programs
+			below.  It tosses output to /dev/null (unless
+			the -b flag is used) except what it wants to see,
+			and either saves the results a report file or mails
+			any pertinent output (depending if the -m flag is
+			used).
+			Usage: cops [-a:b:s:m:xvV]
+
+   chk_strings		Checks for writable paths/files in a file.
+			Usage: chk_strings <file>
+
+   crc.chk		Creates and compares a database of CRC's (a kind
+			of digital signature that changes as the file
+			changes size or is otherwise modified) that warns
+			against changes in the filesystem.  Concievably,
+			virii and worms could be detected in this manner,
+			but I wouldn't hold my breath.
+   crc_list		List of files that are checked.
+   crc_seed		If run automatically, crc.chk creates a semi-random
+			seed to use, to make your CRC's unique.  This is
+			where it is stored (not recommended, but handy.)
+
+   cron.chk		Checks for writable paths/files in crontab entries.
+			Usage: cron.chk
+
+   dev.chk		Checks /dev/*mem and all devs listed by "/etc/fstab"
+   			command for world read/writability (respectively.)
+			Usage: dev.chk [-g]
+			(-g checks for group read/writability as well)
+
+   disclaimer		Vital document to COPS usage.  Read closely.
+
+   ftp.chk		Used mostly to check anonymous ftp setup; it
+			goes over the etc, pub, ~ftp, and bin directories,
+			for writability, ownership, general correctness, etc.
+			Usage: ftp -a
+			(-a checks for anon-ftp setup.)
+
+   is_able.chk		Checks files and dirs listed in "is_able.lst"
+			for writability, readability, etc.
+   is_able.lst		List of directories for above.
+			Usage: is_able.chk [-g]
+			(-g checks for group writability as well)
+
+   group.chk		Checks /etc/group for non-unique groups, invalid
+			fields, non-numeric group ids, etc.
+			Usage: group.chk
+
+   home.chk		Checks all users home-dirs listed in /etc/passwd
+			for bad modes (basically world write, strangeness).
+			Usage: home.chk
+
+   is_writable		Checks a file/directory and determines writability
+			status; returns a "0" if is writable, a "1"
+			otherwise.
+			Usage: is_writable [-g] filename
+   
+   kuang		The U-Kuang expert system.  Read the accompanying
+			instructions in kuang.man.  It basically checks
+			to see if a given user (by default root) is
+			compromisible, given that certain rules are true
+			(i.e. /etc/passwd writable gives root access, etc.)
+			Usage: kuang
+   (init_kuang)		Contains the targets for the kuang system.
+
+   misc.chk             Checks various miscellaneous things -- tftp, decode
+			alias, rexd, etc.
+			Usage: misc.chk
+
+   passwd.chk		Checks /etc/passwd for non-unique uids, invalid
+			fields, non-numeric user ids, etc.
+			Usage: passwd.chk
+
+   pass.chk		Checks /etc/passwd for crummy passwords; lots
+			of options.  Defaults to checking for the users' id.
+   pass.words		A list of words that can be used by pass.chk;
+			use "pass.chk -w pass.words" to use them.
+			Usage: pass.chk [-flags]
+
+   pass_diff.chk	A wrapper for pass.chk.  Only checks passwords in
+			accounts that have *changed* their passwords since
+			last time run, though.
+			Usage: pass_diff.chk [-flags]
+
+   pass.mail		Will scan a COPS result file, grabbing users that
+			have guessed passwords, and mail to them a letter
+			informing them of the fact, along with a "how2"
+			guide to create a good (i.e. hard to guess) password.
+			Usage: pass.mail cops_result_file
+
+   makefile		A makefile for programs enclosed.
+			Type "make" or "make install" to make things (see
+			Makefile for more information.)
+
+   patchlevel.h		Contains the version information of COPS; multiply
+			by .01 and add one, and that's the current version.
+			Used by "cops -x" to determine the version.
+
+   quickstart		A lightning guide on how to start using COPS.
+
+   rc.chk		Checks all commands and paths listed in /etc/rc*
+			for writability.
+			Usage: rc.chk
+
+   reconfig		Changes the (hard coded) paths for the programs
+			used in COPS.
+   (file.paths)		Data file for reconfig (created by reconfig.)
+			Usage: reconfig [file]
+
+   res_diff		Looks to see if anything has changed since
+			the last report that was generated for the host.
+			Usage: res_diff /path/to/secure_dir current_report
+
+   suid.chk		Checks the system for _changes_ in SUID status.
+			This is the one program that should be run as
+			superuser.  You must first run a find on all
+			SUID programs from the / directory, and then use
+			that as a "stop file".
+   suid.stop		The database originally set up with "find".
+			Usage: suid.chk [-s:n]
+
+   user_chk.c		Checks all users listed in /etc/passwd; looks at
+			.login/.cshrc/.rhosts/.profile, etc., for bad 
+			modes (basically world write, strangeness).
+			Usage: user_chk
+

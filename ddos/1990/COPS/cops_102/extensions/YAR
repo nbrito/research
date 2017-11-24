@@ -1,0 +1,14 @@
+
+
+  (YAR -- Yet Another README file)
+
+    This is where the odds 'n ends go.
+    "THINGS_2_DO" is a file that says what I'd like to see done, either
+in COPS or in other packages.
+    "questions" is a questionaire and some answers I recieved about
+computer security.  It might prove of interest for general reading.
+    "netstuff" is a short list of net.references for further information.
+    "passwords" gives a reference for Matt Bishop's replacement passwd 
+program, and his fast password cracker.
+    "crypto-stuff" tells you where you can get some programs to do
+secure digital signatures.

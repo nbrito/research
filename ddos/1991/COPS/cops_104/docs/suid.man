@@ -1,0 +1,82 @@
+.TH FINDSUID 1S
+.UC 4
+.SH NAME
+suid.chk \- find changes in setuid and setgid files
+.SH SYNOPSIS
+.B suid.chk
+[
+\-m user
+]
+[
+\-n
+]
+[
+\-o file
+]
+[
+\-s secure_dir
+]
+[
+\-S start_dir
+]
+[
+\-x
+]
+.SH DESCRIPTION
+.I suid.chk
+is a shell script intended to be run periodically by \fIcron (8)\fP
+in order to spot changes in files with the suid or sgid bits set.
+.PP
+.I suid.chk
+uses \fIfind (1)\fP
+to search system directories for all files with the 4000 or 2000 permission
+bits set.  It then compares these files with the contents of a ``stop file''
+(by default \fIsuid.stop\fP) containing
+\fI``ls -lga''\fP
+output for known setuid or setgid programs.  In addition, it flags any
+setuid or setgid programs that are either world-writable or shell scripts.
+Any additions or changes to this list represent potential security
+problems, so they are reported by mail to system administrators for further
+investigation.
+.SH OPTIONS
+.TP
+.B \-m user
+Mail the results to this user.
+.TP
+.B \-n
+Do *not* follow NFS mounted partitions.  This is probably not
+portable on most machines -- check the string in the source code
+that does the work; on a sun, it's:
+.TP
+.B \-o
+Writes the results to a file, rather than mailing it.
+.TP
+.B \-s secure_dir
+Sets the secure dir, good for running this in cron -- 
+else it'll think it's "/", and you'll chmod that to 700 :-)
+.TP
+.B \-S
+Set the search directory where the \fIfind\fP starts.  Warning -- does not
+work with the
+.B \-x
+flag!
+.br
+"-type d \\( -fstype nfs -prune \\)";
+.SH FILES
+.nf
+suid.stop (the ``stop file'')
+.fi
+.SH SEE ALSO
+.nf
+find(1), chmod(1), cron(8)
+.fi
+.SH BUGS
+The location of the stop file and the directories to be searched
+are all defined by shell variables in the source.  The
+.B \-S
+and
+.B \-x
+flags do not work together.
+.PP
+Keeping the stop files up to date with changes to all
+the suid files on more than a couple of hosts is a royal pain!

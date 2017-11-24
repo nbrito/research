@@ -1,0 +1,86 @@
+
+  This README.suid and everything but the C programs has been hacked up be
+me, so all problems you have are probably due to me, unless you can't compile
+the files.  Then blame Jon :-)
+
+  This checks for unexpected file system corruption or security breaches.
+It's nice to be able to say that you know all your files are as they should
+be.  Mark Mendel wrote most of crc.c and Jon Zeef wrote crc_check.c.  Seems
+to work fine on BSD or SYS V.
+
+To use it:
+
+1) You first create a crc list with the script "crc.chk", which takes one
+argument, the seed for the crc generator.  It reads the file "crc_list"
+for a list of files to check; what I have are some of the more interesting
+binaries, but you can add or delete from this list to your hearts content.
+Wildcards or specific file names are fine.  The first time you run it,
+it will create a file called "crc.files", which contains all the crc
+values you generated.  Optionally, you can do a:
+
+find / -mount -print | sort | xargs ./crc -v > crc.tmp
+
+  However, "xargs" is a security problem, when combined with find.  Use
+this judiciously, if at all, unless your vendor puts some "safe" options
+to find in.
+
+2) You can now use "crc.chk" to compare this "crc.files" file to a crc list
+created each time you run the shell program.  If everything is ok, nothing
+is outputted, otherwise, the results are either mailed to the user INFORM,
+on line xxx, or saved to a file "crc.results".  You *MUST* use the same
+seed each time you run the program, or the numbers generated will be
+different each time you run the program, which kind of makes it useless.
+
+IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT
+IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT
+IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT
+
+  Have I got your attention?  Good.  There are some fundamental problems
+with using a crc program like this.  *If* you use a seed that is hardcoded
+in the program, or no seed at all, this is *bad*.  That means to really
+use this program usefully, you can't run it in crontab, like the rest
+of COPS.  Even worse, you should really store the results offline, since
+anyone who breaks into your machine can modify a binary file, run the
+crc checker again, then put the new values in your file.  That's the
+right way.  But I know that most of you won't do this, so by default,
+"crc.chk" just stores everything like everything else, in the COPS secure
+directory.  It can still help you, if the attacker doesn't know where
+you keep stuff, or doesn't know enough to trash your database of old
+crc values.  If nothing else, be sure that you keep your older values
+on tape or secondary medium, so when your system gets kicked around a
+bit, you can grab the crc program off the tape (the intruder could modify
+that, too, you know), run it on your binaries, and finally compare it
+to your old values.  Believe me, this is a lot easier, though still not
+perfect, than reloading everything on your system from tape, then still
+not knowing.  I've put it in the "cops" shell script, but left it commented
+out, on line 123, so if you want to use it this way, just uncomment this
+line.
+  One thing you can do, if you keep the numbers online, is do a crc on the
+file of values you keep; write it down, or memorize it, then if it is ever
+tampered with, you can detect it.
+
+  Jon goes on about the initial crc value, and other stuff:
+
+=========================================================================
+  ... don't tell anyone what this is, you can 
+  make it nearly impossible for anyone to modify a file in such a way 
+  that it has the same crc value as the old one (primarily because they 
+  don't know what the old one was).  If anyone does discover a way to 
+  make files of the same size that produce the same unknown crc value 
+  for any unknown -i value, let me know.  
+
+  To really do it right, you need to 
+
+  1) Run find_crc in single user mode (unless you modify the crc source).
+  2) Store all crc results offline.
+  3) Don't let anyone see your -i value or the crc results.
+
+  Please send me any modifications you make.
+
+  Jon Zeeff
+  zeeff@b-tech.ann-arbor.mi.us
+=========================================================================
+
+  Send 'em to me, too!
+
+ -- dan

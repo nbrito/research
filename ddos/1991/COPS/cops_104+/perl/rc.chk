@@ -1,0 +1,34 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  Usage: rc.chk
+#
+#  This checks pathnames and files inside the shell script files /etc/rc*
+# for writability.  The commands inside the files /etc/rc* are executed when
+# the machine is booted, so are of special interest.
+#
+# Made easy by chk_strings :-)
+#
+# Name: Martin Foord	Username: maf  Date: Thu Jan 17 15:11:09 EST 1991 
+# Email: maf%dbsm.oz.au@munnari.oz.au
+#
+
+require 'chk_strings.pl';
+
+# probably don't need to, but might want to do &'glob("/etc/rc*") instead.. ;-)
+@all_rc_files = ("/etc/rc*", "/etc/*rc", "/etc/rc*.d/*",
+		 "/etc/shutdown.*d/*", "/etc/inittab");
+
+for $file (@all_rc_files) {
+	while (<${file}>) {
+		if (-r $_) {
+			&chk_strings($_);
+			}
+		}
+	}
+
+1;

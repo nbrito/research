@@ -1,0 +1,209 @@
+:
+#
+#  Usage: reconfig [file]
+#
+#   This replaces the program paths (e.g. /bin/awk) in COPS with an
+# alternate path that is found in the file "file.paths".  Alternately,
+# you can specify a single file to reconfig.
+#   All programs are renamed "name.old", and the new version replaces
+# the original name.  It then uses sed to replace all occurances of
+# the target strings.
+#   Basically, the program looks through all directories listed in
+# $all_dirs for the list of programs in $all_commands and when it finds
+# them, puts them in a sed source file.  It then goes to all of the
+# shell files COPS uses ($shell_scripts) and replaces all occurances of
+# the variables found with the new value.  It goes through some
+# contortions trying to look for test (it has to find test without
+# using test), and does some other not so smart things, but it seems
+# to get the job done.
+
+# shell is always here, isn't it?
+SH=/bin/sh
+
+# need these later
+TEST=
+AWK=
+SED=
+TR=
+
+# various types of awks; I'd really like to get gawk or mawk,
+# but even nawk would be great.  In order:
+all_awks="gawk mawk nawk awk"
+
+#  Potential directories to find commands:
+all_dirs='/bin /usr/bin /usr/ucb /usr/local/bin /usr/bsd'
+
+#   First things first; are test and echo built-in shell commands?
+# Theory.  If test is executed correctly and not found in the path
+# I set, then they should be built into the shell, right?
+PATH=/bin:/usr/bin
+for dir in $all_dirs
+	do
+	if test -f $dir/test
+		then
+		TEST=$dir/test
+		break
+	fi
+	done
+# if not set, then set to default
+if test -z "$TEST"
+	then
+	TEST=test
+	fi
+
+for dir in $all_dirs
+	do
+	if $TEST -f "$dir/echo"
+		then
+		ECHO=$dir/echo
+		break
+	fi
+	done
+
+# if not set, then set to default
+if $TEST -z "$ECHO"
+	then
+	ECHO=echo
+	fi
+
+# The sed filter file
+location=./file.paths
+
+#  Target shell scripts in question:
+if $TEST $# -ne 0 ; then
+	shell_scripts="$*"
+else
+	doc_make=docs/makefile
+	shell_scripts="makefile $doc_make chk_strings cops crc.chk \
+		misc.chk dev.chk ftp.chk is_able.chk cron.chk group.chk \
+		passwd.chk rc.chk root.chk suid.chk kuang init_kuang \
+		res_diff pass_diff.chk yp_pass.chk"
+	fi
+
+#  Target commands in question, sans those checked above:
+all_commands='cc nroff cat chmod cmp comm cp date diff egrep expr find grep ls mail mkdir mv rm sed sh sort tftp touch uniq uudecode ypcat strings'
+
+$ECHO checking to make sure all the target\(s\) are here...
+#  make sure everything is here:
+for i in $shell_scripts
+	do
+	if $TEST ! -s $i
+		then
+		$ECHO  ERROR -- $i not found!
+		exit
+	fi
+done
+
+#   This finds the paths to any program used in COPS, then prints out
+# a sed filter to the file "file.paths" that is used by this shell
+# script to change all occurances of that command in the COPS system.
+#
+#   For example, if sed is in /usr/bin, it will create a line that looks
+# like this:
+#
+# s.SED=*$.SED=/usr/bin/sed.
+#
+#  This corresponds to the sed command substitute ("-" is used as a
+# delineator instead of "/" because the strings will be containing
+# "/"'s) /usr/bin/sed in place of whatever was to the right of the
+# equal sign.  This works because all commands are accessed by the
+# variable "$XYZ", where "XYZ" corresponds to the lowercase command
+# "xyz".  And, of course, all command variables are set at the top
+# of each command file.
+#
+
+# First we need awk and sed if this shell script will work....
+for dir in $all_dirs ; do
+	if $TEST -f $dir/sed ; then
+		SED=$dir/sed
+		fi
+	for awk in $all_awks ; do
+		if $TEST -z "$AWK" ; then
+			if $TEST -x $dir/$awk ; then
+				AWK=$dir/$awk
+				break
+				fi
+			fi
+		done
+	if $TEST -f $dir/tr ; then
+		TR=$dir/tr
+		fi
+	done
+
+if $TEST -z "$AWK" ; then
+	$ECHO "Cannot find awk; awk is needed to run this shell script"
+	exit 1
+	fi
+
+if $TEST -z "$SED" ; then
+	$ECHO "Cannot find sed; sed is needed to run this shell script"
+	exit 1
+	fi
+
+if $TEST -z "$TR" ; then
+	$ECHO "Cannot find tr; tr is needed to run this shell script"
+	exit 1
+	fi
+
+# zero out the file, then put in the real locations...
+$ECHO > $location
+
+$ECHO So far so good...
+$ECHO Looking for all the commands now...
+
+for command in $all_commands ; do
+	found=false
+	for dir in $all_dirs ; do
+		# if find the command in one of the directories, print string
+		if $TEST -f $dir/$command ; then
+			# this converts to upper case
+			upper=`$ECHO $command | $TR '[a-z]' '[A-Z]'`
+		$ECHO "s-^$upper=.*\$-$upper=$dir/$command-" >> $location
+			found=true
+			break
+			fi
+		done
+	if $TEST "$found" = "false" ; then
+		if $TEST $command = "strings" ; then
+			$ECHO Warning!  $command not found!  chk_strings will not work as planned.
+		elif $TEST $command = tftp ; then
+			$ECHO Warning!  $command not found!  misc.chk will not work as planned.
+		elif $TEST $command = uudecode ; then
+			$ECHO Warning!  $command not found!  misc.chk will not work as planned.
+		elif $TEST $command = ypcat ; then
+			:
+		elif $TEST $command = nroff ; then
+			$ECHO Warning!  $command not found!  docs cannot be formatted.
+		else
+			$ECHO ERROR!  $command not found!  Change or delete command!
+			exit
+			fi
+		fi
+	done
+
+$ECHO "s-^AWK=.*\$-AWK=$AWK-" >> $location
+$ECHO "s-^ECHO=.*\$-ECHO=$ECHO-" >> $location
+$ECHO "s-^TEST=.*\$-TEST=$TEST-" >> $location
+
+# almost forgot -- we need chmod & mv to make this reconfig work, too:
+for dir in $all_dirs
+	do
+	if $TEST -f $dir/mv ; then
+		MV=$dir/mv
+		fi
+	if $TEST -f $dir/chmod ; then
+		CHMOD=$dir/chmod
+		fi
+	done
+
+$ECHO Ok, now doing substitutions on the shell scripts...
+for i in $shell_scripts
+	do
+	$ECHO "Changing paths in $i..."
+	$SED -f $location $i > $i.new
+	$MV $i $i.old
+	$MV $i.new $i
+	# finally, make sure everything is back to executable status
+	$CHMOD u+x $i
+
+done

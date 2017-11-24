@@ -1,0 +1,60 @@
+
+This shell script checks to see if you've set up (mainly anonymous)
+ftp correctly.  The "-a" option checks your anon-ftp setup; without that,
+this script doesn't do a whole lot -- just check to see if your ftpusers
+file doesn't have any root accounts in it.
+
+There is no "right" way to set up ftp, but there are lots of wrong
+ways :-)   I suggest everything be owned by either root or ftp, everthing
+important owned by root only, especially if you have the "chmod" command in
+your version of ftp.  Nothing should be world writable, with the exception
+of a ~ftp/incoming directory or something like that (if desired). You can
+change the owners via the $primary and $secondary variables (default root),
+and the publically writable directory is $incoming (default ~ftp/incoming).
+Do not make ~ftp/pub world writable, if you are storing data or programs for
+people to use; you're inviting intruders to write all over the files and
+programs, and leave all kinds of nasties...
+
+Here are the assumptions I made for anon-ftp:
+
+o  If your system allows the "chmod" command, you should not let _anything_
+  be owned by ftp.  In general, it's probably a good idea to not have anything
+  be owned by ftp anyway.
+
+o  User "ftp" should have a non-valid password ("*", whatever) and a invalid
+  shell, but a valid home directory -- this is where all the anonymous
+  stuff gets stashed.  This checks for the passwd and valid home dir only.
+  I would suggest a .rhosts file of 0 size, owned by root, but that's
+  personal preference.  This will complain if a .rhosts file exists, and
+  is either non-0 or non-root owned.
+
+o  All root equivalent accounts (uid=0) with valid passwords should be in
+  /etc/ftpusers 
+
+o  The home dir for ftp is in /etc/passwd, should be a valid directory, and
+  should not be "/" (if the dir is invalid, ftpd should choke.)
+
+o  The ~ftp/etc/{passwd|group} files should be different than their
+  counterparts in /etc (don't want password files available via anon-ftp.)
+  In addition, it seems as though the entries in ~ftp/etc/{passwd|group}
+  files don't do a whole lot -- some versions of ftp seem to use the
+  passwords in the file, some don't.  If a file is created, you might see
+  something like:
+
+     With the entries:
+        drwxr-xr-x  8 cert    ftp           512 Nov  7 16:56 pub/
+     Without:
+        drwxr-xr-x  8 8001    105           512 Nov  7 16:56 pub/
+
+  Some versions of ftpd allow you to leave the files off entirely; that
+  is the preferred method, IMHO; else, you might try putting a null file
+  there.  Experiment... you can uncomment line 178:
+
+  crit_files=$ftpls
+
+  And the checker won't look for password and group files.
+
+o  ~ftp, ~ftp/bin, ~/ftp/etc should all be non-world-writeable, and owned
+  by either root or ftp.  The ls command should be mode 111, the password
+  and group files 444.
+

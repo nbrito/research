@@ -1,0 +1,38 @@
+
+ Possible improvements/extensions of the COPS package might (will?) include
+(other than merely fixing bugs existing in the package) :
+
+ 0) Smarter detection of problems -- a lot of problems can be found in
+configuration files; the way they are set up, not merely if they are
+writable.  These aren't neccessarily hard to check for, but take someone
+with a good understanding for the file to write.
+
+ 1) Better and more thorough Yellow Pages checking.
+
+ 2) Ditto for UUCP stuff.  Fix the perl stuff to work in shell, too.
+
+ 3) Once again for NFS things.
+
+ 4) Problems that are specific to a certain flavor of UNIX.  For
+instance, HP-UX has different files in different places.  Perhaps
+the system could look for and hunt for the vital files in the various
+places rather than having to be put in a configuration file.  Also
+support for various secure UNIX varieties; e.g. C2 level Sun, IBM's
+secure AIX, etc.
+
+ 5) More problems to be added; by no means are all security problems detected
+by COPS.  More potential hazards should not be difficult to detect -- merely
+adding another module to the system or simply modifying what is here might
+suffice.
+
+ 6) Trying to detect what kind of machine you are on, then acting on that,
+possibly using larry wall's configure program.
+
+ 7) Automounters... a problem.  Can we divorce all the home-dir
+accessing stuff?  Sounds interesting in theory, hard in fact.  Maybe
+the perl version could handle it?
+
+ 8) Make a version/script that would run on a "fake" filesystem; e.g. a
+full unix filesystem that starts someplace other than root ("/"), like
+a diskless client or something.
+

@@ -1,0 +1,330 @@
+:
+#
+#  Usage cops [-a architecture] [-b bit_bucket] [-s secure_dir] \
+#             [-m user] [-f filter_file] [-dxvV]
+#
+#  -a specifies the architecure subdirectory you want to run in; you
+#     must run "make install" to install the appropriate binaries there
+#
+#  -b specifies the "bit bucket", where all the error messages go to.
+#
+#  -d will mail a report only if there have been changes since the
+#     last one.  Only makes sense with the -m flag or by setting the
+#     MMAIL var below.
+#
+#  -f specifies the cops filter file, which is used for filtering out
+#     extraneous warning message.
+#
+#  -m tells cops to mail the output to the user specified
+#
+#  -s tells cops where the secure directory is; mostly this is used by
+#     cops itself, when it is run with the -a flag; it will rerun itself
+#     with the -a flag's argument as an argument to this.
+#
+#  -x prints out the version number (running out of letters! :-))
+#
+#  -[vV] are the verbose flags.  Small "v" says print whatever program
+#     is running, when it is executed, in the output file; capital
+#     "V" says print everything to the screen.
+#
+#  Warning!  COPS will get confused if you use a command line arg that
+# expects an argument and you don't give it one.  Don't say I didn't
+# warn you :-)
+#
+# Overall --
+#
+#  Cops will change into the $SECURE/architecture directory, ensure all
+# the security programs (listed below) indeed do exist, and run all of the
+# security programs.  If any of the programs find any security problems, it
+# either sends mail to everyone in the $SECURE_USERS list, or saves the results
+# in a file $SECURE/architecture/hostname.  It then destroys all temporary
+# files, and exits the program.  Programs that are run (besides this one):
+#
+#	root.chk	dev.chk		group.chk
+#	home.chk 	rc.chk		passwd.chk
+#	is_able.chk	pass.chk 	user.chk
+#	cron.chk	misc.chk	ftp.chk
+#
+# The U-kuang system runs these additional programs:
+#	init_kuang	kuang		addto
+#	clearfiles	filewriters	members
+
+#
+#  If this is changed to "NO", the report that cops creates
+# will not be deleted and the results will not be mailed to anyone.
+MMAIL=NO
+
+#
+# Foreign language users can change this (thanks to Wolfgang Denk!):
+LANGUAGE=english
+export LANGUAGE
+
+#
+#  If this is changed to "YES", then the report will only be mailed
+# if it detects a difference between the last report and this one.
+# Note that this makes no sense unless the mail is set to "YES" as well.
+ONLY_DIFF=YES
+
+#
+#  Do you want to run suid.chk within cops?
+RUN_SUID=NO
+
+# Where is everyone?
+ECHO=/bin/echo
+TEST=/bin/test
+RM=/bin/rm
+CAT=/bin/cat
+MAIL=/bin/mail
+DATE=/bin/date
+CHMOD=/bin/chmod
+AWK=/bin/awk
+SED=/bin/sed
+MV=/bin/mv
+MKDIR=/bin/mkdir
+
+# send errors and verbosity to...
+BIT_BUCKET=/dev/null
+# send verbose messages to...
+VERBUCKET=/dev/null
+
+######################
+#  Change these lines!
+######################
+SECURE=/usr/foo/bar
+SECURE_USERS="foo@bar.edu"
+######################
+
+# arg stuff:
+while $TEST $# != 0
+	do      case "$1" in
+        -a)     arch=$2 ; SECURE=$SECURE"/"$arch ; shift ;;
+        -b)	BIT_BUCKET=$2 ; flags=$flags" -b $2" ; shift ;;
+        -d)	ONLY_DIFF=YES ;;
+	-f)	filter=yes ; cops_filter=$2 ; shift ;;
+        -m)	SECURE_USERS=$2 ; flags=$flags" -m $2" ; MMAIL=YES ; shift ;;
+        -s)     SECURE=$2 ; shift ;;
+        -v)	verbose=yes ; v="-v" ; flags=$flags" -v" ;;
+        -V)	verbose=yes ; VERBUCKET="/dev/tty" ; RESULT="/dev/tty" ; flags=$flags" -V" ;;
+        -x)     $AWK '{print "Version 1.0" $NF}' ./patchlevel.h ; exit 0 ;;
+        *)      $ECHO Usage $0 [-a arch] [-b bit_bucket] [-s sec_dir] [-f filter] [-m user] [-dvVx] ; exit ;;
+        esac
+        shift
+	done
+
+if $TEST "$filter" = "yes" -a ! -s "$cops_filter" ; then
+	$ECHO "Can't open filter: $cops_filter"
+	exit 1
+	fi
+
+#  architecture?  change to that dir, and execute cops there:
+if $TEST -n "$arch" ; then
+	if $TEST ! -d "$SECURE" ; then
+ 		$ECHO Architecture directory $1 does not exist
+ 		exit 1
+ 		fi
+	$CHMOD 700 $SECURE
+ 	cd $SECURE
+ 	./cops -s "." $flags
+ 	exit
+ 	fi
+
+SECURE_PROGRAMS="root.chk dev.chk is_able.chk group.chk \
+                 home.chk rc.chk passwd.chk pass.chk misc.chk ftp.chk \
+		 cron.chk user.chk init_kuang kuang addto \
+		 clearfiles filewriters members is_able bug.chk"
+
+if $TEST ! -d "$SECURE" ; then
+	$ECHO "Error -- Security directory $SECURE doesn't exist"
+	exit 1
+fi
+
+$CHMOD 700 $SECURE
+cd $SECURE
+
+for i in $SECURE_PROGRAMS
+	do
+	if $TEST ! -s "$i" ; then
+		$ECHO "Error -- Security program $SECURE/$i doesn't exist"
+		exit 1
+	fi
+done
+
+# results go:
+if $TEST -z "$RESULT" ; then
+	RESULT=$SECURE/result.$$
+	fi
+if $TEST x"-v" = "x$v" ; then
+	VERBUCKET=$RESULT
+	fi
+
+if $TEST -n "$verbose" ; then
+	$ECHO "**** root.chk ****" > $VERBUCKET ; fi
+$SECURE/root.chk		>>	$RESULT 2>  $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** dev.chk ****" >> $VERBUCKET ; fi
+$SECURE/dev.chk			>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** is_able.chk ****" >> $VERBUCKET ; fi
+$SECURE/is_able.chk		>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** rc.chk ****" >> $VERBUCKET ; fi
+$SECURE/rc.chk			>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** cron.chk ****" >> $VERBUCKET ; fi
+$SECURE/cron.chk		>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** group.chk ****" >> $VERBUCKET ; fi
+$SECURE/group.chk		>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** home.chk ****" >> $VERBUCKET ; fi
+$SECURE/home.chk		>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** passwd.chk ****" >> $VERBUCKET ; fi
+$SECURE/passwd.chk		>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** user.chk ****" >> $VERBUCKET ; fi
+$SECURE/user.chk		>>	$RESULT 2>> $BIT_BUCKET
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** misc.chk ****" >> $VERBUCKET ; fi
+$SECURE/misc.chk		>>	$RESULT 2>> $BIT_BUCKET
+
+# use the -a option for checking anon-ftp; e.g., "$SECURE/ftp.chk -a"
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** ftp.chk ****" >> $VERBUCKET ; fi
+$SECURE/ftp.chk			>>	$RESULT 2>> $BIT_BUCKET
+
+#   Optional -- use "pass_diff.chk", instead of "pass.chk" to make your
+# life easier!
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** pass.chk ****" >> $VERBUCKET ; fi
+$SECURE/pass.chk -w ./pass.words -b -g -s -c -d -n >> $RESULT 2>> $BIT_BUCKET
+# $SECURE/pass_diff.chk		>>	$RESULT 2>> $BIT_BUCKET
+# try it with "-w ./pass.words -b -g -s -c -d -n" flags....
+
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** kuang ****" >> $VERBUCKET ; fi
+#   Optional -- use "kuang.pl", instead of "kuang", if you have perl
+# installed on your system, for extra speed and functionality:
+$SECURE/kuang			>>	$BIT_BUCKET 2>> $BIT_BUCKET
+# $SECURE/kuang.pl		>>	$BIT_BUCKET 2>> $BIT_BUCKET
+
+# kuang puts it's results in a file called "Success"; check it out:
+# if $TEST -s "$SECURE/Success" ; then
+# 	$CAT $SECURE/Success >> $RESULT
+# fi
+# $RM -f $SECURE/Success
+
+# Optional!  Should use this interactively, with a secret key!
+# if $TEST -n "$verbose" ; then 
+# 	$ECHO "**** crc.chk ****" >> $VERBUCKET ; fi
+# $SECURE/crc.chk	2>> $BIT_BUCKET
+
+# crc.chk puts it's results in a file called crc.results; uncomment
+# this as well:
+# if $TEST -s "$SECURE/crc_results" ; then
+# 	$CAT $SECURE/crc_results >> $RESULT
+# fi
+# $RM -f $SECURE/crc_results
+
+#
+#  Want to run suid check from within cops?  (Results get mailed separately)
+# if $TEST "$RUN_SUID" = "YES" ; then
+#	$SECURE/suid.chk > /dev/null 2>&1
+# fi
+
+#
+# Bug.chk?  New stuff...
+if $TEST -n "$verbose" ; then 
+	$ECHO "**** bug.chk ****" >> $VERBUCKET ; fi
+$SECURE/bug.chk		>>	$RESULT 2>> $BIT_BUCKET
+
+#
+#
+#  Filter results, if used
+if $TEST "$filter" = "yes" ; then
+	$AWK -f $cops_filter $RESULT > $RESULT".FILT"
+	# if no results are there, don't worry about printing a report...
+	if $TEST ! -s $RESULT".FILT" ; then
+		$RM -f $RESULT
+		exit 0
+		fi
+	# else, move the filtered results in the old result location:
+	$MV $RESULT".FILT" $RESULT
+	fi
+
+#
+#   Save or Mail the final report to $SECURE_USERS and remove the evidence.
+#
+#  (Thanks to Ian Darwin for the next nifty idea!)
+#  If the result is not mailed, it will be saved in a directory with the
+# same name as the host, in a file with the name:
+#
+#  Year_Month_Day  (for example: $SECURE/ucbvax/1999_Dec_31 )
+#
+if $TEST -s "$RESULT" ; then
+	# want to put the date and hostname at top; use tmp file: report.$$
+	REPORT=$SECURE/report.$$
+
+	# name of final resting place:
+	NAME=`$DATE | $AWK '{print $NF"_"$2"_"$3}'`
+	#
+	if $TEST -s /bin/hostname ; then
+		HOSTNAME=`/bin/hostname`
+	elif $TEST -s /bin/uname ; then
+		HOSTNAME=`/bin/uname -n`
+	elif $TEST -s /usr/bin/uuname ; then
+		HOSTNAME=`/usr/bin/uuname -l`
+		fi
+	if $TEST -z "$HOSTNAME" ; then
+		HOSTNAME="foobar"
+		fi
+	HOST=`$ECHO $HOSTNAME | $SED 's/[.].*$//'`
+
+	$ECHO                                   >  $REPORT
+	$ECHO ATTENTION:			>> $REPORT
+	$ECHO "Security Report for "`$DATE`	>> $REPORT
+
+	$ECHO "from host $HOSTNAME"		>> $REPORT
+	$ECHO					>> $REPORT
+	$ECHO					>> $REPORT
+	$CAT $SECURE/result.$$			>> $REPORT
+
+
+	#   figure out where all the old reports are kept, or where the new
+	# one should be kept; make directories if needed...
+	if $TEST -d "$SECURE/$HOST" -a "$MMAIL" = "YES" ; then
+		if $TEST "$ONLY_DIFF" = "YES" ; then
+			if $TEST -n "`./res_diff $SECURE/$HOST $REPORT`" ; then
+				$MAIL $SECURE_USERS < $REPORT
+				$MV $REPORT $SECURE/$HOST/$NAME
+				fi
+		else
+			$MAIL $SECURE_USERS < $REPORT
+		fi
+		$RM -f $REPORT
+	elif $TEST ! -d "$SECURE/$HOST" -a "$MMAIL" = "YES" ; then
+		$MAIL $SECURE_USERS < $REPORT
+		if $TEST -n "$HOST" ; then
+			$MKDIR $SECURE/$HOST 2> /dev/null
+			$MV $REPORT $SECURE/$HOST/$NAME
+		else
+			$MV $REPORT $NAME
+			fi
+	else
+		#  Either saving it to a hostname, in which case move to
+		# the hostname directory, or just move result to
+		# the current dir
+
+		if $TEST -n "$HOST" ; then
+			$MKDIR $SECURE/$HOST 2> /dev/null
+			$MV $REPORT $SECURE/$HOST/$NAME
+		else
+			$MV $REPORT $NAME
+			fi
+	fi
+fi
+
+$RM -f $SECURE/result.$$
+
+#  end it all....
+exit 0

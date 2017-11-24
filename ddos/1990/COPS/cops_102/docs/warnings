@@ -1,0 +1,352 @@
+
+   This file contains a list of most of the security warnings that you
+might see while using the COPS system.  Not included here are messages
+that you may receive from the Kuang system and the ftp checker.  For
+help on using those tools, read the appropriate documentation on each
+of those ("kuang.doc" and "ftp.1".)
+
+   First, I'll define some arbitrary terms which I'll use when describing
+any problems you may encounter, then I'll list the messages, what they may
+mean, and how you can change your system to eliminate any danger posed.
+Some almost identical warnings were eliminated from the list; however
+most warnings should have an analogous entry that is very close syntactically
+to it in this file.  All messages in COPS are prepended by "Warning!";
+this has been excluded here for brevity.
+
+   There may be more than one way to overcome any problem listed here.  If
+you are unsure about whether to change a problem, try looking at some of
+the references listed at the end of the technical report (cops.report) for
+more information on how an attacker may compromise your system.  Some of
+the more dangerous security holes include writable directories and key files
+(such as /etc/passwd), root owned SUID files writable to world or that give
+a root shell, null passwords, and writable files that are executed by root.
+They are more or less aranged in like groups (all the writable files/dirs/
+whatever in one part, etc.)
+
+   Don't take everything that COPS says as gospel!  What may be a serious
+security hole on one machine may not be on your own, and vice-versa.
+However, the more you value the information on your machine, the more you
+should be concerned about security. 
+
+  Some terms I'll use:
+xyz           -- An arbitrary number.  Usually a line number in a file.
+foo_file      -- stands for a file you might see in your warning message.
+foo_file2     -- Same as "foo_file", stands for a different file than the
+                 first (used when two filenames are needed in one message.)
+foo_dir       -- a typical directory.
+Group file    -- /etc/group or the yellow pages group.  If the warning starts
+                 with "Group", it is the former, "YGroup" is the latter.
+foo_group     -- either /etc/group or ygroup.
+Password file -- /etc/passwd or the yellow pages password.  If the warning
+                 starts with "Password", it is the former, "YPassword" refers
+                 to the latter.
+foo_pass      -- either /etc/passwd or ypasswd.
+cron_file     -- will be either /usr/cron or
+                 /usr/spool/cron/crontabs/foo_file.  
+foo           -- anything that doesn't fit above.  Usually an arbitrary
+                 name, or group name, or whatever.
+bar           -- As "foo", if more than one name is needed in one message.
+foo_bar       -- As "foo", if more than two names are needed in one message.
+
+
+  WARNING MESSAGES
+  -----------------
+
+0)
+foo_file is _World_ writable!
+foo_file is group readable!
+
+   This simply means that a file is world writable; e.g. Anyone can modify
+or delete this file.  This can be especially bad if the file can (even
+indirectly) give root access, such as the system password file, "/etc/passwd".
+   To fix, type:
+        chmod a-w foo_file
+This removes write access for group "all/world".
+
+1)
+foo_file (in cron_file) is World writable!"
+File foo_file (inside root executed file foo_file2) is _World_ writable!"
+File foo_file (in /etc/rc*) is _World_ writable!"
+
+   Similar to the above messages, but potentially more serious.  Files
+in this group are being used by root, and either being utilized as input,
+output, or for execution.  Examine the file they are inside and see how
+it is being used.  Files being executed are the most dangerous because
+if they are changed, the new file gets executed with root privileges.  Input
+files are next, because changing them can alter what the executing program
+does and cause undesirable side affects.  Even output files can be dangerous,
+however, because they may be used as an output or even as a program file
+later on.
+   To fix, either delete the reference to foo_file inside the
+cron/rc*/foo_file2/whatever file, or type:
+        chmod a-w foo_file
+to remove write access for group "all/world".
+
+2)
+Directory foo_dir is _World_ writable!
+
+   This simply means that a directory (or it's parent directories) is world
+writable; e.g. Anyone can delete this directory, as well as mess with the
+files and subdirectories inside of it.  For instance, if /usr/spool is world
+writable, even if cron is not writable, this is a problem, because the cron
+directory can be replaced and new crontab files put in (which all run with
+root privileges.)  As a general rule, if you wish to have a file or
+directory secure, all directories that are parent directories must be secure.
+   To fix, type:
+        chmod a-w foo_dir
+            and/or
+        chmod a-w [foo_dir's parent directory]
+This removes write access for group "all/world".
+
+3)
+Directory foo_dir is _World_ writable and in roots path!
+
+   This is the same as (2), but the directory was found to be in the
+path variable set either in /.login or /.profile.  This is a bad thing
+because if it is writable, a trojan horse can be placed there, and
+root will execute the command.  See also (23).
+
+4)
+Duplicate Group(s) found in foo_group:
+
+   This means that one or more duplicate group names have been found.
+This is mostly a system accounting problem; when adding or deleting names
+from a group you will have problems.
+   To fix, remove all but one instance of each group in your /etc/group file.
+
+5)
+Group foo_bar has duplicate user(s):
+
+   Similar to (4), a group has the same user listed more than once.  If
+all instances of the user is not deleted, they probably will remain with
+their old privileges.
+   To fix, remove all but one instance of a user in each group of your
+/etc/group file.
+
+6)
+Group file, line xyz, non-numeric group id: foo
+
+   Group id's must be numeric.  Testing a non-numeric id will give 
+unpredictable results.
+   To fix, change the old id to a valid group id.
+
+7)
+Group file, line xyz, is blank
+
+   To fix, remove all blank lines.
+
+8)
+Group file, line xyz, does not have 4 fields: foo
+
+   More trouble.  Testing of one or more of the groups will result
+in invalid results, depending which is the missing field(s).
+   To fix, ensure group has four valid fields. 
+
+9)
+Group file, line xyz, nonalphanumeric user id: foo
+   
+   As (6).
+   To fix, change the old id to a valid group id.
+
+10)
+Group file, line xyz, group has password: foo
+
+   To fix, change the old password to an asterisk ("*").
+
+11)
+Password Problem: Guessed:    foo    shell: bar    passwd: foo_bar
+
+   If an account has a guessed password, it is susceptible to other password
+guessing programs (the one in COPS is rather crude and slow).  Obviously, if
+the password is known, the account is compromised.
+   To fix, either have the user change her/his password or change it yourself.
+
+12)
+Password Problem: null passwd:    foo    shell: bar
+Password file, line xyz, no password:     foo
+
+   If an account has no password, anyone can log into the account at will.
+   To fix, either have the user change her/his password or change it yourself.
+
+13)
+Duplicate uid(s) found in foo_passwd:
+
+   This is a problem, especially if the accounts have different permissions
+or privileges.  When the user's account is deleted, one or more accounts may
+remain active.
+   To fix, simply delete all but one occurrence of the users account.
+
+14)
+Password file, line xyz, user foo has uid = 0 and is not root    bar
+   
+   Ideally, no one but root should have uid = 0.  Anyone with uid=0 is
+superuser, for all purposes.  Occasionally, a maintenance account has
+uid=0, or perhaps a small group of administrators.  Be very careful!
+   To fix, change the uid from 0 to some other valid number.  If the
+account or person really needs root privileges, have them su to the root
+account so you can keep track of who is using root.
+
+15)
+Password file, line xyz, nonalphanumeric login:     foo
+
+   Another maintenance problem.  Someone's been messing with the password
+file, or you have some bugs in your software that fools around with it.
+   To fix, delete or change the login to a valid login.
+
+16)
+Password file, line xyz, invalid login directory:     foo
+User foo's home directory bar is not a directory!
+
+   A user has a non-existent or invalid login directory listed in the password
+file.  Sometimes these are maintenance accounts, but it is discouraged.
+Examine the account to see if it should really exist.
+   To fix, either delete the account or put in a valid login directory.
+
+17)
+Password file, line xyz, nonnumeric group id:     foo
+Password file, line xyz, nonnumeric user id:     foo
+
+   A user has a invalid user or group id.  Dangerous if, when checked, it
+translates to invalid number (who knows what would happen), or worse yet, 0.  
+   To fix, change the field to a legal, numeric value.
+
+18)
+Password file, line xyz, negative user id: foo
+
+   A user id is negative.  This is most common with user name "nobody",
+and with an id of "-2".  This can be dangerous, especially if you are running
+a Sun, with 4.xx SunOS.  It is uncertain if it is dangerous for other
+versions or machines.  Changing it to 32767 is the usual course of action.
+
+19)
+Password file, line xyz, does not have 7 fields:     foo
+
+   Dangerous, because when a program checks for a field value it will come
+up with who knows what.
+   To fix, ensure all fields have legal values.
+
+20)
+Password file, line xyz, is blank
+
+   To fix, delete all blank lines.  This can be very bad, because a blank
+line can give a uid=0 account with no password.
+
+21)
+NFS file system foo exported with no restrictions.
+
+   Anyone can mount the file system.  May or may not be a problem, but
+look over closely, if you value ANY of the info on it!
+   To fix, put in a valid list of hosts that may mount it.
+
+22)
+Root's umask set to xyz
+
+   If root's umask is set incorrectly, any files that it creates will be
+have bad permissions (e.g. world writable if 000, x00, or xy0).
+   To fix, put a "safe" value; 077 or whatever.
+
+23)
+"." (or current directory) is in roots path!
+
+   Trojan horses traditionally play upon having the current directory in
+a users path.  A bad user will put a trojan horse with a the same name as
+a common system command ("ls" is a favorite) and place it in a location that
+s/he thinks might be executed.  When the trojan horse is executed, it will
+not only execute the command, but will also either steal your account
+privileges or have your account perform some action that they desire.
+
+24)
+A "+" entry in foo_file!
+
+   Host.equiv files specify which machines are equivalent; e.g., user foo on
+another machine listed in your hosts.equiv can log in as user foo onto your
+machine.  A "+" means your machine trusts everyone (I trust no one :-)), which
+is usually not desired, at least in these troubled times.  Sun, in it's
+infinite stupidity, makes this the default on all of it's machines.
+
+   To fix, either remove the "+", put in your own list of trusted machines,
+or delete the file.
+
+25)
+rexd is enabled in foo_file!
+
+   This can allow commands to be excecuted remotely.  (foo_file is usually
+/etc/inetd.conf, of course.)
+   
+   To fix, comment it out of foo_file (put a "#" sign in front of the line.)
+
+25)
+User foo's home directory foo_dir is mode xyz!
+
+   If a user's home directory is writable, you have the same problems as (3),
+except all of the user's files are in jeopardy this time.
+
+   To fix, type:
+        chmod a-w foo_dir
+
+26)
+User foo: .bar is mode xyz!
+
+   In this case, ".bar" stands for one of the user's initialization files,
+such as .login, .profile, .exrc, ect.  If the user's file is world writable,
+then anyone can modify that file, and whenever the user logs in or executes
+a command (such as "vi", when referring to ".exrc"), they will execute
+whatever commands the bad girl/boy wants them to.
+
+   To fix, type:
+        chmod a-w foo_file
+
+27)
+tftp is enabled on foo_host!
+
+   This means that people can steal your password file remotely, and run
+a password cracking program on it.  Bad news, unless you _really_ have great
+password security, or you're running shadowpasswords.  But even then, they
+can still steal any world readable file on your system.
+
+   To fix, comment out (put a pound sign ("#") in the front of the line)
+tftp -- usually a line in your /etc/inetd.conf file.
+
+28)
+uudecode is enabled in foofile!
+
+   If the decode mail alias is a valid mail address, people can mail to it,
+and create files on your system.  If the uudecode is SUID root, or something
+equally insane, it can overwrite any file.
+
+   To fix, comment out the alias in your (usually /usr/lib/alias) mail alias
+file.
+
+29)
+uudecode creates setuid files!
+
+   A common problem, it seems.  Uudecode should not create any kind of
+special files; if combined with (30), you can create hidden SUID files,
+perfect for an attacker.  If combined with (28), then it can be an even
+worse remote attack.
+
+30)
+uudecode is suid!
+
+   Worse and worse.  If this is true, then you can create files that are
+owned by whomever it is SUID to.
+
+   To fix, just make it non-suid.  If it has to be suid for some unknown
+reason, make it SUID to user nobody, or guest, or something relatively
+inoccuous, even though it won't be.
+
+31)
+ROOT owned SUID file foo_file is type: foo_type!
+
+   No root owned SUID file should be anything other than an executable
+binary; however, since this test depends on the "file" command, it may get
+confused, especially when using NFS, since, for example, a Sun won't recognize
+a MIPS executable binary as such.  In any case, examine all SUID root files
+*very* carefully.  And under *no* circumstance should it be a shell script.
+No, no, no.
+
+32)
+User: foo SUID file is type: foo_type!
+
+   As (31), but possibly less severe.
+

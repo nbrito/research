@@ -1,0 +1,174 @@
+:
+#
+#  Usage: root.chk
+#
+#  This shell script checks pathnames inside root's startup files for 
+# writability, improper umask settings (world writable), non-root
+# entries in /.rhosts, and to ensure that root is in /etc/ftpusers.
+# Also check for a single "+" in /etc/hosts.equiv (world is trusted),
+# and that /bin, /etc and certain key files are root owned, so that you
+# can't, say, rcp from a host.equived machine and blow over the password
+# file... this may or may not be bad, decide for yourself.
+# Startup files are /.login /.cshrc /.profile
+#
+#  Mechanism:  These files contain paths and filenames that are stripped
+# out using "grep".  These strings are then processed by the "is_able"
+# program to see if they are world writable.  Strings of the form:
+#
+#	path=(/bin /usr/bin .)
+#		and
+#	PATH=/bin:/usr/bin:.:
+#
+# are checked (using grep) to ensure that "." is not in the path.  All
+# results are echoed to standard output.  In addition, some effort was
+# put into parsing out paths with multiple lines; e.g. ending in "\",
+# and continuing on the next line.
+#  For umask stuff, simply grep for umask in startup files, and check
+# umask value.  For /etc/ftpuser, simple grep to check if root is in
+# the file.  For /etc/hosts.equiv, just check to see if "+" is alone
+# on a line by awking it.
+#
+#
+AWK=/bin/awk
+SED=/bin/sed
+TEST=/bin/test
+ECHO=/bin/echo
+GREP=/bin/grep
+SORT=/usr/bin/sort
+EXPR=/bin/expr
+LS=/bin/ls
+
+# root startup/important files
+csh=/.cshrc
+sh=/.profile
+rhosts=/.rhosts
+big_files="/.login /.cshrc /.profile"
+
+# root should own *at least* these, + $big_files; you can check for all files
+# in /bin & /etc, or just the directories (the default.)
+# root_files="/bin /bin/* /etc /etc/* $big_files $rhosts"
+root_files="/dev /usr/etc /bin /etc $big_files $rhosts /etc/passwd /etc/group"
+
+# misc important stuff
+ftp=/etc/ftpusers
+equiv=/etc/hosts.equiv
+
+#   should't have anyone but root owning /bin or /etc files/directories
+# In case some of the critical files don't exist (/.rhost), toss away error
+# messages
+non_root=`$LS -ld $root_files | $AWK '{if ($3 != "root") print $NF}'`
+if $TEST -n "$non_root" ; then
+	$ECHO "Warning!  Root does not own the following file(s):"
+	$ECHO $non_root
+	fi
+
+# parse into separate paths:
+for i in $big_files
+	do
+	if $TEST -s $i
+		then
+		./chk_strings $i
+
+		# check for umask stuff (thanks to Bruce Spence):
+		if umsk=`$GREP umask $i ` 2>/dev/null
+			then
+			mask=`$ECHO $umsk|$AWK '{if($2!=""){if(length($2)==1) print "00"$2; \
+				else if (length($2)==2) print "0"$2; \
+				else print $2} else print "000"}'`
+#			perm=`$EXPR substr $mask 3 1`
+			perm=`$ECHO $mask | $SED 's/[0-9][0-9]//'`
+			if $TEST "$perm" -lt 2 -o "$perm" = 4
+				then
+				if $TEST "$umsk"
+					then
+					$ECHO "Warning!  Root's umask set to $umsk in $i"
+					fi
+				fi
+			fi
+		fi
+	done
+
+# check to see if root is in ftpusers file
+if $TEST -s $ftp
+	then
+	if $TEST ! "`$GREP "root" $ftp`"
+		then
+		$ECHO Warning!  $ftp exists and root is not in it
+		fi
+	fi
+
+# check for a "+" in hosts.equiv.  Bad.  Bad dog.
+if $TEST -f $equiv ; then
+	$AWK '{if (NF==1 && $1=="+") printf("Warning!  A \"+\" entry in %s!\n", "'$equiv'")}' $equiv
+	fi
+
+# check for non-root entries in /.rhosts
+#$AWK '{if ((NF==1&&!($1=="localhost" || $1=="root"))||(NR!=1&&$2!="root")) printf("Warning!  Non root entry in %s! %s\n", $rhosts, $0)}' $rhosts
+
+
+# checking paths...
+#
+#  For both the .profile and .cshrc, the methods are similar.  Awk for
+# lines with "path" or "PATH", rip out the guts, then check with is_writable 
+# Trying to pull out the multi line stuff was a pain...  no thanks to
+# Jay Batson for telling me this was broken :-)
+#
+{
+#
+# Get the root paths from $csh.
+if $TEST -f $csh; then
+	$AWK '{foo=substr($NF,1,length($NF)); \
+	if (bar && foo=="\\" )
+		foobar[i++] = $0; \
+	if (bar && foo==")") {
+		bar = 0; \
+		foobar[i++] = $0;}}
+/path/	{ foobar[i++] = $0; \
+	foo=substr($NF,1,length($NF)); \
+	if (foo=="\\" )
+		bar = NR \
+	}
+END { for (j=0; j<=i; j++)
+	print foobar[j] } ' $csh |
+	$SED -e 's/#.*$//' -e 's/(//' -e 's/)//' -e 's/.*=//' |
+  	$AWK '{for (i=1;i<=NF;i++) print $i}'
+fi
+
+#
+# Get the root paths from $sh.
+if $TEST -f $sh; then
+	$AWK -F: '{foo=substr($NF,1,length($NF)); \
+	if (bar && foo=="\\" )
+		foobar[i++] = $0; \
+	if (bar) {
+		bar = 0; \
+		foobar[i++] = $0;}}
+	/PATH/	{ foobar[i++] = $0; \
+		foo=substr($NF,1,length($NF)); \
+		if (foo=="\\" )
+			bar = NR \
+		}
+	END { for (j=0; j<=i; j++)
+		print foobar[j] }' $sh |
+	$SED -e 's/#.*$//' -e 's/^export.*$//' -e 's/PATH=//' -e 's/;.*$//' |
+ 	$AWK '{ split($0,temp,":"); for (i in temp) \
+ 			if (temp[i] == "") print "."; \
+ 			else print temp[i]}'
+fi
+} |
+ $SORT -u |
+  while read i
+  do
+	# check to see if "." is in path
+	if $TEST "." = "$i"
+	then
+		$ECHO "Warning!  \".\" (or current directory) is in roots path!"
+	fi
+
+	if ./is_writable $i
+	then
+		$ECHO "Warning!  Directory $i is _World_ writable and in roots path!"
+	fi
+  done
+
+# end of script

@@ -1,0 +1,15 @@
+
+Most accounts have special files called "dot" files.  These files
+control the startup, environment, and execution of the shell and some
+programs.  It is very important that these files not be writable
+or owned by anyone but you!  If someone else owns or can write those
+files, they can take control of your account in a matter of minutes!
+Then they'll be you, which means they can do anything you can do: read,
+write or modify files; send mail; talk to other users; print
+documents.  Make sure that permissions on these files are set to 644,
+or, better yet, 600:
+
+.login     .logout    .cshrc    .bashrc    .kshrc     .xinitrc
+.dbxinit   .profile   .sunview  .mwmrc     .twmrc     .exrc
+
+[Excerpted from "Guide to Account Security"]

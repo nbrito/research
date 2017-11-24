@@ -1,0 +1,89 @@
+:
+#
+#  pass_diff.chk
+#
+#   This shell script is a wrapper for the pass.chk password guessing
+# program.  What this does is save the password file from the last time
+# passwords were guessed, and then do a "diff" on this file and the
+# current password file.  This will prevent accounts being checked over
+# and over again for the same passwords, assuming the password has not
+# been changed.  If you have a fairly stable passwd environment, this
+# can save you quite a bit of CPU time...
+#
+#   Mechanism:  As explained above, it just diff's the password file
+# with the password file used last time you checked passwords, and then
+# calls pass.chk with any flags pass_diff.chk was called with on the
+# difference of the two files.
+#
+#  If the variable $YP is set to "YES", then it will use the the
+# yppassword file; it is not used automatically, because the idea is
+# that this can be, used on any password file, by changing the $etc_passwd
+# var.  See the next paragraph:
+#
+#   Warning!  This only checks for changes in the password file itself --
+# if you change the flags to pass.chk, or if you increase the size of
+# your dictionary, or whatever, this will not detect the change...
+# Also, if you want to use this wrapper with to check alternate pasword
+# files, don't use the "-P" flag (which normally specifies an alternate
+# password file); instead, change the $etc_passwd variable to whatever
+# passwd file you want to check.  Otherwise, this wrapper will force
+# /etc/passwd.
+# 
+#  Yellow Pages/NIS?
+YP=NO
+
+# Locations of commands
+DIFF=/bin/diff
+CMP=/bin/cmp
+AWK=/bin/awk
+TEST=/bin/test
+CP=/bin/cp
+MV=/bin/mv
+RM=/bin/rm
+YPCAT=/usr/bin/ypcat
+TOUCH=/bin/touch
+
+#
+# Important files:
+etc_passwd=/etc/passwd
+old_passwd=./old_passwd
+yp_pass=./yp.$$
+passwd_diff=passwd.diff
+
+# password guessing program:
+pass_chk=./pass.chk
+
+# make a dummy password file if it doesn't exist; changed touch to
+# echo, thanks to the sharp eye of jms@tardis.Tymnet.COM (Joe Smith)
+if $TEST ! -f $old_passwd ; then
+	$ECHO "dummy password file" > $old_passwd
+	fi
+
+# if you use YP:
+if $TEST "$YP" = "YES" ; then
+	$YPCAT passwd > $yp_pass
+	etc_passwd=$yp_pass
+	fi
+
+# has anything changed?  If so, check passwords, if not, leave quietly.
+if $TEST -n "`$CMP $etc_passwd $old_passwd`" ; then
+	#  If old_passwd file exists, use it, else just use the
+	# existing passwd file.
+	$DIFF $etc_passwd $old_passwd | $AWK -F: '/^[<]/{
+		split($1, user, " "); printf("%s",user[2]); \
+		for (i=2;i<=NF;i++){
+			printf(":%s", $i)}; print ""}' > $passwd_diff
+	$CP $etc_passwd $old_passwd
+
+	#  Finally, crack them passwords and get rid of the diff file,
+	# but only if the file is !0 length.
+	if $TEST -s $passwd_diff ; then	
+		$pass_chk $* -P $passwd_diff
+	fi
+	$RM -f $passwd_diff
+fi
+
+# kill off the evidence
+$RM -f $yp_pass
+
+# end

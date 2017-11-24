@@ -1,0 +1,6 @@
+
+Having someone else own one of your files is just as bad as leaving it 
+writable to the world.  Because they own it, they can alter its contents
+at will.  You can check the output of "ls -al" to see if any of your files
+are owned by someone else.  The third column shows the owner of the file.
+

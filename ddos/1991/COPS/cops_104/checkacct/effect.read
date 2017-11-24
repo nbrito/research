@@ -1,0 +1,2 @@
+which will remove read permission for group and other users.  This means that
+no one but you will be able to read this file.

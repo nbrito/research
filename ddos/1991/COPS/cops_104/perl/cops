@@ -1,0 +1,250 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  Usage: cops [-vx] [-c config file] [-s secure_dir] [architecture]
+#
+#  This will change into the $SECURE/architecture directory, suck lots
+# of info and configuration stuff out of "cops.cf", and runs all of the
+# security programs in that file.  If any of the programs find any 
+# security problems, it either sends mail to everyone in the $SECURE_USERS
+# list (see "cops.cf"), or saves the results in a file 
+# $SECURE/architecture/hostname.  It then destroys all temporary files, 
+# and exits the program.  Programs that are run (besides this one):
+#
+#	root.chk	dev.chk		group.chk
+#	rc.chk		passwd.chk	is_able.chk
+#	pass.chk 	user.chk	cron.chk
+#	misc.chk	ftp.chk
+#
+#  The -x and -v (verbose) flags print out the name each program to 
+# the results file as it is executed.  The -v flag also passes the
+# verbose option to other modules.  The -s and -c flags allow you
+# to specify the $SECURE directory and $CONFIG file, respectively.
+# 
+# NOTE:
+#   If you know where perl is and your system groks #!, put its
+# pathname at the top to make this a tad faster.
+#
+# the following magic is from the perl man page
+# and should work to get us to run with perl 
+# even if invoked as an sh or csh or foosh script.
+# notice we don't use full path cause we don't
+# know where the user has perl on their system.
+#
+
+######################################
+# perl COPS main driver.
+# tchrist@convex.com
+######################################
+
+# security sanity settings
+#
+$ENV{'IFS'} = '' if $ENV{'IFS'};
+$ENV{'PATH'} = '/bin:/usr/bin:/usr/ucb';
+$| = 1;
+umask 077;
+
+#
+# Getopts stuff
+$usage = "Usage: $0 [-vx] [-c config_file] [-s secure_dir] architecture\n";
+require 'getopts.pl';
+# Process the command args; Either specify verbose or an alternate config file:
+die $usage unless &Getopts('vxc:s:');
+
+if (defined($opt_v)) { $verbose = $opt_v;}
+else { $verbose = 0; }
+
+if (defined($opt_s)) { $SECURE = $LIBCOPS = $opt_s; }
+else { $SECURE = $LIBCOPS = '.'; }
+
+if (defined($opt_c)) { $CONFIG = $opt_c; }
+else {$CONFIG = "$SECURE/cops.cf"; }
+
+if (@ARGV > 1) {
+    die $usage;
+} elsif (@ARGV == 1) {
+    $SECURE = shift;
+    die "Architecture directory $SECURE does not exist\n" unless -d $SECURE;
+    chdir($SECURE) || die "can't cd to $SECURE: $!";
+    exec './cops';
+} 
+
+# internal cops stuff needed
+require "$LIBCOPS/pathconf.pl";
+require "$LIBCOPS/is_able.pl";
+require "$LIBCOPS/hostname.pl";
+
+chmod 0700, $SECURE;  
+chdir ($SECURE) || die "Error -- Security directory $SECURE doesn't exist\n";
+
+#  Read stuff to do from the config file
+die "$0: Can't trust $CONFIG to reconfig!\n" 	if &'is_writable($CONFIG);
+open CONFIG || die "can't open $CONFIG: $!";
+
+&argh unless -s $CONFIG;
+
+&init_result;
+
+while (<CONFIG>) {
+    next if /^\s*#/;
+    next if /^\s*$/;
+
+    if (/^\s*[\$&\@\%]/) {  #  reset a config variable
+	s/#.*//;
+	eval;
+	warn "Bad config variable at line $. of $CONFIG:\n\t$_\t$@\n" if $@;
+	next;
+    } 
+
+    # must be a program to run
+    chop;
+    s/#.*//;
+    s/;$//;
+    @ARGV=split;
+    $program = shift;
+    if ($verbose || $opt_x) { print "**** $program ****\n"; }
+    &flush;
+    &run("$LIBCOPS/$program");
+    &flush;
+
+} 
+
+&save_result;
+
+&argh unless $ran_something;
+
+exit 0;
+
+######################################################################
+sub run {
+    local($module) = @_;
+    local($status);
+    local($0) = $module; # so it shows up in ps
+    local($!);
+
+
+    $ran_something++;
+
+    open(STDERR, $COPS_ERRORS ? ">&STDOUT" : ">/dev/null");
+
+    unless ($status = do $module) {
+	if ($@) {
+	    warn "cops: unexpected exit from $module:\n\t-> $@\n";
+	} elsif ($! != 0) {
+	    warn "cops: couldn't run $module: $!\n";
+	} else {
+	    warn "cops: $module returned $status\n";
+	} 
+    }
+
+    # hack for kuang, who doesn't write to STDOUT (yet!)
+    $SUCCESS = "$SECURE/Success";
+    if ($module =~ /^kuang/ && -e $SUCCESS) {
+	if (open SUCCESS) {
+	    print while <SUCCESS>;  # STDOUT is $REPORT
+	    close SUCCESS;
+	    unlink $SUCCESS;
+	} else {
+	    warn "can't open $SUCCESS: $!\n";
+	} 
+    } 
+}
+######################################################################
+sub init_result {
+    $REPORT = "$SECURE/result.$$";  # global!
+    open (REPORT, ">$REPORT") || die "can't create $REPORT: $!\n";
+
+    # assume dups work
+    open (STDOUT, ">&REPORT");
+    open (SAVERR, ">&STDERR");
+    open (STDERR, ">&STDOUT");
+
+    ($sec, $min, $hour, $mday, $mon, $year,
+	$wday, $yday, $isdst) = localtime(time);
+
+    $name = sprintf("%s_%s_%s", $year + 1900, 
+	(Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec)[$mon],
+	$mday);
+
+    $host = &hostname;	# from hostname.pl
+    $host =~ s/\..*//;
+
+    # Dan, do you want full path for `date` on next line?
+    print "ATTENTION:\nSecurity report for ", `date`;
+    print "\nfrom host $host, $name\n\n";
+    $report = $name;
+
+    &flush;
+}
+######################################################################
+sub save_result {
+    open(STDERR, ">&SAVERR");
+
+    close REPORT || die "can't close $REPORT: $!\n";
+
+    $dir = "$SECURE/$host";
+    $report = $dir . "/" . $report;
+
+    mkdir($dir,0700) unless -d $dir;
+
+    if ($MMAIL) {
+	# system "$MAIL $SECURE_USERS < $REPORT"
+	system "$ECHO $SECURE_USERS $REPORT"
+	    unless $ONLY_DIFF && !&different($dir, $REPORT);
+    } else {
+#	rename ($REPORT, $dir . "/" . $name) ||
+#	    die "can't put $REPORT into $dir/$name: $!";
+	rename ($REPORT, $report) ||
+	    die "can't put $REPORT into $report: $!\n";
+    }
+    unlink $REPORT;
+} 
+
+######################################################################
+sub different {
+    local($dir, $FILE1) = @_;
+    local($FILE2, $f1, $f2, $_);
+
+    open (LS, "$LS -t $dir |");
+    chop($FILE2 = <LS>);
+    close(LS); # snuff it out
+
+
+    if ($FILE2 eq "") {
+	system "$CP $REPORT $report";
+	}
+    return 1 if (($FILE2 eq "") || (-s $FILE1 != -s $report));
+
+    open FILE1 || die "can't open $FILE1: $!\n";
+    open FILE2 || die "can't open $FILE2: $!\n";
+
+    for (1..5) {
+	$_ = <FILE1>;
+	$_ = <FILE2>;
+    } 
+
+    while ( ($f1 = <FILE1>), ($f2 = <FILE2>) ) {
+	last if $f1 ne $f2;
+    } 
+
+    close FILE1;
+    close FILE2;
+
+    defined($f1) || defined($f2);
+} 
+
+######################################################################
+sub flush {
+    local($old) = $|;
+    $| = 1;
+    print '';
+    $| = $old;
+} 
+
+sub argh {
+    die "Argh -- Can't find anything in $CONFIG\n";
+}

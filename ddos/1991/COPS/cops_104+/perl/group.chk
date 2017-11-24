@@ -1,0 +1,142 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#   group.chk.pl
+#
+# Perl version: composer@chem.bu.edu
+# Based on original shell script, group.chk
+#
+#  Check group file -- /etc/group -- for incorrect number of fields,
+# duplicate groups, non-alphanumeric group names, and non-numeric group
+# id's.
+#
+#   Mechanism:  Group.check uses awk to ensure that each line of the group
+# has 4 fields, as well as examining each line for any duplicate groups or
+# any duplicate user id's in a given group by using "sort -u" to ferret
+# out any duplications.  It also checks to make sure that the password
+# field (the second one) is a "*", meaning the group has no password (a
+# group password is usually not necessary because each member listed on 
+# the line has all the privilages that the group has.)  All results are
+# echoed to standard output.  Finally it ensures that the group names
+# are alphanumeric, that the group id's are numeric, and that there are
+# no blank lines.  For yellow pages groups, it does the same checking,
+# but in order to get a listing of all members of the groups, it does a
+# "ypcat group".
+#
+#   The /etc/group file has a very specific format, making the task
+# fairly simple.  Normally it has lines with 4 fields, each field
+# separated by a colon (:).  The first field is the group name, the second
+# field is the encrypted password (an asterix (*) means the group has no
+# password, otherwise the first two characters are the salt), the third
+# field is the group id number, and the fourth field is a list of user
+# ids in the group.  If a line begins with a plus sign (+), it is a yellow
+# pages entry.  See group(5) for more information.
+#
+
+# should get below config stuff from cops.cf file
+package main;
+
+die "Usage: $0\n" if @ARGV;
+
+require 'pathconf.pl';
+
+#   Used for Sun C2 security group file.  FALSE (default) will flag
+# valid C2 group syntax as an error, TRUE attempts to validate it.
+# Thanks to Pete Troxell for pointing this out.
+#
+# moved to cops.cf
+
+package group_chk;
+
+$etc_group = $'GROUP || '/etc/group';
+
+# Testing $etc_group for potential problems....
+open (Group, "< $etc_group") || warn "$0: Can't open $etc_group: $!\n";
+&chk_group_file_format('Group');
+close Group;
+
+# Testing ypcat group for potential problems
+$yp=0;
+if (-s $'YPCAT && -x _) {
+    open(YGroup, "$'YPCAT group 2>/dev/null |")
+	|| die "$0: Can't popen $'YPCAT: $!\n";
+    $yp=1;
+    &chk_group_file_format('YGroup');
+    close(YGroup);
+}
+
+# usage: &chk_group_file_format('Filehandle-name');
+# skips over lines that begin with "+:"
+# It really should check for correct yellow pages syntax....
+#
+# this routine checks lines read from a filehandle for potential format
+# problems .. should be matching group(5)
+#
+# checks for duplicate users in a group as it reads the lines instead
+# of after (as the original shell script does)
+
+sub chk_group_file_format {
+    local($file) = @_;
+    local($W) = "Warning!  $file file,";
+    undef %groups;
+
+    while (<$file>) {
+	# should really check for correct YP syntax
+	next if /^[-+]:/;   # skipping YP lines for now
+	print "$W line $., is blank\n" if /^\s*$/;
+	($group,$pass,$gid,$users) = split(?:?);
+	$groups{$group}++;   # keep track of dups
+	print "$W line $., does not have 4 fields:\n\t$_" if (@_ != 4);
+	print "$W line $., nonalphanumeric group name:\n\t$_"
+	    if $group !~ /^[_A-Za-z0-9-]+$/;
+	if ($pass && $pass ne '*') {
+	    if ( ! $C2 || $yp ) {
+		print "$W line $., group has password:\n\t$_"
+		    if length($pass) == 13;
+	    } else {
+		print "$W line $., group has invalid field for C2:\n\t$_"
+		    if $pass ne "#\$$user";
+	    }
+	}
+	# print "$W line $., nonnumeric group id: $_" if $_[2] !~ /^\d+$/;
+	if ($gid !~ /^\d+$/) {
+		if ($uid < 0) {
+			print "$W line $., negative group id:\n\t$_";
+			}
+		else { print "$W line $., nonnumeric group id:\n\t$_"; }
+		}
+
+	# look for duplicate users in a group
+	# kinda ugly, but it works .. and I have too much other work right
+	# now to clean it up.  maybe later.. ;-)
+	chop($users);	# down here, 'cos split gets rid of final null fields
+	@users = sort split(/\s*,\s*/, $users);
+	# %users = # of times user is in group, $dup_user = duplicate found
+	undef %users;  $dup_user=0;
+	grep(!($users{$_}++) && 0, @users);
+	for (keys %users) {
+	    (print "Warning!  Group $group has duplicate user(s):\n"),
+		$dup_user=1 if !$dup_user && $users{$_} > 1;
+	    print "$_ " if $users{$_} > 1;
+	}
+	print "\n" if $dup_user;
+
+    }
+    # find duplicate group names 
+    # not the best way, but it works..
+    # boy, this is ugly too .. but, not as bad as above.. :)
+    $dup_warned = 0;
+    for (sort keys %groups) {
+	(print "Warning!  Duplicate Group(s) found in $file:\n"), $dup_warned++
+	    if !$dup_warned && $groups{$_} > 1;
+	print "$_ " if $groups{$_} > 1;
+    }
+    print "\n" if $dup_warned;
+}
+
+1;
+# end

@@ -1,0 +1,40 @@
+:
+#
+#  yp_pass.chk [whatever flags you want to pass to pass.chk]
+#
+#   This shell script is a wrapper for the pass.chk password guessing
+# program for systems using Yellow Pages/NIS.  All this does is dump the
+# yppassword file into a temp file, then runs "pass.chk" with whatever
+# flags were passed to it.
+#
+#   Obviously, it doesn't make any sense to use the "-P" flag (which
+# specifies an alternate password file.)
+# 
+
+TEST=/bin/test
+RM=/bin/rm
+YPCAT=/usr/bin/ypcat
+
+# Important files:
+yp_pass=./yp.$$
+
+# password guessing program:
+pass_chk=./pass.chk
+
+# generic test to check for yp use?
+if $TEST -f $YPCAT -a -s $YPCAT ; then
+	$YPCAT passwd > $yp_pass
+else
+	$RM -f $yp_pass
+	exit 1
+	fi
+
+#  crack them passwords
+if $TEST -s "$yp_pass" ; then	
+	$pass_chk $* -P $yp_pass
+	fi
+
+# kill off the evidence
+$RM -f $yp_pass
+
+# end

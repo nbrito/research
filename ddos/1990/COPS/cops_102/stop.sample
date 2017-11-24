@@ -1,0 +1,10 @@
+-rwsr-xr-x  1 root     bin         10240 Jun 13 13:13 /bin/chgrp
+-rwsr-xr-x  1 root     bin         12288 Jun 13 13:13 /bin/df
+-rws--s---  1 root     term        22528 Aug 13 13:13 /bin/login
+-rws------  1 root     bin         21504 Jun 13 13:13 /bin/login.old
+-rwsr-xr-x  1 root     bin         22528 Jun 13 13:13 /bin/mail
+-rwsr-xr-x  1 root     bin         14336 Jun 13 13:13 /bin/passwd
+-rwxr-sr-x  1 root     MEM         22528 Jun 13 13:13 /bin/ps
+-rwsr-xr-x  1 root     bin         16384 Jun 13 13:13 /bin/su
+-rwxr-sr-x  1 root     MEM         14336 Jun 13 13:13 /etc/dmesg
+-rwsr-x---  1 root     operator    29696 Jun 13 13:13 /etc/dump

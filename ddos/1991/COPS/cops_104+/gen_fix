@@ -1,0 +1,169 @@
+#
+#  gen_fix
+#
+#  An awk program to generate fixes (e.g. shell commands) for the
+# warning messages that cops outputs.  Code structure stolen liberally
+# from the carp.anlz program (heck, I wrote that too -- I can do that :-))
+#
+
+#
+#  IMPORTANT - exception list!
+#
+#  Be very careful of regular expressions and other awk stuff...
+# ()'s, *'s, ?'s, /'s, etc. are all trouble.  Backquote if in doubt.
+#
+#  Sample:
+#  (Brave... or stupid?)
+# /_World_ writable!/ {next}
+#
+
+#  Hassled by mail warning?
+/Warning!  \/usr\/spool\/mail is _World_ writable!/ {next}
+
+#  Kill off password, YP, etc. messages... face it, nothing can be done
+# with this stuff safely in a stupid shell script:
+/Password file/ {next}
+/Group file/ {next}
+
+#
+# START THE CHECKING/FIXING
+#
+
+# do the weird writable/readable things first:
+/Directory.*_World_ writable/ {
+	print "chmod o-w " $3
+	next
+	}
+/Root executed File/ {
+	print "chmod o-w " $5
+	next
+	}
+/File.*_World_ writable/ {
+	print "chmod o-w " $3
+	next
+	}
+
+/_World_ writable/ {
+	print "chmod o-w " $2
+	next
+	}
+/group writable/ {
+	print "chmod g-w " $2
+	next
+	}
+/_World_ readable/ {
+	print "chmod o-r " $2
+	next
+	}
+/group readable/ {
+	print "chmod g-r " $2
+	next
+	}
+/is SUID!/ {
+	print "chmod o-s " $2
+	next
+	}
+/is SGID!/ {
+	print "chmod g-s " $2
+	next
+	}
+
+/A "+" entry in/ {
+	# Lots of different approaches to use.  I'll just Nuke it.
+	print "# Nuke the hosts.equiv file:"
+	print "mv /etc/hosts.equiv /etc/hosts.equiv.old"
+	print ""
+	next
+	}
+
+# /tftp is enabled on/ { next }
+
+# /rexd is enabled in/ {
+/XXXXXXXXX/ {
+	#   better ideas?  I'll sed it out, then echo that you should
+	# restart inetd.
+	inetd=$NF
+	new_inetd = "/usr/tmp/inetd.conf"
+	print "#  can we modify inetd.conf?"
+	print "sed '/^rexd/d'", inetd " > ", new_inetd
+
+	# has anything changed?  If so, change; if not, leave quietly.
+	print "if test -s", new_inetd " -a -n `/bin/cmp " inetd, new_inetd "` ; then"
+	print "\t/bin/mv " inetd, inetd ".old"
+	print "\t/bin/mv " new_inetd, inetd
+	print "\tfi"
+	print "echo Restart inetd with the new configuration file"
+	print ""
+	next
+	}
+
+/User.*home directory.*is mode/ {
+	print "# User's home dirs should be mode 711:"
+	print "chmod 711 " $6
+	print ""
+	next
+	}
+
+/User.*:.*is mode/ {
+	print "# User's dot files should be mode 600:"
+	print "chmod 600 " $4
+	print ""
+	next
+	}
+
+/should be mode 555/ {
+	print "# ftp's home dir should be 555"
+	print "chmod " $2 " 555"
+	print ""
+	next
+	}
+
+/should be be empty/ {
+	print "# nuke ftp's rhosts file:"
+	print "mv " $2, $2 ".old"
+	print ""
+	next
+	}
+
+/should be in/ {
+	print "# add " $2 " to /etc/ftpusers"
+	print "echo " $2 " >> /etc/ftpusers"
+	print ""
+	next
+	}
+
+/should exist/ {
+	print "# create an ftpusers file:"
+	print "touch /etc/ftpusers"
+	print ""
+	next
+	}
+
+/should be owned by.*or/ {
+	print "# " $2 " should be owned by " $7
+	print "chown " $7, $2
+	print ""
+	next
+	}
+
+/Incorrect permissions on "ls" in/ {
+	print "# ls should be 111"
+	print "chmod " substr($NF,1,length($NF)-1) "/ls 111"
+	print ""
+	next
+	}
+
+/Incorrect permissions on "passwd" in/ {
+	print "# passwd should be 444"
+	print "chmod " substr($NF,1,length($NF)-1) "/passwd 444"
+	print ""
+	next
+	}
+
+/Incorrect permissions on "group" in/ {
+	print "# group should be 444"
+	print "chmod " substr($NF,1,length($NF)-1) "/group 444"
+	print ""
+	next
+	}
+

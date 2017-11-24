@@ -1,0 +1,57 @@
+.TH CARP.ANLZ 1 "Feb 15, 1992"
+.UC 4
+.SH NAME
+carp.anlz \- an awk program run internally by \fIcarp\fP(1)
+.SH SYNOPSIS
+.B \fIawk\fP \-f carp.anlz
+.SH DESCRIPTION
+.I carp.anlz
+is an awk program that helps transform \fIcops\fP(1) output into
+a report file; it is run internally by \fIcarp\fP.
+There are two basic kinds of lines used in this program -- one is
+a check to see if a problem exists, and the other is an exception
+line that will ignore any warning line that matches it.
+The order that the lines appear is very important, since normally
+when a match is found, the rest of the checks for that line are skipped. 
+The checks are nothing more than regular expressions that match
+an arbitrary line of \fIcops\fP output, and that ouput the report file
+that is being checked, the \fIcops\fP check that the warning was
+found in, and finally the severity code assigned to the warning (0 is
+problem that can gain root access almost instantly, 1 is a perhaps
+lesser, but still serious problem, and a 2 is a problem of unknown
+severity.)  For instance:
+
+.nf
+# level 0 checks:
+/A "+" entry in/ {print FILENAME, check, testing "0"; next }
+# level 1 checks:
+/User.*home directory.*is mode/ {print FILENAME, check, testing "1"; next }
+# level 2 checks:
+/is _World_ writable!/ {print FILENAME, check, testing "2" }
+.fi
+.PP
+Note that wildcards are not always neccessary (and they slow
+down the pattern matching, as well.)  The first matches the "+" in
+hosts.equiv warning, the second matches a user with a home
+directory with a "bad" mode, and the last matches any warning that
+says something is world writable.
+.PP
+Similarily, exceptions are also simple lines of awk code; they
+do not print anything out, however, they merely tell the program
+to skip the line altogether -- presumably, because you know the
+warning is superfluous, or that it is of little consequence to the
+overall security of your system, or that you don't mind taking the
+risk that the potential problem offers.  They are usually placed at the
+top of the file, since they do no good if the the warning is first,
+because they will never be reached.
+
+.nf
+/Warning!  \\/usr\\/spool\\/mail is _World_ writable!/ {next}
+.fi
+.PP
+Hint -- make sure you backquote forward slashes, as in a path names.
+
+.SH SEE ALSO
+carp(1)
+.SH BUGS
+Any line not matched by a pattern will be ignored.

@@ -1,0 +1,20 @@
+.TH ROOT.CHK 1 "Jan 4, 1991"
+.UC 4
+.SH NAME
+root.chk  \- Checks contents of root owned startup files as well as
+a variety of miscellaneous potential dangers.
+.SH SYNOPSIS
+.B root.chk
+.SH DESCRIPTION
+.I root.chk
+checks the paths inside root's startup files for writeability as well
+as looking to see if the current directory is in root's path, for
+improper umask settings (world writable), and if /bin, /etc, /.login, /.cshrc, /.rhosts, and /.profile
+are all owned by root.
+.SH FILES
+.br
+.nf
+/.login
+/.cshrc
+/.profile
+.fi

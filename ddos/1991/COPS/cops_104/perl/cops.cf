@@ -1,0 +1,95 @@
+#
+# COPS CONFIGURATION FILE
+#
+# put user variables here: anything beginning with /^\s*[$@%&]/ will be eval'd
+# in general, variables in package main are for cops itself, whereas
+# those with package qualifiers are for a particular chk routine or
+# for auxiliary routines.
+
+# COPS  main variables follow...
+$MMAIL 		= 0; 		# send mail instead of generating reports
+$ONLY_DIFF 	= 0;  		# only send diff from last time
+$SECURE_USERS   = "foo@bar.edu";# user to receive mailed report
+$C2             = 0;		# Sun c2 security package
+$OVER_8		= 0;		# long usernames > 8 characters
+$COPS_ERRORS    = 0;		# do you want error stuff or not?
+
+# these don't really work for pass.cache yet
+$IGNORE_YP	= 0;
+$PASSWD		= '/etc/passwd';
+$GROUP		= '/etc/group';
+
+# put whatever gets pw info here, like '/bin/cat /etc/security/passwd' or
+# whatever; no or a null entry means it tries the standard /etc/passwd
+# and 'ypcat passwd' stuff.  Note that this will pass the info to the
+# password caching program -- it expects a file with *exactly* the same
+# fields and such as the normal password file, ok?
+# $GET_PASSWD	= '/bin/cat passwd';
+
+###############################################################
+# many things call &chk_strings (including {cron,misc,rc,root}.chk)
+# the following two variable settings affects its behaviour...
+# this one says to ignore warnings about paths matching these regexps
+
+@chk_strings'ignores = ( '^/tmp/?', '^/(var|usr)/tmp/?' );
+
+# this will take a bit longer, but can find dangerous things much better
+# the shell cops can't do this.... sigh
+
+$chk_strings'recurse = 0;
+
+# if we want stat failure warnings from is_able...
+
+$is_able'noisy = 0;  
+
+###############################################################
+# finally the checks to execute.  these can also all be run 
+# stand-alone from the shell.
+
+# first test the security of the root account
+root.chk
+
+#   Now of the various devices.  adding the -g option to dev.chk means too
+# check group writability, too
+$MTAB    = '/etc/fstab';
+$EXPORTS = '/etc/exports';
+$TAB_STYLE = 'new';
+dev.chk
+
+# exaustive tests for things that shouldn't be readable/writable etc:
+is_able.chk
+
+# check for insecuities in /etc/rc*:
+rc.chk
+
+# and in cron:
+cron.chk
+
+# some consistency and idiocy (null or trivial passwds) in /etc/passwd:
+passwd.chk
+
+# cracking passwds:
+pass.chk
+
+# consistency checks in /etc/group
+group.chk
+
+# make sure user accounts don't have trojanable dot files:
+user.chk
+
+# check ftp security:
+$ftp'primary = "root";
+$ftp'secondary = "ftp";
+ftp.chk
+
+# and anything else we forgot
+
+# Sys V types use /etc/servers here:
+$misc'inetd = "/etc/inetd";
+misc.chk
+
+# Kuang!
+kuang
+
+# SUID checking:
+# suid.chk

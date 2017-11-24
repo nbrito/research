@@ -1,0 +1,13 @@
+
+If you have accounts on more than one system on the same network, you
+can allow yourself to log in from one to another by setting up
+".rhosts" files.  This allows you to log in from one account to another
+without having to enter a password.  This can also be an easy way for
+someone to break into your account, if they can write their login to
+your .rhosts file.  For this reason it usually best not to have one.
+
+One last note on sharing accounts from the PUCC Policy Trifold, 
+"Unauthorized Use of Accounts":
+
+"Don't let any other person use your account."
+

@@ -1,0 +1,47 @@
+:
+#
+#  SGI module for bug/vulnerability checking
+#
+ECHO=/bin/echo
+TEST=/bin/test
+LS=/bin/ls
+LS_OPTS2="g"
+LS_OPTS="-slaL$LS_OPTS2"
+ARCH=/bin/arch
+GREP=/bin/grep
+AWK=/bin/awk
+DATE=/bin/date
+BUG="$AWK -f ./bug_cmp"
+
+if $TEST ! -f ./bug_cmp ; then
+	$ECHO "Must have bug compare module, ./bug_cmp, to run..."
+	exit 2
+	fi
+# what is the date?  We just need the month and year...
+# Format: Fri Feb  7 14:16:55 PST 1992
+real_date=`$DATE | $AWK '{print $2, $NF}'`
+THIS_YEAR=`$DATE | $AWK '{print $NF}'`
+
+# Mail
+#
+# IRIX 3.3 & 3.31
+Mail="/usr/sbin/Mail"
+fix_date="31 Oct 1990"
+cert_advis="CA-90:08"
+if $TEST -f "$Mail" ; then
+	cur_date=`$LS $LS_OPTS $Mail | $AWK '{if (index($9, ":")) print $8,$7, '"$THIS_YEAR"' ; else print $8,$7,$9}'`
+	$ECHO $Mail $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# fmt
+#
+# Fixed in 4.0
+fmt="/usr/sbin/fmt"
+fix_date="26 Aug 1991"
+cert_advis="CA-91:14"
+if $TEST -f "$fmt" ; then
+	cur_date=`$LS $LS_OPTS $fmt | $AWK '{if (index($9, ":")) print $8,$7, '"$THIS_YEAR"' ; else print $8,$7,$9}'`
+	$ECHO $fmt $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# finis

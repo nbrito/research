@@ -1,0 +1,27 @@
+.TH CRON.CHK 1 "December 31, 1989"
+.UC 4
+.SH NAME
+cron.chk  \- Checks contents of cron file(s) for potential danger.
+.SH SYNOPSIS
+.B cron.chk
+.SH DESCRIPTION
+.I cron.chk
+checks pathnames and files inside the cron files for writability.
+It filters out all paths or files that have a /tmp, /dev/null,
+or /dev/*ty, plus everything after a ">"; e.g. if crontab is writing
+to a file it doesn't care.
+.PP
+Since cron is run with root privileges, any file that root uses as input
+inside the cron files or any program that root executes is potential danger.
+World writable files can be changed by anyone to cause a root owned process
+to give away unwarranted privileges.
+.SH FILES
+/usr/lib/cron
+/usr/spool/cron/crontabs/*
+.SH "SEE ALSO"
+is_writable(1)
+.SH BUGS
+Spurious messages can occur; a more stringent method (if perhaps less
+careful of a check) would be to test just the 6th field, instead of
+all the fields after the fifth.  Also throwing away /tmp, etc. could
+be a mistake.

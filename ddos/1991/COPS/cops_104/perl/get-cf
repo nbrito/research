@@ -1,0 +1,73 @@
+#! /usr/local/bin/perl
+
+@dot_files = (
+    ".login", ".logout", ".cshrc",			# csh, cshe or tcsh
+    ".profile",						# ksh, sh
+    ".env",						# ksh
+    ".alias", ".aliases",				# common for all shells
+    "user.ps", ".user.ps", "tools.ps", ".tools.ps",
+	"startup.ps", ".startup.ps",			# NeWS
+    ".mgrc",						# MGR
+    ".X11init", ".awmrc", ".twmrc", ".xinitrc",		# X11
+    ".emacs"						# emacs
+);
+
+%seen = {};
+
+open(HOST, "/bin/hostname |") || die "can't get the hostname";
+chop($hostname=<HOST>);
+close(HOST);
+
+user_loop:
+    for (($name,$passwd,$uid,$gid,$quota,$comment,$gcos,$dir,$shell) = getpwent();
+         $name ne "";
+         ($name,$passwd,$uid,$gid,$quota,$comment,$gcos,$dir,$shell) = getpwent()) {
+
+	#
+	# If the user has a home directory on this server, get the info 
+	# about the directory, his CF's and so on.
+	#
+	if ($dir =~ m,^/n/$hostname/,) {
+	    if (! -d $dir) {
+		printf(stderr "home directory '%s' for user '%s' doesn't exist.\n",
+			$dir,
+			$name);
+		next user_loop;
+	    }
+
+	    ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+                    $atime,$mtime,$ctime,$blksize,$blocks)
+                        = stat(_);
+	    $mode = $mode & 07777;
+
+	    &spit_it_out("d", $uid, $gid, $mode, $dir);
+
+	    foreach $file (@dot_files) {
+		$path = "$dir/$file";
+
+		if (-f $path) {
+		    ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+                        $atime,$mtime,$ctime,$blksize,$blocks)
+                            = stat(_);
+		    $mode = $mode & 07777;
+
+		    &spit_it_out("f", $uid, $gid, $mode, $dir);
+		}
+	    }
+	}
+    }
+
+
+
+
+sub spit_it_out {
+    local($type, $uid, $gid, $mode, $name) = @_;
+
+    if (defined($seen{$name})) {
+	return;
+    }
+
+    printf("%s %d %d 0%o %s\n", $type, $uid, $gid, $mode, $name);
+    $seen{$name} = 1;
+}
+

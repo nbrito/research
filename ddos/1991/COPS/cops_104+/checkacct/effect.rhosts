@@ -1,0 +1,4 @@
+which will prevent anyone from logging into your account without a password.
+After talking to a PUCC Consultant (available in the basement of Math-Science
+or at 49-41787) you can edit this file, rhosts.xxxxx and move it back to be 
+your effective rhosts file.

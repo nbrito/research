@@ -1,0 +1,125 @@
+:
+#
+#  Usage: rc.chk
+#
+#  This checks pathnames and files inside the shell script files /etc/rc*
+# for writability.
+#
+#  Mechanism:  The commands inside the files /etc/rc* are executed when
+# the machine is booted.  This shell script greps for commands/paths that
+# are of these forms:
+#
+#	/path/command			# or whatever
+#		or
+#	PATH=:/bin:/usr/bin:.		# or whatever
+#		or
+#	MYVAR=`/path/command`		# or whatever
+#	
+#  It then takes each potential problem-string and uses the program
+# "is_writable" to determine if it is world writable.  All results are
+# echoed to standard output.
+#
+# 12 Apr 90, Mark Plumbly made it ignore lines starting with rm -f
+# (popular in rc files) and fixed my code so it would ignore everything
+# after a ">".
+#
+SED=/bin/sed
+CAT=/bin/cat
+RM=/bin/rm
+AWK=/bin/awk
+LS=/bin/ls
+TEST=/bin/test
+EGREP=/usr/bin/egrep
+ECHO=/bin/echo
+SORT=/usr/bin/sort
+FIND=/bin/find
+
+# temp file for stuff:
+FOO_RC="./rc.foo.$$"
+FOO_RC2="./rc.foo2.$$"
+
+# CHANGE THIS LINE OR PUT IN FILE NAMES IF/AS NEEDED!
+#    (for example: init_files="/etc/rc /etc/rc.local")
+#
+# init_files=`$LS /etc/*rc /etc/rc* /etc/rc*.d/* /etc/shutdown.d/* /etc/inittab | $SORT -u`
+
+potential_files="/etc/*rc /etc/rc*"
+if $TEST -d /etc/shutdown.d ; then
+	potential_files=$potential_files" /etc/shutdown.d"
+	fi
+if $TEST -f /etc/inittab ; then
+	potential_files=$potential_files" /etc/inittab"
+	fi
+init_files=`$FIND $potential_files -print | $SORT -u`
+
+#
+#  This should get all paths in /etc/rc* files; at least two types here.
+# First type starts with a "/", the second is either in the form :
+#
+#	PATH=:/bin:/usr/bin:.		# or whatever
+# or
+#	MYVAR=`/bin/echo "hello"`	# or whatever
+#
+#   Notice also I strip out any references to /tmp, /usr/tmp,
+# /dev/*ty's, and /dev/null.
+#
+# 12 Apr mdp: 	Modified to remove "> file" as well as ">file"
+#		and remove "rm -f file" (this removes a few bogus ones).
+#		(i.e. things which are written to or removed only are ignored).
+#
+
+#  You can try this, or use the old method...
+# for file in $init_files
+#  	do
+# 	if $TEST -s $file ; then
+#  		./chk_strings $file
+# 		fi
+#   	done
+# exit
+
+for file in $init_files
+	do
+	if $TEST -f "$file" ; then
+		$AWK '{ if (substr($1,1,1)== "#") next; \
+		for (i=1;i<=NF;i++) \
+			{ first=substr($i,1,1);		\
+				if (first==">"||first=="#"||first=="$")	\
+					break;			\
+				else if ($i == "rm")		\
+					break;			\
+				else if (first == "/")		\
+					print "\"'$file'\"", $i;\
+				}				\
+			}' $file |
+		$SED -e s/\"//g -e s/\'//g -e s/\`//g -e s/\;// |
+		$EGREP -v "/dev/.*ty|/tmp|/usr/tmp|/dev/null"
+		fi
+		done | sort -u >> $FOO_RC2
+
+#
+#  Ok -- $FOO_RC has a format like thus:
+# /etc/rc.local /bin/foofile
+#
+#  We want to kill off all dups in the second field:
+$AWK '{dup[$2] = $1}
+	END { for (i in dup) print dup[i], i;}' $FOO_RC2 | $SORT > $FOO_RC
+
+#  First, get the ones starting with "/":
+#
+#   DANGER!  DANGER!  DANGER Will Robinson! Awk runs out of room ("bails
+# out") if too many files are here....
+# for i in `$CAT $FOO_RC`
+cat $FOO_RC | while read i
+	do
+	target=`$ECHO $i | $SED 's/.* //'`
+	if $TEST -f "$target" ; then
+		blame=`$ECHO $i | $SED 's/ .*$//'`
+		if ./is_writable $target
+			then
+			$ECHO "Warning!  File $target (in $blame) is _World_ writable!"
+			fi
+		fi
+	done
+
+$RM -f $FOO_RC $FOO_RC2
+# end of script

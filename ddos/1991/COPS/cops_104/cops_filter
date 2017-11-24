@@ -1,0 +1,69 @@
+#
+#  cops_filter
+#
+#  An awk program to help filter out spurious warning messages.  Similar
+# to "carp.anlz", but instead of filtering out things on a network
+# level (or at least multi-host), as carp does, it filters out individual
+# host warnings.  Also, carp.anlz filters post facto and doesn't modify
+# the report files; this filters before the report is printed and influences
+# the final cops report.  See readme.cops_filter for more information.
+#
+
+#
+#  EXCEPTION LIST:
+/Warning!/ {
+	# if (warning) print "FIRST:", warning_msg
+	if (warning) print warning_msg
+	warning = skip_next = 0
+
+#
+#  You can clump all the warnings together, which can be a pain
+# to keep track of matching parens, backslashes, and curly braces
+# (especially if you're changing the first or last entry in the long
+# if statement...):
+#
+#	if (($0 ~ /Warning!  \/usr\/spool\/mail is _World_ writable!/) || \
+#	    ($0 ~ /Warning!  \/etc\/mtab is _World_ writable!/) || \
+#	    ($0 ~ /Warning!  YPassword/) || \
+#	    ($0 ~ /Warning!  \/etc\/tmp is _World_ writable!/) || \
+#	    ($0 ~ /Warning!  \/etc\/utmp is _World_ writable!/) || \
+#	    ($0 ~ /Warning!  \/usr\/adm\/snm is _World_ writable!/)) {
+#		skip_next = 1
+#		next
+#		}
+
+#  Alternately, you can do each one separately:
+#
+#	if ($0 ~ /Warning!  \/usr\/spool\/mail is _World_ writable!/) {
+#		skip_next = 1
+#		next
+#		}
+#	if ($0 ~ /Warning!  \/etc\/sm.* is _World_ writable!/) {
+#		skip_next = 1
+#		next
+#		}
+#	if ($0 ~ /Warning! ypadmin should be in \/etc\/ftpusers!/) {
+#		skip_next = 1
+#		next
+#		}
+
+	warning = 1
+	warning_msg = $0
+	}
+
+#  this catches the second line of multi line warnings
+! /Warning!/ {
+	# if it's the second line, print the first line (caught above)
+	if (warning)
+		print warning_msg
+	warning = 0
+
+	# print the second line or just normal lines
+	if (!skip_next && $0 !~ /\*\*\*\*/)
+		print $0
+	}
+
+# don't want to blow away verbose information headers
+/\*\*\*\*/ {
+	print $0
+	}

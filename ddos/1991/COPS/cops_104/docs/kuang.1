@@ -1,0 +1,63 @@
+NAME
+	kuang -	rule based system to find inconsistencies in the security
+		configuration of a BSD 4.2 Unix.
+
+SYSNOPSIS
+	edit init_kuang to reflect attackers initial goals
+	sh kuang > tracelog
+
+DESCRIPTION
+	Kuang is a rule based system that searches for a path from an
+initial set of privileges to a desired set.  Given a goal, kuang uses
+rules to determine a set of subgoals which are sufficient to achieve the
+initial goal.  The rules are then applied to the subgoals to determine a
+set of sub-subgoals, etc.  This process repeats until there are no new
+goals to examine.  If a subgoal can be directly achieved using the
+attacker's initial privileges, then a line is added to the file
+'Success' that describes how the attacker can achieve the top level goal.
+	The rules for Unix can be divided into three categories
+depending on whether they deal with files, users, or groups.  Kuang
+embodies these rules in three shell scripts, dofiles, douids, and
+dogids.  Goals that have been examined are recorded in the files
+files.p, uids.p, and gids.p.  The files files.n, uids.n, and gids.n
+record the goals that will be examined next.  The shell script, kuang,
+applies the goals in each .n file to the corresponding rule file.
+	The initial privileges and ultimate goal are set up in the shell
+script, init_kuang.  If the program finds a sequence of rules that
+connects the initial privileges to the ultimate goal, that sequence will
+be recorded in the file Success.  Each step in the sequence is recorded
+as a pair of words.  For example, the line "gids users, write
+/usr/bob/.login, trojan baldwin, grant staff, write /etc, replace
+/etc/passwd" means that the password file can be replaced because the
+group staff has write access to the directory /etc, and you can get
+access to the staff group because the .login file for the user bob can
+be written by members of the group users, which is one of your initial
+privileges.
+
+FILES
+	*.n		- goals to process in the next round.
+	*.x		- goals currently being processed.
+	*.p		- goals that have been examined.
+	uids.*		- goals related to user IDs.
+	gids.*		- goals related to group IDs.
+	files.*		- goals related to files.
+	Success		- log of holes that are found.
+	tracelog	- step by step trace of search.
+
+AUTHOR
+	Bob Baldwin, MIT Lab for Computer Science, Programming and
+Systems Group.  
+E-Mail Address   :
+
+baldwin@xx.lcs.mit.edu
+...!mit-eddie!baldwin
+
+Kuang was inspired by William Gibson's book, Neuromancer, which won the
+1984 Hugo award.  In honor of Gibon's book, systems that use rule based
+searching to find security holes should be called a kuang-type systems.
+
+BUGS
+	Needs to be smarter about command files (e.g., it should look
+for writeable files executed via crontab).
+	Doesn't include rules for all the programs that run with
+their user id set to root.

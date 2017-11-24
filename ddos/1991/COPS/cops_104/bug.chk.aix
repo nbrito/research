@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+#  IBM/AIX module for bug/vulnerability checking
+#
+ECHO=/bin/echo
+TEST=/bin/test
+LS=/bin/ls
+LS_OPTS="-slagL"
+ARCH=/bin/arch
+GREP=/bin/grep
+AWK=/bin/awk
+BUG="$AWK -f ./bug_cmp"
+
+if $TEST ! -f ./bug_cmp ; then
+	$ECHO "Must have bug compare module, ./bug_cmp, to run..."
+	exit 2
+	fi
+# what is the date?  We just need the month and year...
+# Format: Fri Feb  7 14:16:55 PST 1992
+if $TEST $# -eq "2" ; then
+        real_date="$1 $2"
+else
+        real_date=`$DATE | $AWK '{print $2, $NF}'`
+        fi
+
+# tftpd
+#
+#
+# Fixed in version "1.13.1.3" (do a "what /etc/tftpd")
+tftpd="/etc/tftpd"
+fix_date="17 Oct 1991"
+cert_advis="CA-91:19"
+#  IBM says to do this; I'm going to go by date, because if I search
+# for a specific version, I'll be screwed when they change it.
+# `what /etc/tftpd`
+if $TEST -f "$tftpd" ; then
+	cur_date=`$LS $LS_OPTS $tftpd | $AWK '{print $8, $7, $9}'`
+	$ECHO $tftpd $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# /usr/etc/rpc.rexd
+#
+#
+rexd="/usr/etc/rcp.rexd"
+fix_date="5 Mar 1992"
+cert_advis="CA-92:5"
+#
+if $TEST -f "$rexd" ; then
+	cur_date=`$LS $LS_OPTS $rexd | $AWK '{print $8, $7, $9}'`
+	$ECHO $rexd $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# finis

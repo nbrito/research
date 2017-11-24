@@ -1,0 +1,9 @@
+
+  Make sure you uncomment out line 92 in dev.chk:
+
+# On an IBM/AIX box, you can try something like:
+# all_devs=`$GREP 'dev.*=' /etc/filesystems | $AWK '{print $NF}'`
+
+  So that COPS can read the right devices.  Also, read the "readme.shadow"
+file for shadow-password info, and how to crack passwords, etc, on this
+beast.

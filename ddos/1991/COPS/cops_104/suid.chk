@@ -1,0 +1,249 @@
+:
+#
+#  Usage: suid.chk [-s secure_dir] [-S start_dir] [-m user] [-o file] [-n] [-x]
+#
+#
+#   Shell script intended to be run periodically by cron in order
+#   to spot changes in files with the suid or sgid bits set.
+#
+#	suid.chk	840919		Prentiss Riddle
+#
+#     This changes into the $SECURE directory first, then 
+#   uses find(1) to search the directories in $SEARCH for all
+#   files with the 4000 or 2000 permission bits set.  $STOP is a file
+#   containing "ls -lga" output for known setuid or setgid programs.
+#   Any additions or changes to this list represent potential security
+#   problems, so they are reported to the users named in $INFORM.
+#
+# [-m user]  mail to user specified here.
+#
+# [-n]  Do *not* follow NFS mounted partitions.  This probably won't
+#	work on most machines -- check the string; this works on a
+#	sun: "-type d \( -fstype nfs -prune \)"; you can send me
+#	what works on your machine.
+#
+# [-o file]  Write results to this file instead of mailing.
+#
+# [-s secure_dir]  Set the secure dir, good for running this in cron -- 
+#	else it'll think it's "/", and you'll chmod that to 700 :-)
+#
+# [-S search_dir]  Start the "find" here, instead of the default "/"
+#
+# [-x]  Look for strangely named files, too.  Really primative right
+#	now; I'm pondering what to do with this.  Ideally, you'd pass
+#	all the files through a filter (preferably perl), but then I'd
+#	have to rethink the general suid finding stuff, or do a separate
+#	find.  Yuck, both ways.  I have a perl filter that does the
+#	right thing, or close to it; it's in "extra_src/bad_dir.pl".
+#	You say something like: "find $1 -exec perl ./bad_dir.pl {} \;"
+#
+#  Lots of changes by dan:
+#	Changed the program/doc names and some of the temp files to
+#	make it fit in with the rest of the programs, flags SUID shell
+#	scripts and world writeable SUID files, too, added command line
+#	flags, look for strange files, etc.
+
+#  CHANGE THIS LINE!
+INFORM="foo@bar.edu"
+#
+
+TEST=/bin/test
+ECHO=/bin/echo
+LS=/bin/ls
+CAT=/bin/cat
+CP=/bin/cp
+MAIL=/bin/mail
+CHMOD=/bin/chmod
+SORT=/usr/bin/sort
+COMM=/usr/bin/comm
+FIND=/usr/bin/find
+RM=/bin/rm
+MV=/bin/mv
+AWK=/bin/awk
+SED=/bin/sed
+GREP=/bin/grep
+EGREP=/usr/bin/egrep
+YPCAT=/usr/bin/ypcat
+DATE=/bin/date
+NONFS=false
+
+#   Arg stuff:
+while $TEST $# != 0 ; do
+		case "$1" in
+		-m)     INFORM=$2 ; shift ;;
+		-n)     NONFS=true ;;
+		-o)     OUTFILE=$2 ; shift ;;
+		-s)     SECURE=$2 ; shift ;;
+		-S)     SEARCH=$2 ; shift ;;
+		-x)     STRANGE=true ;;
+		*)      $ECHO "Usage $0 [-s secure_dir] [-m user] [-o outfile] [-n] [-x]" ; exit 2 ; ;;
+		esac
+		shift
+        done
+
+#   Checking for non-executable SUID files;
+#
+#   simple way; just see if file says it's a script -- this is a *definite*
+# no-no, and the default:
+#	type_filter="$GREP script"
+#
+#   Safer/paranoid way; anything but an executable is flagged (may not be
+# good over NFS mounts with different binaries...
+#	type_filter="$GREP -v xecut"
+#
+#   You may want to grep out "ermission" string, too, in case NFS mount
+# stuff that you can't read gives you "permission denied", even as root:
+#	type_filter="$EGREP"' -v '"xecut|ermiss"
+#
+type_filter="$GREP script"
+
+# did you use the -s option?
+if $TEST -z "$SECURE" ; then
+	SECURE=.
+	fi
+
+if $TEST -z "$SEARCH" ; then
+	SEARCH=/
+	fi
+
+#
+# Warning messages used below:
+WARN_NEW="These files are newly setuid/setgid"
+WARN_NO="These files are no longer setuid/setgid"
+
+# Strange stuff; "..." directories, etc.
+if $TEST "$STRANGE" = "true" ; then
+	STRANGE_DIRS="-o -type d ( ! -name '.' -a ! -name '..' \
+		      -a ! -name '[A-z0-9]*' -a ! -name '.[A-z0-9]*' )"
+	WARN_NO=$WARN_NO"/strange"
+	WARN_NEW=$WARN_NEW"/strange"
+	fi
+
+# Yellow Pages check further down...
+etc_passwd=/etc/passwd
+STOP=./suid.stop
+TEMPOLD=./fsold$$
+TEMPCUR=./fscur$$
+TEMPNEW=./fsnew$$
+TEMPGON=./fsgon$$
+TEMPM=./fsm$$
+
+umask 077
+OLDCWD=`pwd`
+
+if $TEST ! -d "$SECURE" ; then
+	$ECHO "Error -- Security directory $SECURE doesn't exist"
+	exit 1
+	fi
+
+$CHMOD 700 $SECURE
+cd $SECURE
+
+#
+# The actual Find!  Never thought you'd make it, eh?
+#
+if $TEST "$NONFS" = "false" ; then
+	$FIND $SEARCH -type f \( -perm -4000 -o -perm -2000 \) $STRANGE_DIRS \
+		-exec $LS -ldga {} \; | $SORT > $TEMPCUR
+else
+	# this is the trouble spot:
+	$FIND $SEARCH -type d \( -fstype nfs -prune \) -o \
+		-type f \( -perm -4000 -o -perm -2000 \) $STRANGE_DIRS \
+		-exec $LS -ldga {} \; | $SORT > $TEMPCUR
+	fi
+
+# find the setuid programs and sort
+
+# compare with the sorted stop list
+if $TEST ! -f "$STOP" ; then
+	$CP /dev/null $TEMPOLD
+else
+	$SORT <$STOP >$TEMPOLD
+	fi
+
+$COMM -13 $TEMPOLD $TEMPCUR | $SORT +8 >$TEMPNEW
+$COMM -23 $TEMPOLD $TEMPCUR | $SORT +8 >$TEMPGON
+
+# report changes
+if $TEST -s $TEMPNEW -o -f $TEMPGON; then
+
+	# YP?  Thanks again, to Rob Kolstad...
+	# Scratch files for testing:
+	yp_passwd=./ypsuid.$$
+
+	# generic test to check for yp use?
+	if $TEST -f $YPCAT -a -s $YPCAT ; then
+		$YPCAT passwd > $yp_passwd
+		if $TEST $? -eq 0 ; then
+			etc_passwd=$yp_passwd
+			fi
+		fi
+
+	# get the hostname:
+	if $TEST -s /bin/hostname ; then
+		HOSTNAME=`/bin/hostname`
+	elif $TEST -s /bin/uname ; then
+		HOSTNAME=`/bin/uname -n`
+	elif $TEST -s /usr/bin/uuname ; then
+		HOSTNAME=`/usr/bin/uuname -l`
+		fi
+	if $TEST -z "$HOSTNAME" ; then
+		HOSTNAME="foobar"
+		fi
+
+	$ECHO >>$TEMPM
+        $ECHO ATTENTION:                        >> $TEMPM
+        $ECHO "SUID Security Report for "`$DATE`>> $TEMPM
+
+        $ECHO "from host $HOSTNAME"             >> $TEMPM
+	$ECHO >>$TEMPM
+
+# NEW STUFF... $TEMPNEW holds the new SUID files; stuff the results in $TEMPM:
+	for i in `$AWK '{print $NF}' $TEMPNEW`
+		do
+		# don't want SUID files to be world writable!
+		./is_able $i w w >> $TEMPM
+
+		type=`file "$i" | $SED 's/.*://' | $type_filter`
+
+		if $TEST -n "$type" ; then
+			owner=`$LS -ldga $i | $AWK '{print $3}'`
+			uid=`$AWK -F: '/^'"$owner"'/{print $3}' $etc_passwd`
+
+			# set to nobody, if can't find 'em in the password file
+			if $TEST -z "$uid" ; then
+				uid="-2"
+				fi
+
+			if $TEST "$uid" -eq "0" ; then
+				$ECHO Warning!  ROOT owned SUID file $i is type: $type! >> $TEMPM
+			else
+				$ECHO Warning!  User: $owner SUID file $i is type: $type! >> $TEMPM
+				fi
+			fi
+		done
+
+	if $TEST -s $TEMPNEW; then
+		$ECHO $WARN_NEW":" >>$TEMPM
+		$ECHO '' >>$TEMPM
+		$CAT $TEMPNEW >>$TEMPM
+		$ECHO '' >>$TEMPM
+	fi
+	if $TEST -s $TEMPGON; then
+		$ECHO $WARN_NO":" >>$TEMPM
+		$ECHO '' >>$TEMPM
+		$CAT $TEMPGON >>$TEMPM
+	fi
+
+	# mail or save to a file?
+	if $TEST -z "$OUTFILE" ; then
+		$MAIL $INFORM <$TEMPM
+	else
+		$MV $TEMPM $OUTFILE
+		fi
+	$RM -f $TEMPM
+fi
+$RM -f $TEMPOLD $TEMPCUR $TEMPNEW $TEMPGON $yp_passwd
+
+#  end it all....
+exit 0

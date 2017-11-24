@@ -1,0 +1,644 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/users/df/bin/perl.sun4 -S $0 $argv:q'
+        if 0;
+# & eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+#
+# kuang - rule based analysis of Unix security
+#
+# Perl version by Steve Romig of the CIS department, The Ohio State
+# University, October 1990. 
+# 
+# Based on the shell script version by Dan Farmer from his COPS
+# package, which in turn is based on a shell version by Robert
+# Baldwin. 
+#
+#-----------------------------------------------------------------------------
+# Players:
+#	romig	Steve Romig, romig@cis.ohio-state.edu
+#	tjt	Tim Tessin, tjt@cirrus.com
+#
+# History:
+# 4/25/91  tjt, romig	Various fixes to filewriters (better messages about 
+#			permission problems) and don't update the DBM cache 
+#			with local file info.
+# 11/1/90  romig	Major rewrite - generic lists, nuking get_entry 
+#			and put_entry, moved rules to separate file.
+#
+
+#
+# Options
+#
+# -l		list uid's that can access the given target, directly
+#		or indirectly
+# -d		debug
+# -V 		verbose
+#
+# -k file	load the list of known CO's
+# -f file	preload file information from the named file.
+# -p file	preload passwd info from the named file.
+# -Y		preload passwd info from ypcat + /etc/passwd
+# -g group	preload group info from the named file.
+# -G		preload group info from ypcat + /etc/group
+# 
+# NOTE:
+#   If you know where perl is and your system groks #!, put its
+# pathname at the top to make this a tad faster.
+#
+# the following magic is from the perl man page
+# and should work to get us to run with perl 
+# even if invoked as an sh or csh or foosh script.
+# notice we don't use full path cause we don't
+# know where the user has perl on their system.
+#
+
+$options = "ldVk:p:g:f:YG";
+$usage = "usage: kuang [-l] [-d] [-v] [-k known] [-f file] [-Y] [-G] [-p passwd] [-g group] [u.username|g.groupname]\n";
+
+$add_files_to_cache = 1;		# Whether to update the %files cache
+					# with local file info or not.
+
+#
+# Terminology:
+#
+#   An "op" is an operation, such as uid, gid, write, or replace. 
+#   'uid' means to gain access to some uid, 'gid' means to gain access 
+#   to some gid.  'write' and 'replace' refer to files - replace means
+#   that we can delete a file and replace it with a new one somehow
+#   (for example, if we could write the directory it is in).
+#
+#   An object is a uid, gid or pathname.  
+#
+#   A Controlling Operation (CO) is a (operation, object) pair
+#   represented as "op object": "uid 216" (become uid 216) or "replace
+#   /.rhosts" (replace file /.rhosts).  These are represented
+#   internally as "c value", where "c" is a character representing an
+#   operation (u for uid, g for gid, r for replace, w for write) and
+#   value is a uid, gid or pathname.
+#
+#   A plan is a chain of CO's that are connected to each other.  If
+#   /.login were writeable by uid 216, we might have a plan such as:
+#
+#	uid 216 => write /.login => uid 0
+#
+#   which means (in English) "if we can become uid 216, then write 
+#   /.login which gives you access to uid 0 (when root next logs in)."
+#   Plans are represented in several ways: as arrays:
+#
+#	("u 0", "w /.login", "u 216")
+#
+#   Note that the order is reversed.  As a string:
+#
+#	"u 0\034w /.login\034u 216"
+#
+#   The target is the object that we are trying to gain (a uid, gid or
+#   file, typically u.root or some other UID).
+#
+# Data Structures
+#
+#   %known		An assocc array, indexed by CO.  This lists
+#			the COs that we already have access to.  If we
+#                       find a plan that leads from a CO in the known
+#                       list to the target, we've succeeded in
+#                       finding a major security flaw.  
+#
+#   @new		An array of plans that are to be evaluated in
+#			the next cycle. 
+#
+#   @old		An array of plans that we are currently
+#			evaluating. 
+#
+#   %beendone		An assoc array that lists the plans that have
+#			already been tried.  Used to prevent loops.
+#
+#   @accessible		An array of the uids that can reach the
+#			target. 
+#
+#   %files		An assoc array, indexed by file name, contains
+#			cached file info.  value is of form "uid gid
+#			mode". 
+#
+# From pwgrid:
+#
+#   %uname2shell	Assoc array, indexed by user name, values are
+#			shells. 
+#
+#   %uname2dir		Assoc array, indexed by user name, values are
+#			home directories.
+#
+#   %uname2uid		Assoc array, indexed by name, values are uids.
+#			
+#   %uid2names		Assoc array, indexed by uid, value is list of
+#			user names with that uid, in form "name name
+#			name...". 
+#
+#   %gid2members	Assoc array, indexed by gid, value is list of
+#			group members (user names).
+#
+#   %gname2gid		Assoc array, indexed by group name, values are
+#			matching gids.
+#
+#   %gid2names		Assoc array, indexed by gid, values are
+#			matching group names.
+#
+
+do 'yagrip.pl' ||
+  die "can't do yagrip.pl";
+
+# do 'pwgrid.pl' ||
+#   die "can't do pwgrid.pl";
+do 'pass.cache.pl' ||
+  die "can't do pass.cache.pl";
+
+do 'rules.pl' ||
+  die "can't do rules.pl";
+
+
+#
+# Turns a string of the form "operation value" or "value" into
+# standard "CO" form ("operation value").  Converts user or group
+# names into corresponding uid and gid values. 
+#
+# Returns nothing if it isn't parseable.
+#
+
+sub canonicalize {
+    local($string) = @_;
+    local($op, $value);
+
+    if ($string =~ /^([ugrw]) ([^ \t\n]+)$/) { # of form "op value"
+	$op = $1;
+	$value = $2;
+    } elsif ($string =~ /^[^ \t\n]+$/) {       # of form "value"
+        $value = $string;
+	$op = "u";
+    } else {
+	return();
+    }
+
+    if ($op eq "u" && $value =~ /^[^0-9]+$/) { # user name, not ID
+        if (defined($uname2uid{$value})) {
+	    $value = $uname2uid{$value};
+	} else {
+	    printf(stderr "There's no user named '%s'.\n", $value);
+	    return();
+	}
+    } elsif ($op eq "g" && $value =~/^[^0-9]+$/) {
+	if (defined($gname2gid{$value})) {
+	    $value = $gname2gid{$value};
+	} else {
+	    printf(stderr "There's no group named '%s'.\n", $value);
+	    return();
+	}
+    }
+
+    return($op, $value);
+}
+
+
+#
+# Preload file information from a text file or DBM database.  
+# If $opt_f.dir exists, then we just shadow %files from a DBM
+# database.  Otherwise, open the file and read the entries into 
+# %files.  
+#
+# $add_files_to_cache is set to 0 if we get the info from 
+# DBM since we wouldn't want to pollute update our DBM cache
+# with local file info which wouldn't apply to other hosts.
+#
+
+sub preload_file_info {
+    local($count, $f_type, $f_uid, $f_gid, $f_mode, $f_name);
+
+    if (defined($opt_d)) {
+	printf("loading file info...\n");
+    }
+
+    if (-f "$opt_f.dir") {
+	$add_files_to_cache = 0;
+
+	dbmopen(files, $opt_f, 0644) ||
+	  die sprintf("can't open DBM file '%s'", $opt_f);
+    } else {
+	open(FILEDATA, $opt_f) || 
+	  die sprintf("kuang: can't open '%s'", $opt_f);
+
+	$count = 0;
+	while (<FILEDATA>) {
+	    $count++;
+
+	    chop;
+	    ($f_type, $f_uid, $f_gid, $f_mode, $f_name) = split;
+	    
+	    if ($count % 1000 == 0) {
+		printf("line $count, reading entry for $f_name\n");
+	    }
+	    $files{$f_name} = join(' ', $f_uid, $f_gid, $f_mode);
+	}
+
+	close(FILEDATA);
+    }
+}
+
+#
+# Preload the known information.  Reads data from a file, 1 entry per line,
+# each entry is a CO that we "know" can be used.
+#
+
+sub preload_known_info {
+    local($file_name) = @_;
+    local($op, $value, $co);
+
+    open(FILE, $file_name) ||
+      die sprintf("kuang: can't open '%s'", $file_name);
+
+  known_loop:
+    while (<FILE>) {
+	chop;
+	if ((($op, $value) = &canonicalize($_)) == 2) {
+	    $co = sprintf("%s %s", $op, $value);
+	    $known{$co} = 1;
+	} else {
+	    printf(stderr "kuang: invalid entry in known list: line %d '%s'.\n",
+		   $.,
+		   $_);
+	}
+    }
+
+    close(FILE);
+}
+    
+
+#
+# Do various initialization type things.
+#
+
+sub init_kuang {
+    local($which, $name, $uid, $gid);
+    local($op, $value, $co);
+
+    #
+    # Deal with args...
+    #
+
+    &getopt($options) ||
+      die $usage;
+
+    if ($#ARGV == -1) {
+	push(@ARGV, "u root");
+    }
+
+    #
+    # Preload anything...
+    #
+    if (defined($opt_f)) {
+	&preload_file_info();
+    }
+
+    if (defined($opt_d)) {
+	printf("load passwd info...\n");
+    }
+
+    if (defined($opt_p)) {
+	if (defined($opt_Y)) {
+	    printf(stderr "You can only specify one of -p or -P, not both.\n");
+	    exit(1);
+	}
+
+	&load_passwd_info(0, $opt_p);
+    } elsif (defined($opt_Y)) {
+	&load_passwd_info(0);
+    } else {
+	&load_passwd_info(1);
+    }
+
+    if (defined($opt_d)) {
+	printf("load group info...\n");
+    }
+
+    if (defined($opt_g)) {
+	if (defined($opt_G)) {
+	    printf(stderr "You can only specify one of -g or -G, not both.\n");
+	    exit(1);
+	}
+
+	&load_group_info(0, $opt_g);
+    } elsif (defined($opt_G)) {
+	&load_group_info(0);
+    } else {
+	&load_group_info(1);
+    }
+
+    #
+    # Need some of the password and group stuff.  Suck in passwd and 
+    # group info, store by uid and gid in an associative array of strings
+    # which consist of fields corresponding to the passwd and group file 
+    # entries (and what the heck, we'll use : as a delimiter also...:-)
+    #
+    $uname2shell{"OTHER"} = "";
+    $uname2dir{"OTHER"} = "";
+    $uname2uid{"OTHER"} = -1;
+    $uid2names{-1} = "OTHER";
+
+    $known{"u -1"} = 1;		# We can access uid OTHER
+
+    if (defined($opt_k)) {
+	&preload_known_info($opt_k);
+    }
+
+    #
+    # Create the target list from the remaining (non-option) args...
+    #
+    while ($#ARGV >= 0) {
+	$elt = pop(@ARGV);
+	if ((($op, $value) = &canonicalize($elt)) == 2) {
+	    $co = sprintf("%s %s", $op, $value);
+	    push(@targets, $co);
+	} else {
+	    printf(stderr "target '%s' isn't of correct form\n", $elt);
+	}
+    }
+}
+
+
+#
+# Call this to set things up for a new target.  Resets old, new, beendone 
+# and accessible.  
+#
+sub set_target {
+    local($target) = @_;
+
+    @old = ();
+    @new = ();
+    %beendone = ();
+    @accessible = ();
+# fixme: reset known?
+
+    if ($target =~ /^([ugrw]) ([^ \t]+)$/) {
+	&addto($1, $2);
+	return(0);
+    } else {
+	printf(stderr "kuang: bad target '%s'\n", $target);
+	return(1);
+    }
+}
+
+#
+# Break a CO into an (operation, value) pair and return it.  If it
+# isn't in "operation value" form, return ().
+#
+sub breakup {
+    local($co) = @_;
+    local($operation, $value);
+
+    if ($co =~ /^([ugrw]) ([^ \t]+)$/) {
+	$operation = $1;
+	$value = $2;
+    } else {
+	printf(stderr "Yowza, breakup failed on '%s'\n",
+		$co);
+	exit(1);
+    }
+
+    return($operation, $value);
+}
+
+#
+# Get the writers of the named file - return as (UID, GID, OTHER)
+# triplet.  Owner can always write, since he can chmod the file if he
+# wants. 
+#
+# (fixme) are there any problems in this sort of builtin rule?  should
+# we make this knowledge more explicit?
+#
+sub filewriters {
+    local($name) = @_;
+    local($tmp, $mode, $uid, $gid, $other);
+    
+    #
+    # Check the file cache - avoid disk lookups for performance and 
+    # to avoid shadows...
+    #
+    if (defined($files{$name})) {
+	$cache_hit++;
+	
+	($uid, $gid, $mode, $tmp) = split(/ /, $files{$name});
+    } else {
+	$cache_miss++;
+
+	unless (-e $name) {
+	    if ($add_files_to_cache) {
+		$files{$name} = "";
+	    }
+	    # ENOTDIR = 20 
+	    ($! == 20) && print "Warning: Illegal Path: '$name'\n";
+	    # EACCES = 13
+	    ($! == 13) && print "Warning: Permission Denied: '$name'\n";
+	    # all values are returned "" here.
+	    return;
+	}
+
+	($tmp,$tmp,$mode,$tmp,$uid,$gid) = stat(_);
+	if ($add_files_to_cache) {
+	    $files{$name} = join(' ', "$uid", "$gid", "$mode");
+	}
+    }
+
+    if (($mode & 020) != 020) {
+	$gid = "";
+    }
+    
+    if (($mode & 02) == 02) {
+	$other = 1;
+    } else {
+	$other = 0;
+    }
+
+    return($uid, $gid, $other);
+}
+
+
+sub ascii_plan {
+    local(@plan) = @_;
+    local($op, $value, $result);
+
+    for ($i = $#plan; $i >= 0; $i--) {
+	($op, $value) = &breakup($plan[$i]);
+
+      case: 
+	{
+	    if ($op eq "g") {
+		$op = "grant gid";
+		last case;
+	    }
+
+	    if ($op eq "u") {
+		$op = "grant uid";
+		last case;
+	    }
+
+	    if ($op eq "r") {
+		$op = "replace";
+		last case;
+	    }
+
+	    if ($op eq "w") {
+		$op = "write";
+		last case;
+	    }
+
+	    printf(stderr "Bad op '%s' in plan '%s'\n",
+		   $op,
+		   join(';', @plan));
+	    last case;
+	}
+
+	$result .= "$op $value ";
+    }
+
+    return($result);
+}
+
+#
+# Add a plan to the list of plans to check out.
+#
+sub addto {
+    local($op, $value, @plan) = @_;
+    local($co);
+
+    $co = sprintf("%s %s",
+		  $op,
+		  $value);
+
+    #
+    # See if the op and value is "uid root" - if so, and if the @plan 
+    # isn't empty, then don't bother checking - if the target isn't root, 
+    # its silly to pursue plans that require becoming root since if we can 
+    # become root, we can become anything.  If the target is root, then 
+    # this would be a loop anyway.
+    #
+    if ($op eq "u" && $value eq "0" && $#plan >= 0) {
+	if (defined($opt_d)) {
+	    printf("addto: aborted root plan '%s'\n",
+		   &ascii_plan(@plan, $co));
+	}
+	return;
+    }
+
+    #
+    # See whether there's an entry for $co in the known list.
+    # If so - success, we've found a suitable breakin plan.
+    #
+    # Yes, we want to check to see whether the whole Controlling Operation 
+    # is one that is known to us, rather than just the object.  I
+    # might have a hole that allows me to "replace /bin/foo" which is
+    # somewhat different than "write /bin/foo"  
+    #
+    if (! defined($opt_l) && defined($known{$co})) {
+	printf("Success! %s\n",
+	       &ascii_plan(@plan, $co));
+    }
+
+    #
+    # Check for loops -- if the new CO is part of the plan that we're
+    # adding it to, this is a loop.
+    #
+    foreach $entry (@plan) {
+	if ($entry eq $co) {
+	    if (defined($opt_d)) {
+		printf("addto: aborted loop in plan '%s'\n",
+		       &ascii_plan(@plan, $co));
+	    }
+	    return;
+	}
+    }
+
+    #
+    # Add this CO to the plan array...
+    #
+    push(@plan, $co);
+
+    #
+    # Make an ascii version of sorts...
+    #
+    $text_plan = join($;, @plan);
+
+    #
+    # Check to see if the new plan has been done.
+    #
+    if (defined($beendone{$text_plan})) {
+	if (defined($opt_d)) {
+	    printf("addto: plan's been done - '%s'\n",
+		   &ascii_plan(@plan));
+	}
+	return;
+    }
+
+    #
+    # If we made it this far, its a new plan and isn't a loop.  
+    #
+
+    #
+    # Add to the beendone list...
+    #
+    $beendone{$text_plan} = 1;
+
+    #
+    # Add to new plan list...
+    #
+    push(@new, $text_plan);
+
+    if (defined($opt_V)) {
+	printf("addto: %s\n", 
+	       &ascii_plan(@plan));
+    }
+
+    #
+    # If this is a uid goal, then add the plan to the accessible list.
+    #
+    if ($op eq "u" && $value ne "0" && defined($opt_l)) {
+	push(@accessible, $value);
+    }
+}
+
+#
+#----------------------------------------------------------------------
+#Main program follows...initialize and loop till we're done.
+#
+
+&init_kuang();
+
+target_loop:
+foreach $target (@targets) {
+    if (&set_target($target)) {
+	next target_loop;
+    }
+
+    while ($#new >= 0) {
+	@old = @new;
+	@new = ();
+
+	foreach $t_plan (@old) {
+	    @plan = split(/\034/, $t_plan);
+	    ($op, $value) = &breakup($plan[$#plan]);
+
+	    &apply_rules($op, $value, @plan);
+	}
+    }
+
+    if (defined($opt_l)) {
+	foreach $elt (@accessible) {
+	    printf("$elt\n");
+	}
+    }
+}
+
+if (defined($opt_d)) {
+    printf("File info cache hit/access ratio: %g\n", 
+   	    ($cache_hit + $cache_miss > 0) 
+	        ? $cache_hit / ($cache_hit + $cache_miss)
+	        : 0.0);
+}
+
+1;

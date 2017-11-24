@@ -1,0 +1,17 @@
+
+This is the locally developed program chkacct(1L) (an abbreviation for
+'check account').  Its purpose is to check the files in your Unix
+account for security problems which, if left as they are, might make it
+possible for someone to break into your account.  chkacct(1L) will
+present each problem to you along with a short explanation as to why it
+is a danger.  You will then be asked if you wish to ignore the problem,
+see more information about the problem, or have chkacct(1L) fix the
+problem for you.
+
+If you simply press RETURN/NEWLINE whenever prompted, chkacct(1L) will
+always choose to fix the problem in the most security-conscious
+manner.
+
+There are three steps to chkacct(1L), if you do not see one of the
+steps, then please see a PUCC General Consultant.
+

@@ -1,0 +1,25 @@
+
+  Uncomment the "BRAINDEADFLAGS=-lcrypt" in the makefile, and put the line:
+
+extern char *crypt();
+
+  Right after the #include lines in "pass.c".  This apparently came from 
+the makers of Xenix, about the availability of crypt(3):
+
+========================
+Subject: crypt in Xenix
+
+Due to the export restrictions on CRYPT, we do not ship it with the
+standard product.  We do ship it as an SLS: the relevant numbers are
+lng190 (for shipment inside the U.S. only) and lng225, which can be
+shipped outside the U.S..
+========================
+
+  Make the following change in dev.chk:
+
+line 39:
+> mtab=/etc/fstab
+
+To:
+< mtab=/etc/checklist
+

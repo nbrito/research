@@ -1,0 +1,5 @@
+
+  In bug.chk, you'll need to change this line (29) to "no":
+
+# Do you decend from 4.3 BSD?
+bsd43=yes

@@ -1,0 +1,18 @@
+
+(a)utomatic mode - Choosing `a' will put chkacct(1L) into automatic mode.  In
+	this mode, no questions will be asked of the user.  Problems will
+	still be displayed as they are found, but they will be fixed 
+	automatically.  If you invoked chkacct(1L) with the ``harmless'' 
+	(-n) option set, no corrective action will be taken.
+
+(h)elp me out with this menu - Choosing `h' displays this help screen.
+
+(f)ix problem - Choosing `f' will tell chkacct to perform the recommended fix
+	displayed above.  If you invoked chkacct(1L) with the ``harmless'' 
+	(-n) option set, no corrective action will be taken.
+
+(i)gnore problem - Choosing `i' will tell chkacct(1L) to ignore the problem and
+	continue normal execution.
+
+(m)ore info - Choosing `m' will attempt to display more information relevant to
+	this particular security problem.  

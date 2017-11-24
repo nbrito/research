@@ -1,0 +1,36 @@
+
+ Possible improvements/extensions of the COPS package might (will?) include
+(other than merely fixing bugs existing in the package) :
+
+ 0) Smarter detection of problems -- a lot of problems can be found in
+configuration files; the way they are set up, not merely if they are
+writable.  These aren't neccessarily hard to check for, but take someone
+with a good understanding for the file to write.
+
+ 1) Detecting Bugs.  A very touchy subject, with so many sites without
+source code to fix the bugs.  Depends a lot on how people react to this
+package, and what the demand is for a package that finds bugs.  It would
+be similar to the approach used in the rest of the package in that it
+would point out the bugs, not tell how to exploit them.  For instance,
+an example would be "Warning!  fingerd bug present!"
+
+ 2) Better and more thorough Yellow Pages checking.
+
+ 3) Ditto for UUCP stuff.
+
+ 4) Once again for NFS things.
+
+ 5) Problems that are specific to a certain flavor of UNIX.  For
+instance, HP-UX has different files in different places.  Perhaps
+the system could look for and hunt for the vital files in the various
+places rather than having to be put in a configuration file.  Also
+support for various secure UNIX varieties; e.g. C2 level Sun, IBM's
+secure AIX, etc.
+
+ 6) More problems to be added; by no means are all security problems detected
+by COPS.  More potential hazards should not be difficult to detect -- merely
+adding another module to the system or simply modifying what is here might
+suffice.
+
+ 7) Trying to detect what kind of machine you are on, then acting on that,
+possibly using larry wall's configure program.

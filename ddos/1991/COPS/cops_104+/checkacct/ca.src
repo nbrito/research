@@ -1,0 +1,567 @@
+#!/bin/sh
+#
+# paths to some important programs
+#
+
+#
+# This is the language used to parse the .rhosts file.  If you rewrite the
+# parser in a different language, you should change this.  If it doesn't
+# exist, that's "ok".  chkacct will notice that.
+#
+PERL=perlpath()
+
+#
+# This is the program used to parse the .rhosts file.  If you rewrite it, you
+# should change PERL1 to be the location of your new program.  You should also
+# send me a copy because I'm a packrat for stuff like this.
+#
+PERL1=installpath()lib/chkacct/rhosts.pl
+
+#
+# This directory contains the info and effect files that chkacct(1L) references.
+#
+DOCPATH=installpath()lib/chkacct
+
+# default variable values prevent nasty surprises
+# (its good style, too)
+#
+
+# The title of the guru to send customers to  (maybe your name if you work at a 
+#  small company..)
+GURU=gurudude()
+
+#
+# The name of the security article
+#
+ARTICLE=Article
+
+#
+# The name of the pager you want to use to display info files.  This is 
+# probably "more" or "less" at most sites, but never cat, because things
+# scroll off the screen too quickly.
+# 
+PAGER=pagerpath()
+
+#
+# miscellaneous stuff
+#
+CAT=catpath()
+THISSHELL=$$
+EXITCOND=0
+UNIQUE=1
+trap 'echo "Exiting."; %eval^ $stop_dots; exit;' 0;
+trap 'echo "Exiting."; %eval^ $stop_dots; exit;' 1;
+trap 'echo "Exiting."; %eval^ $stop_dots; exit;' 2;
+trap 'echo "Exiting."; %eval^ $stop_dots; exit;' 3;
+
+# an example shell command line parser that conforms to the getopt	(ksb)
+# standard, Kevin Braunsdorf, ksb@cc.purdue.edu
+
+# our program name and usage message
+progname=`basename $0`
+usage="$progname: usage [-ehinqrv] [-f <startdir>] [-m <homedir>] [-s <username]"
+
+# how to slide a single letter option off the beginning of a bundle
+# -barf -> -arf
+slide='P=$1; %shift^; set _ -`expr "$P" : '\''-.\(.*\)'\''` ${1+"$@"}; %shift^'
+param='if [ $# -lt 2 ]; then echo "$progname: missing value for $1" 1>&2 ; exit 1; fi'
+
+# default values for all the flags, or leave unset for a ${flag-value) form
+
+# verbose by default
+VERBOSE=1
+# interactive by default
+INTERACTIVE=1
+# cavalier by default
+HARMLESS=0
+# check .rhosts file by default
+RHOSTS=1
+
+# read an environment variable as well as the command line options:
+# protect this script from leading -x's with a bogus underbar, then remove it
+set _ $ZZZ ${1+"$@"}
+%shift^
+
+# get the options from the command line (+ any variables)
+while [ $# -gt 0 ]
+do
+	case "$1" in
+	-e)
+		INTERACTIVE=0
+		%shift^
+		;;
+	-e*)
+		INTERACTIVE=0
+		%eval^ "$slide"
+		;;
+	-f)
+		%eval^ "$param"
+                START_DIR=$2
+                %shift^ ; %shift^
+		;;
+	-f*)
+		START_DIR=`expr "$1" : '-.\(.*\)'`
+                %shift^
+		;;
+	-i)
+		INTERACTIVE=1
+		%shift^
+		;;
+	-i*)
+		INTERACTIVE=1
+		%eval^ "$slide"
+		;;
+	-m)
+		%eval^ "$param"
+                HOME=$2
+                %shift^ ; %shift^
+		;;
+	-m*)
+		HOME=`expr "$1" : '-.\(.*\)'`
+                %shift^
+		;;
+	-n)
+		HARMLESS=1
+		%shift^
+		;;
+	-n*)
+		HARMLESS=1
+		%eval^ "$slide"
+		;;
+	-q)
+		VERBOSE=0
+		%shift^
+		;;
+	-q*)
+		VERBOSE=0
+		%eval^ "$slide"
+		;;
+	-r)
+		RHOSTS=0
+		%shift^
+		;;
+	-r*)
+		RHOSTS=0
+		%eval^ "$slide"
+		;;
+	-s)
+		%eval^ "$param"
+		ME=$2
+		HOME=`echo "echo ~${ME}" | cshpath() `;
+		%shift^ ; %shift^
+		;;
+	-s*)
+		ME=`expr "$1" : '-.\(.*\)'`
+		HOME=`echo "echo ~${ME}" | cshpath() `;
+		%shift^
+		;;
+	-v)
+		VERBOSE=1
+		%shift^
+		;;
+	-v*)
+		VERBOSE=1
+		%eval^ "$slide"
+		;;
+	--)
+		%shift^
+		break
+		;;
+	-h|-h*)
+		cat <<HERE
+$usage
+e		expert (non-interactive) do not ask the user any questions
+f <startdir>	specify the directory in which to begin the general file check
+			(\${HOME} is the default)
+h		print this help message
+i		interactive mode - ask the user about every file (default)
+m <home dir>	specify a home directory (\${HOME} is the default)
+n		do not actually alter any file permissions or files
+q		perform actions quietly
+r		do not check of \${HOME}/.rhosts file
+s <username>	run chkacct as if my userid were <username> (also sets \${HOME} to ~username)
+v		perform actions verbosely (this is the default)
+HERE
+		exit 0
+		;;
+	-*)
+		echo "$usage" 1>&2 
+		exit 1
+		;;
+	*)
+		# process and continue for intermixed options & args
+		break
+		;;
+	esac
+done
+
+# set my identity if it hasn't been done yet
+if [ -z "${ME}" ]; then
+
+	ME=`whoami`;
+	if [ \( -z "${ME}" \) -o \( $? -ne 0 \) ]; then
+		echo "Cannot determine your identity - exiting, nothing checked.";
+		EXITCOND=1;
+		exit ${EXITCOND};
+	fi;
+fi;
+
+# set my home directory if it hasn't been set yet
+if [ -z "${HOME}" ]; then
+
+	HOME=`echo "echo ~${ME}" | cshpath() `;
+	if [ -z "${HOME}" ]; then
+		echo "Cannot determine your home directory - exiting, nothing checked.";
+		EXITCOND=1;
+		exit ${EXITCOND};
+	fi;
+fi;
+
+# search only in the home dir by default
+if [ -z "${START_DIR}" ]; then
+
+	START_DIR=${HOME};
+fi
+
+#
+# For debugging, silly.
+#
+# echo "Performing account check with username = ${ME}, home dir = ${HOME}, and";
+# echo "starting directory ${START_DIR}";
+
+#
+# Ok, this is actually checkacct.
+#
+
+#
+# Define a routine which will display files.  If sites have their own favorite
+# pager or display method, it can be specified here.  If you just wanted
+# to use a simple pager, you would define PAGER to be equal to it, and then
+# you would change the line below that display it to be:
+#   ${PAGER} ${DOCPATH}/${DISPLAY};
+# 
+# REMEMBER!  Before you call this routine, you must set DISPLAYFILE to be
+# the file you want displayed
+#
+display_file='
+if [ -f ${DOCPATH}/${DISPLAYFILE} ]; then
+
+	${PAGER} ${DOCPATH}/${DISPLAYFILE};
+fi;'
+
+#
+# Its crucial that we don't leave shell variables like $* set 
+# when we're not expecting it.  For that reason, here's a small routine
+# to clear the contents of $* by shift'ing.  For some reason, each set
+# successively lengthens $*.
+#
+clear_args='
+for i
+do
+	%shift^;
+done;'
+
+#
+#  Before each situation where the user might be queried as to the action,
+#  one needs to remember to set the following shell variables:
+#
+#  FIX - the shell command to fix it with \$TARGET to be the file to
+#	 be operated upon
+#  MANPAGES - a list of man pages it will tell you to look at
+#  INFO - The name of the info file in which more info is to be found (if any)
+#  EFFECT - The name of the file which describes the effect of the fix
+#  PROBLEM - This is the problem string -- it may be printed several times.
+#
+# define the prompt/decision routine which will make the fix if necessary, print
+# out specific info, refer someone to a manual page.
+prompt='
+FIXED=0;
+while [ ${FIXED} -eq 0 ]; do
+	echo "";
+	echo "${PROBLEM}";
+	echo "The output of the command \"ls -lsopt()ld ${PROBLEMFILE}\" is:";
+	/bin/ls -lsopt()ld ${PROBLEMFILE};
+	echo "";
+	echo "The suggested fix for this is to execute the command:";
+	echo "	${FIX}";
+
+	if [ ${VERBOSE} -eq 1 ]; then
+		if [ \( -f ${DOCPATH}/${EFFECT} \) -a \( ! -d  ${DOCPATH}/${EFFECT} \) ]; then
+			${CAT} ${DOCPATH}/${EFFECT};
+		fi;
+	fi;
+
+	if [ ${INTERACTIVE} -eq 1 ]; then
+		echo ""; 
+		echo "Press a letter (a) to enter automatic mode (no more questions), (f)ix problem,";
+		echo "(h)elp me out with this menu, (i)gnore problem, (m)ore info";
+		echownl(%Press RETURN/NEWLINE to fix the problem and go on> ^);
+		read input;
+	else
+		input="f";
+	fi;
+
+	case $input in
+		a*)
+			echo "";
+			echo "This will put you into automatic mode.  No more questions will be asked,";
+			echo "and all problems will be automatically fixed unless you specified the";
+			echo "\"harmless(-n)\" option on startup.";
+			echo "";
+			echownl(%Press \"yes\" to enter automatic mode> ^);
+			read confirm;
+			if [ \( ! -z "$confirm" \) -a \( "$confirm" = "yes" \) ]; then
+				echo "Beginning automatic mode.";
+				INTERACTIVE=0;
+				echo "";
+			fi;
+			;;
+		h*)
+			DISPLAYFILE="prompt.help";
+			%eval^ $display_file;
+			;;
+		m*)
+			DISPLAYFILE=${INFO};
+			%eval^ $display_file;
+			if [ -n "$MANPAGES" -a ${VERBOSE} -eq 1 ]; then
+				echo "";
+				echo "For additional information, read the manual page for the following";
+				echo "program(s): ${MANPAGES}";
+				echo "The command man <name of program> will show you the manual page.";
+				echo "";
+			fi;
+			;;
+		i*)
+			echo "Ignoring problem -- taking no action.";
+			FIXED=1;
+			;;
+		*|f*) 
+			if [ ${HARMLESS} -eq 0 ]; then
+				echownl(%Fixing problem...^);
+				%eval^ ${FIX};
+				echo "Done.";
+			else
+				echo "In \"harmless\" (-n) mode, ignoring problem.";
+			fi;
+			FIXED=1;
+			;;
+	   esac;
+done;'
+
+#
+# define the waiting routine that prints those neat dots
+#
+make_dots='
+if [ ${VERBOSE} -eq 1 ]; then
+	(touch /tmp/makedots${THISSHELL};while [ -f /tmp/makedots${THISSHELL} ]; do echownl(%.^); sleep 1; done)& 2>&1 >/dev/null;
+fi;'
+
+stop_dots='sleep 1; /bin/rm -rf /tmp/makedots${THISSHELL};'
+
+if [ 1 -eq $VERBOSE ]; then
+
+	DISPLAYFILE="Intro";
+	%eval^ $display_file;
+
+fi
+
+if [ ${INTERACTIVE} -eq 1 ]; then
+	echownl(%Press RETURN/NEWLINE to begin> ^); read input;
+fi;
+
+NO_WRITE="rhosts profile login logout cshrc bashrc bash_profile inputrc";
+NO_WRITE="$NO_WRITE screenrc kshrc tcshrc netrc forward dbxinit distfile";
+NO_WRITE="$NO_WRITE exrc emacsrc remote mh_profile xinitrc xsession Xdefaults";
+NO_WRITE="$NO_WRITE Xresources rninit mwmrc twmrc emacs rhosts";
+NO_READ="badpass netrc"
+
+#
+# First, are any of the dot files writable & does the user own every dot file?
+#
+PERMLINE="FindPermWrite()";
+
+if [ ${VERBOSE} -eq 1 ]; then
+	echo ""
+	echo "Step one (three total) - Evaluating your account's dot files."
+fi
+
+%eval^ $make_dots;
+for i in ${NO_WRITE}
+do
+	TARGET=${HOME}/.$i;
+	if [ -f ${TARGET} -o -d ${TARGET} ]; then
+		while [ -f ${HOME}/dangerous.${i}.${UNIQUE} ];
+		do
+			UNIQUE=`echo "${UNIQUE} + 1" | bc -l`;
+		done;
+		FIX="/bin/mv -i ${TARGET} ${HOME}/dangerous.${i}.${UNIQUE}";
+		MANPAGES="chmod"
+		EFFECT="effect.owners"
+		INFO="owners"
+		RESULT=`/bin/ls -ld ${TARGET}`;
+		%eval^ $clear_args;
+		set $*=${RESULT};
+		if [ $3 != ${ME} ]; then
+			PROBLEM="File '${TARGET}' is owned by user $3.";
+			PROBLEMFILE=${TARGET};
+			EXITCOND=1;
+			%eval^ $stop_dots;
+			%eval^ $prompt;
+			%eval^ $make_dots;
+			continue;
+		fi
+		TEMP="`find ${TARGET} ! -type l \( ${PERMLINE} \) -print`"
+		EFFECT="dotwrite";
+		INFO="effect.dotwrit";
+		FIX="/bin/chmod ChmodPermSymbol()-w ${TARGET};"
+		if [ -n "${TEMP}" ]; then
+			PROBLEM="File '${TARGET}' is world or group writable.";
+			PROBLEMFILE=${TARGET};
+			EXITCOND=1;
+			%eval^ $stop_dots;
+			%eval^ $prompt;
+			%eval^ $make_dots;
+		fi
+	fi
+done
+
+PERMLINE="FindPermRead()";
+EFFECT="effect.read";
+INFO="readable";
+
+for i in ${NO_READ}
+do
+	TARGET=${HOME}/.${i};
+	if [ -f ${TARGET} ]; then
+		FIX="/bin/chmod ChmodPermSymbol()-r ${TARGET};"
+		if [ -n "`find ${TARGET} \( ${PERMLINE} \) -exec /bin/ls {} \;`" ]; then
+			PROBLEM="File '${TARGET}' is world or group readable.";
+			PROBLEMFILE=${TARGET};
+			EXITCOND=1;
+			%eval^ $stop_dots;
+			%eval^ $prompt;
+			%eval^ $make_dots;
+		fi
+	fi
+done
+%eval^ $stop_dots;
+
+if [ ${VERBOSE} -eq 1 ]; then
+	echo "Step one complete."
+	echo ""
+	echo "Step two (three total) - Evaluating the file permissions in your account."
+fi
+
+#
+# Second, do we have any writable files or directories?
+#
+%eval^ $make_dots
+PERMLINE="FindPermWrite()";
+RESULT=`(cd ${HOME}; find . -user ${ME} ! -type l \( ${PERMLINE} \) -print)`;
+EFFECT="effect.write";
+INFO="write";
+%eval^ $stop_dots
+
+for i in ${RESULT}
+do
+	FIX="/bin/chmod ChmodPermSymbol()-w ${i};"
+	if [ -d $i ]; then
+		PROBLEM="Your directory $i is world or group writable.";
+		PROBLEMFILE=$i;
+		EXITCOND=1;
+		%eval^ $prompt;
+	else
+		PROBLEM="Your file $i is world or group writable.";
+		PROBLEMFILE=$i;
+		EXITCOND=1;
+		%eval^ $prompt;
+	fi
+done
+
+%eval^ $make_dots
+PERMLINE="FindPermSuid()";
+RESULT=`(cd ${HOME} ; find . -user ${ME} ! \( -type l -o -type d \) \( ${PERMLINE} \) -print)`;
+EFFECT="effect.setuid";
+INFO="setuid";
+
+for i in ${RESULT}
+do
+	FIX="/bin/chmod ChmodPermSuidSymbol()-s ${i};"
+	PROBLEM="Your file $i is user or group setuid.";
+	PROBLEMFILE=$i;
+	EXITCOND=1;
+	%eval^ $stop_dots
+	%eval^ $prompt;
+	%eval^ $make_dots
+done
+
+sleep 1
+%eval^ $stop_dots
+
+if [ ${VERBOSE} -eq 1 ]; then
+	echo "Step two complete."
+	echo ""
+	echo "Step three (three total) - Checking the contents of your rhosts file."
+fi
+
+FIX="/bin/mv -i ${HOME}/.rhosts ${HOME}/rhosts.$$;"
+EFFECT="effect.rhosts";
+INFO="rhosts";
+MANPAGES="hosts.equiv rlogin";
+#
+# Third, does our rhost file contain any glaring dangers?
+# see "man hosts.equiv"
+#
+if [ ${RHOSTS} -eq 0 ]; then
+
+	echo "The file ${HOME}/.rhosts will not be checked (as requested).";
+
+elif [ -f ${HOME}/.rhosts ]; then
+	if [ ! -x ${PERL} ]; then
+		echo "${PERL} does not exist on your system -- skipping .rhosts check.";
+		echo "If you are unfamiliar with the uses of a .rhosts file, you should";
+		echo "definately have a ${GURU} take a look at it.";
+	else
+		${PERL1} ${HOME}/.rhosts;
+		if [ $? -ne 0 ]; then
+			PROBLEM="Your .rhosts file is unsafe.";
+			PROBLEMFILE=${HOME}/.rhosts;
+			EXITCOND=1;
+			%eval^ $prompt;
+		else
+			if [ ${VERBOSE} -eq 1 ]; then
+				echo "Your .rhosts file doesn't appear to be a security hole.";
+			fi;
+		fi;
+	fi;
+else
+	if [ ${VERBOSE} -eq 1 ]; then
+		echo "Congratulations!  You don't have a .rhosts file!";
+		echo "(If I had a cookie, I would give you one.)";
+	fi;
+fi;
+
+%eval^ $stop_dots
+
+if [ ${VERBOSE} -eq 1 ]; then
+	echo "Step 3 complete."
+	echo "";
+	echo "Checkacct is complete.  If you still have questions about this program,";
+	echo "please see a ${GURU}." ;
+	echo "";
+	if [ ${INTERACTIVE} -eq 1 ]; then
+		echo "If you are interested in reading an article on Unix";
+		echo "security, type \"yes\" and hit RETURN/NEWLINE now.";
+		echownl(%If not, simply hit RETURN/NEWLINE and checkacct will exit.> ^);
+		read input;
+		if [ \( ! -z "$input" \) -a \( "$input" = "yes" \) ]; then
+			DISPLAYFILE=${ARTICLE};
+			%eval^ $display_file;
+		fi;
+	fi;
+fi;
+if [ \( ${EXITCOND} -eq 0 \) -a \( ${VERBOSE} -eq 1 \) ]; then
+	echo "There were no obvious problems with your Unix account.";
+	echo "(I owe you a cookie.)";
+fi;
+exit ${EXITCOND};

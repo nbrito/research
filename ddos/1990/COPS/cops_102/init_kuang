@@ -1,0 +1,33 @@
+# /* Copyright 1985 Robert W. Baldwin */
+# /* Copyright 1986 Robert W. Baldwin */
+###############################################
+# Kuang: Rule based computer security checker.
+###############################################
+
+CAT=/bin/cat
+ECHO=/bin/echo
+
+#
+# Initialization.
+#
+./clearfiles
+#
+# First setup what we have access to.
+# The uids.k file must include the user 'OTHER' meaning the world access bits.
+# Add any other UIDs accessible to the attacker (e.g., ftp, daemon).
+#
+# Directly accessible user IDs.
+$CAT >uids.k <<END
+OTHER
+END
+#
+# Directly accessible group IDs.
+# This usually includes a group like 'users', which most users are in.
+#
+$CAT >gids.k <<END
+END
+#
+# Setup the primary goal(s).
+#
+$ECHO Setting up goal						#>/dev/tty
+./addto uids root DO ANYTHING

@@ -1,0 +1,60 @@
+#  This lists any/all sensitive files the administration wants to have a
+# CRC value for.  Comments are lines starting with a "#".
+#
+
+# some key files that might not change too often:
+/.login
+/.profile
+/.cshrc
+/.rhosts
+/etc/hosts.equiv
+/usr/lib/crontab
+/usr/lib/aliases
+/usr/spool/uucp/L.sys
+
+#   some that you might like to keep an eye on, depending on your site
+# stability and/or paranoia:
+# /etc/passwd
+# /etc/group
+
+# default is individual files; can use wildcards, or whatever;
+# here are some examples, using wildcards:
+# /bin/*
+# /usr/bin/*
+# /usr/lib/*
+# /usr/local/lib/*
+# /usr/local/bin/*
+
+# Here are individual files:
+/bin/fsck
+/bin/rrestore
+/bin/csh
+/bin/login
+/bin/ls
+/bin/mail
+/bin/mount
+/bin/passwd
+/bin/ps
+/bin/sh
+/bin/su
+/usr/lib/sendmail
+/usr/ucb/telnet
+/usr/ucb/rlogin
+/usr/ucb/ftp
+/usr/bin/at
+/usr/bin/chgrp
+/usr/bin/cu
+/usr/bin/df
+/usr/bin/login
+/usr/bin/mail
+/usr/bin/passwd
+/usr/bin/ruusend
+/usr/bin/su
+/usr/bin/tip
+/usr/bin/uucp
+/usr/bin/uulog
+/usr/bin/uuname
+/usr/bin/uusend
+/usr/bin/uustat
+/usr/bin/uux
+/usr/bin/xterm

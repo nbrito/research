@@ -1,0 +1,17 @@
+
+  Here's what I do to start COPS (I always ftp it and run it on any 
+new system I'm on, being the paranoid chap that I am.)  Do the following:
+
+0) type "./reconfig"
+
+1) type "make"
+
+2) type "./cops -v -s . -b cops.err"
+
+(Or "./cops -v -s . -m user" if you want it mailed to "user", or whomever.)
+
+3) Wait, or toss the sucker in the background and keep peeking at the result
+file as it's growing (result.pid#) :-)   The result will either be mailed to
+you (-m flag), or be placed in a directory of your machine name, with
+the current date as the file name.)
+

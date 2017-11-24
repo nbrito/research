@@ -1,0 +1,87 @@
+
+  Part of a conversation I had with a guy about cracking shadow passords;
+at the end of this is a script that should work with SVR3.2; I'm not
+sure about the rest, but minor changes should make it work on
+just about anything (for instance, I think on my sun, the variable
+$num_fields should be changed to 15 (or you could compile pass.c with
+the C2 flag)).  Let me know if you can't get it to work, and I'll
+*make* it work :-)  In any case, you'll need to run as root to get the
+passwords for cracking.
+
+>On system V3.2, both  AT&T, SCO, and us (Interactive) use the following format
+> /etc/passwd looks pretty much normal;
+> adm:x:4:4:0000-Admin(0000):/usr/adm:
+[...]
+> except that the passwd field always contains an "x".
+> Then, the etc/shadow file, which is owned by root and perms 400 looks
+> like;
+[...]
+> sally:e4T6g5HbjOnck:7449:0:7000
+[...]
+> The first field is the account name, the second field is the excrypted
+> passwd string, and the rest is password aging garbage.
+> Ignore the password fields above containing "LOCKED".  I do that by
+> hand to secure an account, since the output of crypt will never match it.
+
+  Try this on for size:
+
+========== shadow.stuff ================
+#!/bin/sh
+#
+#  Usage: shadow.stuff [shadow_password_file]
+#
+#   Extracts the correct info from shadow pass to use for processing with
+# pass.chk and passwd.chk.
+#
+# (written by me, modified by John F Haugh II, remodified by me.  Hope
+# it still works :-))
+#
+if test -f "$1" ; then
+	shadow=$1
+else
+	if test -f "/etc/shadow" ; then
+		shadow=/etc/shadow
+	else
+		echo "Can't find shadow password file..."
+		exit 1
+	fi
+fi
+
+# This is 15, I think, for a sun?  Others seem to want 13
+num_fields=13
+
+passwd=/etc/passwd
+foo_pass="./shadow.tmp.$$"
+ptmp="./pfile.tmp.$$"
+stmp="./sfile.tmp.$$"
+
+sed -e 's/^/p:/' $passwd | sort > $ptmp
+sed -e 's/^/s:/' $shadow | sort > $stmp
+cat ./pfile.tmp.$$ ./sfile.tmp.$$ | \
+	sort -t':' +1 -2 +0r -1 | \
+	sed -e 's/^[sp]://' > $foo_pass
+
+awk -F: '{parray[$1] = $0":"parray[$1]} END { \
+	for (line in parray) { \
+		nf=split(parray[line], pline, ":"); \
+		if (nf == '"$num_fields"') {
+			print pline[1]":"pline[9]":"pline[3]":"pline[4]":" \
+			pline[5]":"pline[6]":"pline[7]; \
+		      	} \
+		      } \
+		}' $foo_pass
+
+rm -f $ptmp $stmp $foo_pass
+==========================================
+
+  Ok, the way you use this is just to type "shadow.stuff > tempfile";
+this will create a file, "tempfile" (or whatever), that *should*
+be the equivalent to a normal password file.  Of course, you'll have
+to run this as root so that you can read the shadow password file.
+This should work, but no blame if it doesn't, please :-)  Just let
+me know if it does or not; I can put it in the normal distribution,
+if so.
+
+  Hope this helps -- 'luck!
+
+ -- dan

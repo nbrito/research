@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+#  SVR4 module for bug/vulnerability checking
+#
+ECHO=/bin/echo
+TEST=/bin/test
+LS=/bin/ls
+LS_OPTS="-slagL"
+ARCH=/bin/arch
+GREP=/bin/grep
+AWK=/bin/awk
+BUG="$AWK -f ./bug_cmp"
+
+if $TEST ! -f ./bug_cmp ; then
+	$ECHO "Must have bug compare module, ./bug_cmp, to run..."
+	exit 2
+	fi
+# what is the date?  We just need the month and year...
+# Format: Fri Feb  7 14:16:55 PST 1992
+if $TEST $# -eq "2" ; then
+        real_date="$1 $2"
+else
+        real_date=`$DATE | $AWK '{print $2, $NF}'`
+        fi
+
+# /bin/login
+#
+# AT&T SVR4
+#
+# FIX -- "chmod 500 /bin/login
+#
+login="/bin/login"
+fix_date="23 May 1991"
+cert_advis="CA-91:08"
+#
+# Can anyone execute it?
+($LS $LS_OPTS $login | $GREP ...x..x..x ) > /dev/null 2>/dev/null
+
+# if so, check date, etc...
+if $TEST $? -eq "0" ; then
+	cur_date=`$LS $LS_OPTS $login | $AWK '{print $8, $7, $9}'`
+	$ECHO $login $fix_date $cur_date $cert_advis | $BUG
+	fi
+
+
+# /usr/etc/rexecd
+#
+# AT&T TCP/IP release 4.0, SVR4, on 386/486 and 3B2 RISC platforms
+# (how can you tell if it's one of those two platforms?)
+#
+rexecd="/usr/etc/rexecd"
+fix_date="25 Feb 1992"
+cert_advis="CA-92:04"
+#
+# Can anyone execute it?
+($LS $LS_OPTS $rexecd | $GREP ...x..x..x ) > /dev/null 2>/dev/null
+
+# if so, check date, etc...
+if $TEST $? -eq "0" ; then
+	cur_date=`$LS $LS_OPTS $rexecd | $AWK '{print $8, $7, $9}'`
+	$ECHO $rexecd $fix_date $cur_date $cert_advis | $BUG
+	fi
+
+# finis

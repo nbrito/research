@@ -1,0 +1,77 @@
+#  This lists any/all sensitive files the administration wants to ensure
+# non-read/writability of.  Comments are lines starting with a "#".
+#
+# USE FULL PATHNAMES!
+#
+#   Lines are of the format:
+#
+# /path/to/{dir|file}	World/Group	Read/Write/Both
+#
+# as above		{w|g}		{r|w|b}
+#
+/			w		w
+/etc			w		w
+/usr			w		w
+/bin			w		w
+/dev			w		w
+/usr/bin		w		w
+/usr/etc		w		w
+/usr/adm		w		w
+/usr/lib		w		w
+/usr/include		w		w
+/usr/spool		w		w
+/usr/spool/mail		w		w
+/usr/spool/news		w		w
+/usr/spool/uucp		w		w
+/usr/spool/at		w		w
+/usr/local		w		w
+/usr/local/bin		w		w
+/usr/local/lib		w		w
+/usr/users		w		w
+/Mail			w		w
+
+# some Un*x's put shadowpass stuff here:
+/etc/security		w		r
+
+# /.login /.profile /.cshrc /.rhosts
+/.*			w		w
+
+#   I think everything in /etc should be !world-writable, as a rule; but
+# if you're selecting individual files, do at *least* these:
+#   /etc/passwd /etc/group /etc/inittab /etc/rc /etc/rc.local /etc/rc.boot
+#   /etc/hosts.equiv /etc/profile /etc/syslog.conf /etc/export /etc/utmp
+#   /etc/wtmp
+/etc/*			w		w
+
+/bin/*			w		w
+/usr/bin/*		w		w
+/usr/etc/*		w		w
+/usr/adm/*		w		w
+/usr/lib/*		w		w
+/usr/include/*		w		w
+/usr/local/lib/*	w		w
+/usr/local/bin/*	w		w
+/usr/etc/yp*		w		w
+/usr/etc/yp/*		w		w
+
+# individual files:
+/usr/lib/crontab	w		b
+/usr/lib/aliases	w		w
+/usr/lib/sendmail	w		w
+/usr/spool/uucp/L.sys	g		b
+
+#  NEVER want these writeable/readable!
+/dev/kmem		w		b
+/dev/mem		w		b
+
+#   Optional List of assorted files that shouldn't be
+# write/readable (mix 'n match; add to the list as desired):
+/usr/adm/sulog		w		r
+/.netrc			w		b
+# HP-UX and others:
+/etc/btmp		w		b
+/etc/securetty		w		b
+# Sun-fun
+/dev/drum		w		b
+/dev/nit		w		b
+/etc/sunlink/dni/rc	w		w

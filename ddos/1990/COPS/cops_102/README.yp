@@ -1,0 +1,15 @@
+
+  There are a couple of things to keep in mind if you're using yellow
+pages/NIS.  Automatic checks are made in the passwd.chk, group.chk, suid.chk,
+and ftp.chk.  However, if you want to crack passwords from that database,
+you need to do one of three things:
+
+1)  If you're using "pass_diff.chk" to check only changed passwords (on
+line 108 of "cops"), change the flag on line 33 in "pass_diff.chk" from
+"NO" to "YES"
+
+2)  If you're not running "pass_diff.chk", replace "pass.chk" with
+"yp_pass.chk" on line 109 of "cops".
+
+3)  Create a file with ypcat and run "pass.chk -P file".
+

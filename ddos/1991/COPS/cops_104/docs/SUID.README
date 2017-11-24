@@ -1,0 +1,13 @@
+Findsuid is a little utility we dreamt up to watch for potential Trojan horse
+programs by keeping an eye on our suid and sgid files and telling us when
+they change unexpectedly.
+
+We run it using the following line in crontab:
+
+	40 3 * * * /etc/findsuid/findsuid >/etc/findsuid/fserror 2>&1
+
+Included here is the findsuid shell script, a man page, a makefile, and a
+sample "stop" file.
+
+--- Prentiss Riddle ("Aprendiz de todo, maestro de nada.")
+--- {ihnp4,harvard,seismo,gatech,ctvax}!ut-sally!riddle

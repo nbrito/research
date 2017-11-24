@@ -1,0 +1,25 @@
+.TH IS_WRITABLE 1 "Feb 3, 1992"
+.UC 4
+.SH NAME
+is_writable \- Check for writability of a file.
+.SH SYNOPSIS
+.B is_writable
+[
+\-g
+]
+file
+.SH DESCRIPTION
+.I is_writable
+can check a file to see if a file is either writable by group or by all,
+returning either 0 if it is writable, or non-zero if it is not.
+.I is_writable
+also checks the parent directories, if a complete path is
+given, for writeability.
+Options are:
+.TP
+.B \-g
+Check for group writability as well as world.
+.SH BUGS
+The Andrew File System, or Mach, or the combination of the two, apparently
+plays games with stat(), the way I get the file info, so it can report things
+as writable, when they aren't.

@@ -1,0 +1,188 @@
+:
+#
+#   group.chk
+#
+#  Check group file -- /etc/group -- for incorrect number of fields,
+# duplicate groups, non-alphanumeric group names, and non-numeric group
+# id's.
+#
+# Awk part based on _passwd_ from _The AWK Programming Language_, page 78
+#
+#   Mechanism:  Group.check uses awk to ensure that each line of the group
+# has 4 fields, as well as examining each line for any duplicate groups or
+# any duplicate user id's in a given group by using "sort -u" to ferret
+# out any duplications.  It also checks to make sure that the password
+# field (the second one) is a "*", meaning the group has no password (a
+# group password is usually not necessary because each member listed on 
+# the line has all the privilages that the group has.)  All results are
+# echoed to standard output.  Finally it ensures that the group names
+# are alphanumeric, that the group id's are numeric, and that there are
+# no blank lines.  For yellow pages groups, it does the same checking,
+# but in order to get a listing of all members of the groups, it does a
+# "ypcat group > ./$$" and uses that temporary file for a groupfile.
+# It removes the tmp file after using it, of course.
+#   The /etc/group file has a very specific format, making the task
+# fairly simple.  Normally it has lines with 4 fields, each field
+# separated by a colon (:).  The first field is the group name, the second
+# field is the encrypted password (an asterix (*) means the group has no
+# password, otherwise the first two characters are the salt), the third
+# field is the group id number, and the fourth field is a list of user
+# ids in the group.  If a line begins with a plus sign (+), it is a yellow
+# pages entry.  See group(5) for more information.
+#
+#
+AWK=/bin/awk
+SED=/bin/sed
+ECHO=/bin/echo
+TEST=/bin/test
+SORT=/usr/bin/sort
+UNIQ=/usr/bin/uniq
+YPCAT=/usr/bin/ypcat
+RM=/bin/rm
+
+#   Used for Sun C2 security group file.  FALSE (default) will flag
+# valid C2 group syntax as an error, TRUE attempts to validate it.
+# Thanks to Pete Troxell for pointing this out.
+C2=FALSE
+
+etc_group=/etc/group
+yp_group=./$$
+yp=false
+
+if $TEST -f $YPCAT
+	then
+if $TEST -s $YPCAT
+	then
+	$YPCAT group > $yp_group
+	if $TEST $? -eq 0
+		then
+		yp=true
+		fi
+	fi
+fi
+
+# Testing $etc_group for potential problems....
+
+#   First line is for a yellow pages entry in the group file.
+# It really should check for correct yellow pages syntax....
+$AWK 'BEGIN {FS = ":" }
+    {
+    if (substr($1,1,1) != "+") { \
+        if ($0 ~ /^[ 	]*$/) {
+            printf("Warning!  Group file, line %d, is blank\n", NR)
+            }
+        else {
+            if (NF != 4) {
+                printf("Warning!  Group file, line %d, does not have 4 fields: %s\n", NR, $0)
+                } \
+            if ($1 !~ /[A-Za-z0-9]/) {
+                printf("Warning!  Group file, line %d, nonalphanumeric user id: %s\n", NR, $0)
+                } \
+            if ($2 != "" && $2 != "*" && $2 != "!") {
+                if ("'$C2'" != "TRUE") {
+                    if (length($2) == 13)
+                        printf("Warning!  Group file, line %d, group has password: %s\n", NR, $0)
+                        }
+                    else {
+                        if ("#$"$1 != $2)
+                            printf("Warning!  Group file, line %d, group has invalid field for C2:\n%s\n", NR, $0)
+                        } \
+                    } \
+                if ($3 !~ /[0-9]/) {
+                    printf("Warning!  Group file, line %d, nonnumeric group id: %s\n", NR, $0)
+                    }
+                }
+            }
+        }' $etc_group
+
+#
+#  Look for duplications in groups in $etc_group
+#
+result=`$AWK -F: '{print $1}' $etc_group | $SORT |$UNIQ -d`
+if $TEST "$result"
+	then
+	$ECHO "Warning!  Duplicate Group(s) found in $etc_group:"
+	$ECHO $result
+fi
+
+#
+#   Next, check for duplicate users in a group in /etc/group.  Let
+# awk do all the work (thanks, adri!)
+#
+
+# Ignore all groups with less than two members.
+#
+awk -F: 'split($4, users, ",") > 1 {
+    ct = 0
+    for (i in users) {
+        curuser = users[i]
+        for (j in users) {
+            if (j > i && curuser == users[j]) {
+                if (ct++ == 0) print "Warning!  Group "$1" has duplicate user(s):"
+                    print curuser
+                }
+            }
+        }
+    }' $etc_group
+
+
+#
+# Test yellow pages groups as well
+if $TEST "$yp" = "true"
+	then
+$AWK 'BEGIN {FS = ":" }
+    {
+    if ($0 ~ /^[ 	]*$/) {
+        printf("Warning!  YGroup file, line %d, is blank\n", NR)
+        }
+    else {
+        if (NF != 4) {
+            printf("Warning!  YGroup file, line %d, does not have 4 fields: %s\n", NR, $0)
+            } \
+        if ($1 !~ /[A-Za-z0-9]/) {
+            printf("Warning!  YGroup file, line %d, nonalphanumeric user id: %s\n", NR, $0)
+            } \
+        if ($2 != "" && $2 != "*") {
+            if (length($2) == 13)
+                printf("Warning!  YGroup file, line %d, group has password: %s\n", NR, $0)
+            } \
+        if ($3 !~ /[0-9]/) {
+            printf("Warning!  YGroup file, line %d, nonnumeric group id: %s\n", NR, $0)
+            }
+        }
+    }' $yp_group
+
+#
+#  Look for duplications in groups in yellow pages groups
+#
+	yresult=`$AWK -F: '{print $1}' $yp_group | $SORT |$UNIQ -d`
+	if $TEST "$yresult"
+		then
+		$ECHO "Warning!  Duplicate Group(s) found in yellow pages group:"
+		$ECHO $result
+	fi
+#
+#   Next, check for duplicate users in a group in yellow groups.  Let
+# awk do all the work (thanks, adri!) 
+
+# ignore all groups with one member.
+#
+	awk -F: 'split($4, users, ",") > 1 {
+	    ct = 0
+	    for (i in users) {
+	        curuser = users[i]
+	            for (j in users) {
+	                if (j > i && curuser == users[j]) {
+	                    if (ct++ == 0) 
+	                        print "Warning!  YGroup "$1" has duplicate user(s):"
+	                    print curuser
+	                    }
+	                }
+	            }
+	    }' $yp_group
+
+fi
+
+$RM -f $yp_group
+
+# end

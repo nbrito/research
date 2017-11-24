@@ -1,0 +1,10 @@
+.TH TILDE 1 "December 31, 1989"
+.UC 4
+.SH NAME
+tilde  \- returns a user's home directory.
+.SH SYNOPSIS
+.B tilde 
+user
+.SH DESCRIPTION
+This merely prints a user's home directory, or "Error" if not found.
+Named for the Csh feature.

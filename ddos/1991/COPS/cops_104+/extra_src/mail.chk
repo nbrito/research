@@ -1,0 +1,49 @@
+:
+#  mail.chk -- COPS-driveable shell script to check for problems in
+#              the mail spool directory.
+#
+#  This script uses awk(1) to find all files in the mail spool
+#  directory with improper names, permission, or ownership.  If
+#  it finds no bad files, it exits silently.
+#
+#  Installation: Make sure that the MAILDIR variable is set to your
+#  mail spool directory (/var/spool/mail or /usr/spool/mail) and
+#  that the executables (AWK, CAT, LS and RM) are named correctly.
+#
+#  History:
+#  11/08/91  Prentiss Riddle (riddle@rice.edu): Original version.
+#
+AWK=/bin/awk
+CAT=/bin/cat
+LS=/bin/ls
+RM=/bin/rm
+MAILDIR=/var/spool/mail
+#
+PROG="/usr/tmp/mchk.p$$"
+TEMP="/usr/tmp/mchk.t$$"
+#
+umask 077
+#
+# Unpack the awk script from a "hereis".
+# The script reports files with bad permissions or where filename !=
+# owner's userid.
+$RM -f $PROG
+cat <<'EndOfProg' >$PROG
+$1 == "total"                                   { next }
+$9 == "." || $9 == ".." || $9 == "lost+found"   { next }
+$1 != "-rw-------" || $3 != $9                  { print $0 }
+EndOfProg
+#
+# Pipe long ls through the awk script.  Save the output and print it
+# with a heading if it's non-null.
+cd "$MAILDIR"
+$RM -f $TEMP
+$LS -lag | $AWK -f $PROG >$TEMP
+if [ -s $TEMP ] ; then
+        echo 'Warning: problem files in '"$MAILDIR"':'
+        $CAT $TEMP
+fi
+#
+# Clean up.
+$RM -f $TEMP $PROG
+exit 0

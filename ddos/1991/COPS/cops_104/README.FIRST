@@ -1,0 +1,55 @@
+
+  Here is a fast overview of how to learn to use COPS; steps may be deleted,
+ignored, or added at your discretion.
+
+0)  It requires a unix system with a C compiler; the perl stuff
+(optional) requires a perl version >= 3.44.  Better yet, >= 4.10.
+
+1)  If you're upgrading from an older version, read "coverfile" for an
+overview of the changes from last time.
+
+2)  Read "README.1", either "README.2.sh" or "README.2.pl", depending
+on which version you're going to run, and then "README.3".
+1b) If applicible, look at the readme files in the "docs" directory
+(e.g. "readme.svr4", etc.)  Alternately, read "quickstart" for a crash
+course in installing/running COPS.
+
+3)  Run "reconfig" if uncertain about the pathnames to the system
+executables that your system uses, or if you think they are at all
+different than sun/generic BSD systems.
+
+4)  "make" or "make install" (if installing, change line 7 in "makefile"
+to specify where you want things to go.)  If you'd like to try the fast
+crypt stuff (stolen from Crack), uncomment lines 94-95, comment out
+the normal line (93).
+
+5)  Change the "is_able.lst" and "crc_list" files to better represent
+your type of system.
+
+6)  Run COPS.  Usually something like "./cops -v -s . -b cops_errs" or
+whatnot.  Also run "suid.chk".
+
+7)  Read "docs/warnings" file for interpretations of results.
+7b) If on a network and have more than one report, you may with to
+run the CARP report analyzer (see the "carp" subdirectory; *ONLY*
+useable with "cops -v" output files!)
+
+8)  Fix problems that were flagged, examine the error log (cops_errs in
+the above example) to see if cops had any troubles with anything, and
+finally decide if you want to modify the exception filter (typically
+"cops_filter", run with the -f flag; e.g. "cops -f cops_filter").
+
+9)  Read various man pages, extra docs, and look at source code to see
+if anything needs modifying or tweaking.
+
+10)  Look at the extra stuff included.  In particular, if you have lots
+of users, look at the "checkacct" stuff, in the directory of the same
+name.  Also look at the "extra_src" directory for miscellaneous goodies.
+
+11)  Put COPS in your system's cron/at (or repeat 5 manually), repeat #7
+as deemed neccessary.
+
+
+ g'luck...
+ -- dan
+

@@ -1,0 +1,6 @@
+
+Some "dot" files typically have very sensitive information in them,
+such as passwords.  It is not a good idea to even have these on the
+system, but if you must, then they should not be readable by anyone on
+the system (except yourself).
+

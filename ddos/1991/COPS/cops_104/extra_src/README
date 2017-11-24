@@ -1,0 +1,35 @@
+
+
+  Assorted programs and love songs that don't fit, are not polished enough,
+or are just too miscellaneous to put in the general distribution.  Here's
+a quick rundown on the stuff in this directory:
+
+bad_dir.pl -- finds weird named dirs... things like "..." and stuff.  Use
+	it like "find $1 -exec perl ./bad_dir.pl {} \;"
+
+diff_last.sh -- gives you the difference between the last two cops reports
+		that you have run.
+
+mail.chk -- checks your mail directory for potentially bad things.
+
+pass_mail -- scans through a COPS result file and mails a warning note to
+	anyone who had their password guessed.  The note that is to be
+	mailed needs a bit of editing to put site specific info in.
+
+rhosts_sweeper -- checks for "+"'s in .rhosts files... should be run as root.
+
+stop.make -- a quick way to make a starting suid stop file from scratch.
+
+trust.pl -- this looks at your /etc/hosts.equiv file and resolves all the
+		hosts that your host trusts, including netgroup stuff.
+		This will be part of the satan project.
+
+uucp_1.shar -- a nifty set of programs to help check uucp security.  This
+		or the above will be melded into the next version of
+		cops, but there just wasn't enough time with everything
+		else going on...
+
+uucp_2.shar -- the start of a comprehensive uucp checking program.  Comments
+		are *very* welcome on this!  Must have perl, run in the perl
+		subdir, or have the support programs in the dir run at.
+

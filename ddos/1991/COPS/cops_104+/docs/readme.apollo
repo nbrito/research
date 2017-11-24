@@ -1,0 +1,61 @@
+
+  Try setting the $OVER_8 variable (line 50) in "passwd.chk" to "YES",
+if you get warnings about having extra long uid's.
+
+
+  This little script can be used to generate a better password file for
+the password cracker, if you use those funky more-than-one-field in field
+one of the password file; e.g., if you have something that looks like:
+
+root.foo.bar:xxxxxxxxxxxxx:0:0:Mr. Fu Bear:/:/bin/sh
+
+  This will change it to:
+
+root:xxxxxxxxxxxxx:0:0:foo bar Mr. Fu Bear:/:/bin/sh
+
+  So that you can use the extra fields as gcos information for password
+cracking.  You can substitute the normal password cracking stuff in "cops"
+("pass.chk") with something like (assuming you call this "apollo.sh"):
+
+apollo.sh > ./apollo.pw.$$
+pass.chk -P ./apollo.pw.$$
+rm -f ./apollo.pw.$$
+
+
+  In addition, you can add these 2 lines to the "passwd.chk" shell script
+(right before the start of the awk on line 82 would be fine):
+
+$AWK -F: '{print $1}' $etc_passwd | $AWK -F. '{if (NF > 3)
+		printf("Warning!  Password file, line %d, has %d sub-fields in the user field: \n\t%s\n", NR, NF, $0) }'
+
+  And if you're running YP (is that possible, with all of that?  :-)
+You can add these 2 lines before line 119:
+
+$AWK -F: '{print $1}' $yp_passwd | $AWK -F. '{if (NF > 3)
+		printf("Warning!  YPassword file, line %d, has %d sub-fields in the user field: \n\t%s\n", NR, NF, $0) }'
+
+
+:
+#
+#  apollo.pw
+#
+AWK=/bin/awk
+
+# Quote from the man page (passwd):
+# On DOMAIN systems, passwords are kept in the registry files (/registry/*).
+#
+# Important files:
+etc_passwd=/etc/passwd
+
+$AWK -F: '{split($1,temp,"."); \
+		$1=temp[1]; \
+		for (i in temp) {
+			if (i!=1) \
+				$5 = $5" "temp[i]; \
+			} \
+		for (j=1;j<=NF;j++)
+			printf("%s:",$j); \
+		printf("\n") \
+		}' $etc_passwd
+
+# end

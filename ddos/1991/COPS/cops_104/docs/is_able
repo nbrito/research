@@ -1,0 +1,23 @@
+.TH IS_ABLE 1 "Jan 4, 1991"
+.UC 4
+.SH NAME
+is_able \- Check for write/read\-ability of a file.
+.SH SYNOPSIS
+.B is_able
+file {w|g|S|s} {r|w|s|B|b}
+.SH DESCRIPTION
+.I is_able
+can check a file to see if a file is either write/read-able by group or by
+all, or if it is setuid/setgid, or a combination of these.  A first argument
+of "w" or "g" determines whether it is to be world or group writable,
+respectively, a "s" or "S" allows checking of SUID or SGID files, respectively.
+A second argument of "r", "w", or "s", stands for readability, writeability,
+or set[ug]id-ness, respectively; a "B" and a "b" stand for read and write,
+and set[ug]id and write, respectively.
+.I is_able
+with a write option also checks the parent directories, if a complete path is
+given, for writeability.
+.SH BUGS
+The Andrew File System, or Mach, or the combination of the two, apparently
+plays games with stat(), the way I get the file info, so it can report things
+as writable, when they aren't.

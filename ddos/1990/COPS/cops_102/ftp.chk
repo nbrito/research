@@ -1,0 +1,256 @@
+:
+#
+#  Usage: ftp.chk [-a]
+#
+#   This shell script checks to see if you've set up (mainly anonymous)
+# ftp correctly.  The "-a" option checks your anon-ftp setup; without that,
+# this script doesn't do a whole lot -- just check to see if your ftpusers
+# file doesn't have any root accounts in it.  There seems to be some different
+# types of ftp's around; for instance, some allow "chmod" -- and if the home
+# dir is owned by "ftp", you're toast.  So I've tried to err on the side of
+# safety...
+#
+#   See the man page for a more detailed description, here's what this
+# checks for:
+#
+# - User ftp exists in the password file.
+# - root (or all root equivalents) are in ftpusers file.
+# - Home directory for ftp should exist, and not be /
+# - The ~ftp/etc/{passwd|group} should not be the same as the real ones.
+# - Various critical files/directories should exist, and have correct
+#   permissions and owners; variables "$primary" and "$owner" can be set
+# to whomever you want owning the files:
+#
+#  File/Dir          Perms           Owner      Other
+#  =========         ======          ======     ======
+#  ~ftp              non-w.w.        root
+#           or
+#  ~ftp              555             ftp	if no chmod command exists
+#
+#     All of these are ftp owned iff no chmod exists...
+#
+#  ~ftp/bin          non-w.w.        root/ftp
+#  ~ftp/bin/ls       111             root/ftp
+#  ~ftp/etc          non-w.w.        root/ftp
+#  ~ftp/etc/passwd   non-w.w.        root/ftp   0 size or nonexistant
+#  ~ftp/etc/group    non-w.w.        root/ftp   0 size or nonexistant
+#  ~ftp/pub          non-w.w.        root/ftp
+#  ~ftp/incoming     world-writable  root/ftp   This can be set to "pub"
+#  ~ftp/.rhosts      non-w.w.        root       0 size, is optional
+#  ~ftp/*            non-w.w.                   other dirs/files in ~ftp
+#
+
+#  If an argument is present, it should be an "a"
+TEST=/bin/test
+ECHO=/bin/echo
+if $TEST $# -gt 1 ; then
+	$ECHO Usage: $0 [-a]
+	exit 1
+	fi
+if $TEST $# -eq 1 ; then
+	if $TEST $1 = "-a" ; then
+			anonymous=yes
+	else
+		$ECHO Usage: $0 [-a]
+		exit 1
+		fi
+	fi
+
+#   Primary and secondary owners of the ftp files/dirs; if you *don't* have
+# chmod, you can probably change the secondary owner to "ftp".  If you have
+# chmod in your ftp, definitely have secondary to some other account (root
+# is fine for this.)
+primary=root
+secondary=root
+
+# some might have this as ftpd; is the account in /etc/passwd
+ftpuid=ftp
+
+# Where is everyone?
+AWK=/bin/awk
+EGREP=/usr/bin/egrep
+LS=/bin/ls
+CMP=/bin/cmp
+RM=/bin/rm
+YPCAT=/usr/bin/ypcat
+
+# system files
+ftpusers=/etc/ftpusers
+passwd=/etc/passwd
+group=/etc/group
+
+#  A pox on YP/NIS, making life tougher for me :-)  Thanks to Rob Kolstad
+# for pointing this out -- you need to use ypcat to get the password file,
+# if you run yp:
+
+# Scratch files for testing:
+yp_passwd=./p.$$
+yp_group=./g.$$
+
+# generic test to check for yp use?
+if $TEST -f $YPCAT -a -s $YPCAT ; then
+	$YPCAT passwd > $yp_passwd
+	if $TEST $? -eq 0 ; then
+		$YPCAT group > $yp_group
+		yp=true
+	else
+		yp=false
+		fi
+	fi
+
+if $TEST "$yp" = "true" ; then
+	passwd=$yp_passwd
+	group=$yp_group
+	fi
+
+#   ftp's files:
+ftproot=`$AWK -F: '/^'"$ftpuid"':/{print $6}' $passwd`
+
+#   if the user ftp doesn't exist, no-anon stuff....
+if $TEST -z $ftproot -a "$anonymous" = "yes" ; then
+	$ECHO Warning!  Need user $ftp for anonymous ftp to work!
+	$RM -f $yp_passwd $yp_group
+	exit 1
+	fi
+
+ftprhosts=$ftproot/.rhosts
+ftpbin=$ftproot"/bin"
+ftpls=$ftpbin"/ls"
+ftpetc=$ftproot"/etc"
+ftppasswd=$ftpetc"/passwd"
+ftpgroup=$ftpetc"/group"
+
+#   the pub/incoming stuff; by default, pub is *not* world writable, incoming
+# is; if you want pub to be world writable, just change incoming to "pub"
+incoming=incoming
+ftppub=$ftproot"/pub"
+
+crit_files="$ftpgroup $ftppasswd $ftpls"
+
+if $TEST -s "$ftpusers" ; then
+	# check to see if root (or root equivalents) is in ftpusers file
+	all_roots=`$AWK -F: '{if ($3==0 && length($2)==13) printf("%s ", $1)}' $passwd`
+	if $TEST -n "$all_roots" ; then
+		for i in $all_roots
+			do
+			if $TEST ! "`$EGREP '^'"$i"'$' $ftpusers`"
+				then
+				$ECHO Warning!  $i should be in $ftpusers!
+				fi
+			done
+		fi
+	fi
+
+#  do the anonymous ftp checking stuff now
+if $TEST -n "$anonymous" ; then
+	#
+	#  ftp's home dir checking
+	if $TEST ! -d "$ftproot" -o -z "$ftproot"; then
+		$ECHO Warning!  Home directory for ftp doesn\'t exist!
+		fi
+	if $TEST "$ftproot" = "/" ; then
+		$ECHO Warning!  $ftproot ftp\'s home directory should not be \"/\"!
+		fi
+	#
+	#  Don't want the passwd and group files to be the real ones!
+	if $TEST "$passwd" != "$ftppasswd" ; then
+		if $TEST "`$CMP $passwd $ftppasswd 2> /dev/null`" ; then
+			:
+		else $ECHO ftp-Warning!  $ftppasswd and $passwd are the same!
+			fi
+		fi
+	if $TEST "$group" != "$ftpgroup" ; then
+		if $TEST "`$CMP $group $ftpgroup 2> /dev/null`" ; then
+			:
+		else $ECHO ftp-Warning!  $ftpgroup and $group are the same!
+			fi
+		fi
+
+	#   want to check all the critical files and directories for correct
+	# ownership.
+	#
+	#  This is what a "/bin/ls -l" of a file should look like:
+	# ---x--x--x  1 root        81920 Dec 31  1999 /bin/ls
+	#  So in awk, $3 is the owner, $1 is the permission.
+	#
+	#   some versions don't need much of anything... no etc directory or
+	# password/group files.
+	# crit_files=$ftpls
+	#   others need etc directory & password/group files.  Experiment.
+	crit_files=$crit_files" "$ftpbin" "$ftpetc
+	for i in $crit_files
+		do
+		if $TEST ! -f $i -a ! -d $i; then
+			$ECHO ftp-Warning!  File $i is missing!
+			fi
+
+		owner=`$LS -Lld $i | $AWK '{print $3}'`
+		if $TEST "$owner" = "$primary" -o "$owner" = "$secondary" ; then
+			:
+		else
+			$ECHO ftp-Warning!  $i should be owned by $primary or $secondary!
+			fi
+		done
+
+	#   ftproot is special; if owned by root; should be !world writable;
+	# if owned by ftp, should be mode 555
+	owner=`$LS -Lld $ftproot | $AWK '{print $3}'`
+	perms=`$LS -Lld $ftproot | $AWK '{print $1}'`
+	if $TEST "$owner" = "$primary" -o "$owner" = "$secondary" ; then
+		:
+	else
+		$ECHO ftp-Warning!  $ftproot should be owned by $primary or $secondary!
+	fi
+
+	# ftp-root should not be world-writable:
+	./is_able $ftproot w w
+
+	# if ftp owns root-dir, then mode should be 555:
+	if $TEST "$owner" = "$ftpuid" -a "$perms" != "dr-xr-xr-x" ; then
+		$ECHO ftp-Warning!  $ftproot should be mode 555!
+		fi
+
+	#
+	# check the .rhosts file:
+	if $TEST -f $ftprhosts ; then
+		if $TEST -s $ftprhosts ; then
+			$ECHO ftp-Warning!  $ftprhosts should be be empty!
+			fi
+		owner=`$LS -Lld $ftprhosts | $AWK '{print $3}'`
+		if $TEST "$owner" = "$primary" -o "$owner" = "$secondary" ; then
+			:
+		else
+			$ECHO ftp-Warning!  $ftprhosts should be owned by $primary or $secondary!
+			fi
+		fi
+
+	#
+	# finally, some permissions of miscellaneous files:
+	perms=`$LS -Lld $ftpls | $AWK '{print $1}'`
+	if $TEST "$perms" != "---x--x--x" ; then
+		$ECHO ftp-Warning!  Incorrect permissions on \"ls\" in $ftpbin!
+		fi
+
+	perms=`$LS -Lld $ftppasswd | $AWK '{print $1}'`
+	if $TEST "$perms" != "-r--r--r--" ; then
+		$ECHO ftp-Warning!  Incorrect permissions on \"passwd\" in $ftpetc!
+		fi
+
+	perms=`$LS -Lld $ftpgroup | $AWK '{print $1}'`
+	if $TEST "$perms" != "-r--r--r--" ; then
+		$ECHO ftp-Warning!  Incorrect permissions on \"group\" in $ftpetc!
+		fi
+
+	#   Finally, the ~ftp/{pub|incoming|whatever} stuff:
+	all_dirs=`$LS -Lal $ftproot | $AWK '{if (NF >= 8) print $NF}'`
+	for i in $all_dirs
+		do
+		if $TEST -n "`is_able $ftproot/$i w w`" -a $i != "$incoming" ; then
+			$ECHO Warning!  Anon-ftp directory $i is World Writable!
+			fi
+		done
+	fi
+
+# get rid of any yp evidence
+$RM -f $yp_passwd $yp_group
+# end of script

@@ -1,0 +1,142 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  Usage: suid.chk [-n] [-s secure_dir] [search_starting_directory]
+#
+#   Shell script intended to be run periodically by cron in order
+#   to spot changes in files with the suid or sgid bits set.
+#
+#	suid.chk	840919		Prentiss Riddle
+#
+#     This changes into the $SECURE directory first, then 
+#   uses find(1) to search the directories in $SEARCH for all
+#   files with the 4000 or 2000 permission bits set.  $STOP is a file
+#   containing "ls -gildsa" output for known setuid or setgid programs.
+#   Any additions or changes to this list represent potential security
+#   problems, so they are reported.
+#
+#  Modified 8/15/89, Dan Farmer:
+#	Just changed the program/doc names and some of the temp
+#  files to make it fit in with the rest of the programs....
+#  Modified 12/26/90, df
+#       Now flags SUID shell scripts and world writeable SUID files, too.
+#
+#  Rewritten in perl, 1/17/91, df
+#  Major hacks by tchrist 5/14/91
+#
+
+require "hostname.pl";
+require "is_able.pl";
+require "file_owner.pl";
+require "pathconf.pl";
+require "chk_strings.pl";
+require "pass.cache.pl";
+package suid_chk; # name space protection
+$debug=0;
+
+#
+# Getopts stuff
+$usage = "Usage: $0 [-n] [-s secure_dir] [starting_directory]\n";
+require 'getopts.pl';
+# Process the command args; Either specify verbose or an alternate config file:
+die $usage unless &'Getopts('ns:');
+
+$suid_dir = $'SECURE || '.';
+if (defined($'opt_s)) { $suid_dir = $'opt_s; }
+
+# Do NFS stuff?  Yes unless opt:
+if (defined($'opt_n)) { $skip_nfs = 1; }
+else { $skip_nfs = 0; }
+
+$STOP="$suid_dir/suid.stop" unless defined $STOP;
+$FINDARGS="" unless defined $FINDARGS;
+$LSARGS=" -glids" unless defined $LSARGS;
+
+$TEMPOLD="$suid_dir/fsold$$";
+$TEMPCUR="$suid_dir/fscur$$";
+$TEMPNEW="$suid_dir/fsnew$$";
+$TEMPGON="$suid_dir/fsgon$$";
+$TEMPM="$suid_dir/fsm$$";
+
+if (@ARGV > 1) { die $usage; }
+elsif (@ARGV == 1) { $start_dir = shift; }
+
+# these may be terribly rash assumptions....
+$start_dir="/" unless defined $start_dir;
+$find_can_ls = 1 unless defined $find_can_ls;
+
+$NONFS = '-type d \( -fstype nfs -prune \) -o' if $skip_nfs;  
+$find_ls = $find_can_ls ? '-ls' : "-exec $'LS $LSARGS {} \\;";
+
+die "Error -- Security directory $suid_dir doesn't exist\n"
+    unless -d $suid_dir;
+unless (-d $suid_dir) {
+    mkdir($suid_dir, 0700) || die "can't mkdir $suid_dir: $!";
+} 
+chdir $suid_dir || die "can't chdir $suid_dir: $!\n";
+
+# find the setuid programs and sort
+&run("$'FIND $start_dir $FINDARGS $NONFS -type f \\( -perm -4000 -o -perm -2000 \\) $find_ls | $'SORT > $TEMPCUR");
+
+# compare with the sorted stop list
+# create stop file if needed
+if (! -f $STOP) { open(S,">$STOP"); close(S); }
+
+&run("$'SORT <$STOP >$TEMPOLD");
+&run("$'COMM -13 $TEMPOLD $TEMPCUR | $'SORT +8 >$TEMPNEW");
+&run("$'COMM -23 $TEMPOLD $TEMPCUR | $'SORT +8 >$TEMPGON");
+
+local($is_able'silent) = 1;
+local($chk_strings'recurse) = 0 unless defined $chk_strings'recurse;
+
+# report changes
+if (-s $TEMPNEW || -s $TEMPGON) {
+    if (-s $TEMPNEW) {
+	open TEMPNEW || die "Can't open $TEMPNEW: $!\n";
+	while (<TEMPNEW>) {
+	    ($file) = /(\S+)$/;
+
+	    # don't want SUID files to be world writable!
+	    # although *reasonable* systems clear the bit on write
+	    print "Warning!  SUID file $file is _World_ writable!\n" 
+		if &'is_able ($file, "w", "w"); 
+		    
+	    if (-r $file && -f _ && -T $file) {
+		print "Warning!  ", &'Owner($file) ? '' : 'ROOT-owned ', 
+		    "SUID file $file is a non-binary, executable file!\n";
+	    }
+
+	    &'chk_strings($file) if -r _;
+	}
+	close TEMPNEW;
+    }
+
+    if (-s $TEMPNEW) {
+	open TEMPNEW || die "Can't reopen $TEMPNEW: $!\n";
+	print "\nThese files are newly setuid/setgid:\n\n";
+	print while <TEMPNEW>;
+    }
+
+    if (-s $TEMPGON) {
+	open TEMPGON || die "Can't reopen $TEMPGON: $!\n";
+	print "\nThese files are no longer setuid/setgid:\n\n";
+	print while <TEMPGON>;
+    }
+
+}
+
+unlink $TEMPOLD, $TEMPCUR, $TEMPNEW, $TEMPGON;
+
+sub run {
+    print "running: $_[0]\n" if $debug;
+    system $_[0];
+    warn "command $_[0] returned $?" if $?;
+} 
+
+#  end it all....
+
+1;

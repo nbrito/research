@@ -1,0 +1,195 @@
+:
+#
+#  Usage: cops [architecture]
+#
+#  This will change into the $SECURE/architecture directory, ensure all
+# the security programs (listed below) indeed do exist, and run all of the
+# security programs.  If any of the programs find any security problems, it
+# either sends mail to everyone in the $SECURE_USERS list, or saves the results
+# in a file $SECURE/architecture/hostname.  It then destroys all temporary
+# files, and exits the program.  Programs that are run (besides this one):
+#
+#	root.chk	dev.chk		group.chk
+#	home.chk 	rc.chk		passwd.chk
+#	is_able.chk	pass.chk 	user.chk
+#	cron.chk	misc.chk	ftp.chk
+#
+# The U-kuang system runs these additional programs:
+#	init_kuang	kuang		addto
+#	clearfiles	filewriters	members
+
+#
+#  If this is changed to "NO", the report that cops creates
+# will not be deleted and the results will not be mailed to anyone.
+MMAIL=NO
+#
+#  If this is changed to "YES", then the report will only be mailed
+# if it detects a difference between the last report and this one.
+# Note that this makes no sense unless the mail is set to "YES" as well.
+ONLY_DIFF=YES
+
+# Where is everyone?
+ECHO=/bin/echo
+TEST=/bin/test
+RM=/bin/rm
+CAT=/bin/cat
+MAIL=/bin/mail
+DATE=/bin/date
+CHMOD=/bin/chmod
+AWK=/bin/awk
+SED=/bin/sed
+MV=/bin/mv
+MKDIR=/bin/mkdir
+
+# send errors and verbosity to...
+BIT_BUCKET=/dev/null
+
+######################
+#  Change these lines!
+######################
+SECURE=/usr/foo/bar
+SECURE_USERS="foo@bar.edu"
+######################
+
+#  If an argument is present, that's the architecture;
+# change to that dir, and execute cops there:
+if $TEST $# -gt 1 ; then
+	$ECHO Usage: $0 [architecture]
+	exit 1
+elif $TEST $# -eq 1 ; then
+	if $TEST ! -d $SECURE/$1 ; then
+		$ECHO Architecture directory $1 does not exist
+		exit 1
+		fi
+	SECURE=$SECURE"/"$1
+	cd $SECURE
+	./cops
+	exit
+	fi
+
+SECURE_PROGRAMS="root.chk dev.chk is_able.chk group.chk \
+                 home.chk rc.chk passwd.chk pass.chk misc.chk ftp.chk \
+		 cron.chk user.chk init_kuang kuang addto \
+		 clearfiles filewriters members is_able"
+
+if $TEST ! -d "$SECURE" ; then
+	$ECHO "Error -- Security directory $SECURE doesn't exist"
+	exit 1
+fi
+
+$CHMOD 700 $SECURE
+cd $SECURE
+
+for i in $SECURE_PROGRAMS
+	do
+	if $TEST ! -s "$i" ; then
+		$ECHO "Error -- Security program $i doesn't exist"
+		exit 1
+	fi
+done
+
+RESULT=$SECURE/result.$$
+$SECURE/root.chk		>	$RESULT 2> $BIT_BUCKET
+$SECURE/dev.chk			>>	$RESULT 2> $BIT_BUCKET
+$SECURE/is_able.chk		>>	$RESULT 2> $BIT_BUCKET
+$SECURE/rc.chk			>>	$RESULT 2> $BIT_BUCKET
+$SECURE/cron.chk		>>	$RESULT 2> $BIT_BUCKET
+$SECURE/group.chk		>>	$RESULT 2> $BIT_BUCKET
+$SECURE/home.chk		>>	$RESULT 2> $BIT_BUCKET
+$SECURE/passwd.chk		>>	$RESULT 2> $BIT_BUCKET
+$SECURE/user.chk		>>	$RESULT 2> $BIT_BUCKET
+$SECURE/misc.chk		>>	$RESULT 2> $BIT_BUCKET
+
+# use the -a option for checking anon-ftp; e.g., "$SECURE/ftp.chk -a"
+$SECURE/ftp.chk			>>	$RESULT 2> $BIT_BUCKET
+
+#   Optional -- use "pass_diff.chk", instead of "pass.chk" to make your
+# life easier!
+# $SECURE/pass_diff.chk		>>	$RESULT 2> $BIT_BUCKET
+$SECURE/pass.chk 		>>	$RESULT 2> $BIT_BUCKET
+
+#   Optional -- use "kuang.pl", instead of "kuang", if you have perl
+# installed on your system, for extra speed and functionality:
+# $SECURE/kuang.pl		>	$BIT_BUCKET 2> $BIT_BUCKET
+$SECURE/kuang			>	$BIT_BUCKET 2> $BIT_BUCKET
+# kuang puts it's results in a file called "Success"; check it out:
+if $TEST -s "$SECURE/Success" ; then
+	$CAT $SECURE/Success >> $RESULT
+fi
+$RM -f $SECURE/Success
+
+# Optional!  Should use this interactively, with a secret key!
+# $SECURE/crc.chk		>>	$RESULT 2> $BIT_BUCKET
+# crc.chk puts it's results in a file called crc.results; check it out:
+# if $TEST -s "$SECURE/crc.results" ; then
+# 	$CAT $SECURE/crc.results >> $RESULT
+# fi
+
+#
+#   Save or Mail the final report to $SECURE_USERS and remove the evidence.
+#
+#  (Thanks to Ian Darwin for the next nifty idea!)
+#  If the result is not mailed, it will be saved in a directory with the
+# same name as the host, in a file with the name:
+#
+#  Year_Month_Day  (for example: $SECURE/ucbvax/1999_Dec_31 )
+#
+if $TEST -s "$RESULT" ; then
+	# want to put the date and hostname at top; use tmp file: report.$$
+	REPORT=$SECURE/report.$$
+
+	# name of final resting place:
+	NAME=`$DATE | $AWK '{print $NF"_"$2"_"$3}'`
+	#
+	if $TEST -s /bin/hostname ; then
+		HOSTNAME=`/bin/hostname`
+	elif $TEST -s /bin/uname ; then
+		HOSTNAME=`/bin/uname -n`
+	elif $TEST -s /usr/bin/uuname ; then
+		HOSTNAME=`/usr/bin/uuname -l`
+		fi
+	if $TEST -z "$HOSTNAME" ; then
+		HOSTNAME="foobar"
+		fi
+	HOST=`$ECHO $HOSTNAME | $SED 's/[.].*$//'`
+
+	$ECHO                                   >  $REPORT
+	$ECHO ATTENTION:			>> $REPORT
+	$ECHO "Security Report for "`$DATE`	>> $REPORT
+
+	$ECHO "from host $HOSTNAME"		>> $REPORT
+	$ECHO					>> $REPORT
+	$ECHO					>> $REPORT
+	$CAT $SECURE/result.$$			>> $REPORT
+
+
+	#   figure out where all the old reports are kept, or where the new
+	# one should be kept; make directories if needed...
+	if $TEST "$MMAIL" = "YES" ; then
+		if $TEST $ONLY_DIFF = "YES" ; then
+			if $TEST -n "`./res_diff $SECURE/$HOST $REPORT`" ; then
+				$MAIL $SECURE_USERS < $REPORT
+				fi
+		else
+			$MAIL $SECURE_USERS < $REPORT
+		fi
+		$RM -f $REPORT
+
+	else
+		#  Either saving it to a hostname, in which case move to
+		# the hostname directory, or just move result to
+		# the current dir
+
+		if $TEST -n "$HOST" ; then
+			$MKDIR $SECURE/$HOST 2> /dev/null
+			$MV $REPORT $SECURE/$HOST/$NAME
+		else
+			$MV $REPORT $NAME
+			fi
+	fi
+fi
+
+$RM -f $SECURE/result.$$
+
+#  end it all....
+exit 0

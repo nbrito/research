@@ -1,0 +1,126 @@
+
+A quick primer on "cops_filter"
+
+  "cops_filter" is a mechanism for eliminating warning messages in
+the final COPS report that you deem spurious.  It's a simple awk
+program that looks at a list of regular expressions and prunes
+out any that match.  As simple as it is, however, it is an extremely
+dangerous program -- a slip of the ol' regular expression and bam --
+you don't get notified that /etc/passwd is world writable, or something
+like that.  Hence this file, in hopes to enlighten the masses (yeah,
+right, like I can do that... anyway, on to business.)
+
+  Awk uses regular expressions to search for things, which means you
+can use wildcards or even a part of a line to nuke a warning.  For
+instance -- let's say on a particular host you have NIS explicitly
+included in your password file (e.g. no "+" there), but you are a
+member of a NIS domain that does have NIS password maps.  Since COPS
+isn't smart enough right now to figure out that you might not care
+about the NIS password maps on your machine (and I'm not sure that
+it would be a good idea to ignore this anyway), it checks everything...
+you might get a warning like:
+
+Warning!  YPassword file, line 9, no password:
+	ypg::2200:10:YP guest acct:/tmp:/bin/rsh
+
+  There are several things you can do to eliminate this message.
+If you're familiar with awk, there are some example lines in
+"cops_filter"; you can just change those to do what you want.  If
+you're not an awk hacker, run out and by the book by aho, kernighan,
+and weinberger, and learn awk.  Well, no, you don't have to -- it's
+very easy to do simple things.
+
+
+
+IMPORTANT!  All filter lines in "cops_filter" will *ONLY* match the
+first line of this multi-line warning message (at least, and do the
+right thing.)  Do not try to filter out the second line -- it won't
+work.
+
+
+
+(No new information below to awk/shell people that you couldn't get
+by just glancing at the filter file -- you can go play with "cops_filter"
+now if you wish.)
+
+  The simplest thing to do is to add a line (actually 4 lines, as you'll
+see below -- but the most important one is the first line) that exactly
+matches what you want to get rid of; e.g., for the above example,
+you could put something like:
+
+if ($0 ~ /Warning!  YPassword file, line 9, no password:/) {
+	skip_next = 1
+	next
+	}
+
+  An explanation.  In awk, every line of code in the awk program
+will act on every line in the input file.  In most programming languages
+you need to put a loop around the program, but in awk, it is implied.
+The $0 here refers to the current input line that the awk program
+is looking at.  This line says that if the current input line is
+equal to "Warning!  YPassword file, line 9, no password:", then
+you should do what it says between the two curly braces.  In this case,
+you just set a variable (don't worry about exactly what it does right
+now), and then skip to the next line of input from the COPS report file.
+That's all there is to it.  Notice that at the bottom half of the awk
+program, there are places where information gets printed out -- all
+those mean is that unless awk sees a pattern that it matches and gets
+told to go to the next line, it will print out the current line.
+
+  Well, this is probably as clear as mud, but the basic idea is
+that you'll be putting a regular expression inbetween two forward
+slanting lines ("/"), and if awk matches that, then it will not
+print that out in the final COPS report file.
+
+  If you don't want to use an exactly matching line, either because
+you're a poor typist or lazy or perhaps you have a group of warnings,
+all alike, and you'd like to get rid of them, then you can use
+wildcards, or even a part of the line(s) in question -- be careful with
+this, and make sure you test your awk program out before inflicting it
+for real on your cops reports.
+
+  For instance, to match the above example, you could say:
+
+	if ($0 ~ /Warning!  YPassword file, line 9, no password:/)
+
+or:
+
+	if ($0 ~ /YPassword file, line 9, no password/)
+
+or, if you really don't want to see any YP/NIS messages, you could use:
+
+	if ($0 ~ /YPassword file/)
+
+alternately, an example with wildcards:
+
+	if ($0 ~ /YP.* no password/)
+
+  All of these would match the example line.  However, the bottom two
+would match other lines as well -- something like:
+
+Warning!  YPassword file, line 12, invalid login directory:
+
+  Would also be eliminated from the result file.  Be careful especially
+when you're dealing with anything that is in the report file that looks
+like a regular expression -- characters like "*", "+", and "?", as
+well as the forward slash "/" (to keep it separate from the awk
+regular expression separator character) should be preceded with a
+backslash -- e.g. something like:
+
+	if ($0 ~ /\/usr\/spool\/mail is _World_ writable!/)
+
+  Check your awk program as described before, and compare the output
+with the old report file with diff -- does it do what you thought?
+Be careful.
+
+
+
+  Almost the last Important note -- you can test your filter by saying
+something like:
+
+awk -f cops_filter cops_result_file
+
+  Where cops_result_file is usually named something like "1992_Dec_31".
+Well, that's about it -- good luck!
+
+ -- dan

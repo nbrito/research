@@ -1,0 +1,171 @@
+
+Continued Use and Installing COPS
+----------------------------------
+
+   Once you are satisfied that COPS indeed does something useful
+(hopefully this will occur :-)), a good way to use it is to run it on at
+least a semi-regular basis.  Even if it doesn't find any problems
+immediately, the problems and holes it detects are of the sort that can
+pop up at any given time.  One way of running COPS might be to run it as
+an "at" job or by cron (if you run suid.chk via cron, use the "-s" flag
+to tell cron where the rest of the COPS programs are, or it will chmod
+"/" to mode 700, among other things).
+
+   I strongly advise that whatever directory COPS is placed in be
+readable, writable, and executable only by the owner (typing "chmod 700
+/usr/foo/bar" or whatever the name is will do this) of the directory.
+This is to prevent prying eyes from seeing any security problems your
+site may have.  Even if you don't think of them as important, someone
+else might come around and change your mind.  Since COPS is fairly
+configurable, an intruder could easily change the paths and files that
+COPS checks for, hence making it fairly worthless.  Again, this comes
+back to the point that COPS is only a tool -- don't put down your
+defensive shields merely because COPS says "all clear".  If this sounds
+paranoid, it is!  Security people are traditionally paranoid, for a
+reason...  In any case, it is probably not a good idea to advertise any
+(even) potential weaknesses.
+
+   If you use the shell/C version, typing "make install" will create (if
+necessary) a subdirectory with the name you put in $INSTALL_DIR (found
+on line 7 of "makefile"); if you run a network with multiple
+architectures, you can have several executable versions of COPS in the
+same NFS-mounted directory structure.
+
+  You can run COPS with "cops -a archtype", and it will cd into the
+archtype directory, use the binaries or config files in that directory
+(placed there by a "make install"), and put any results in a
+subdirectory of the archtype directory with the appropriate host name.
+You can set the secure directory (the directory that COPS finds all of
+the programs in and places the results in) by either invoking COPS with
+the -s flag (both shell and perl versions), or by setting the $SECURE
+variable in the "cops" shell script (line 93.)
+
+   For example, assume you have the following setup, and run COPS with:
+
+machine architecture    hostname    If run COPS with:
+=====================   ========    ==================
+cray                    ribcage     cops         -s /usr/secure
+vax                     bar         cops -a vax  -s /usr/secure
+vax                     foo         cops -a vax  -s /usr/secure
+sun                     earth       cops -a sun3 -s /usr/secure
+sun                     mars        cops -a sun3 -s /usr/secure
+sun                     venus       cops -a sun4 -s /usr/secure
+mips                    hades       cops         -s /usr/secure
+
+  The resulting directory/reporting structure would be (all reports
+would be placed in a file named "year_month_day"):
+
+/usr/secure/cops/ribcage
+/usr/secure/cops/vax/bar
+/usr/secure/cops/vax/foo
+/usr/secure/cops/sun3/earth
+/usr/secure/cops/sun3/mars
+/usr/secure/cops/sun4/venus
+/usr/secure/cops/hades
+
+  Sometimes you will get the same report over and over again, everytime
+you run COPS; for instance, with Ultrix 3.x, /dev/kmem is world
+readable.  This is a security hole, but many utilities in Ultrix need
+this to function.  If you wish to only see reports that are _different_
+than the old reports, you first need to have an older report saved in a
+file (in $SECURE/hostname, or wherever you usually save the reports).
+In the shell version, you can either do:
+
+   cops -m user
+
+or:
+
+   set "MMAIL=YES" (line 55)
+   set "ONLY_DIFF=YES" (line 66)
+
+in "cops".  In the perl version, do:
+
+   set "$ONLY_DIFF=1" (line 11 of the config file)
+
+  Every time COPS is run after that, it will compare the report it
+generated for the current check with the old report; if it detects any
+differences, it will mail you a report.  If not, it will simply discard
+it.  This can be a real boon for a site with a lot of machines running
+COPS every night.
+
+  Alternately, you can use a "filter_file" to filter out repetative
+messages.  There is an example filter file, "cops_filter", that is
+included in the package.  It is used by simply typing "cops -f cops_filter",
+and can be both very useful and very dangerous.  Useful for obvious
+reasons, dangerous because it can cause valid warning messages to be
+thrown away before you get to see them.
+
+   There are a couple of further options you may wish to explore.  First
+of all, since so many breakins are because of poor password selection by
+users, it would be a wise idea to add options to your password checking
+program (line 200 in "cops", or line 72 in "cops.cf" for perl users).
+You may wish to try some words from a dictionary; you may use either
+your system dictionary (usually found in /usr/dict/words), or you may
+use the same dictionary that the internet worm found so lucrative when
+hitting all those thousands of hosts; that dictionary is in the file
+"pass.words".  For example, the way to include the worm dictionary (e.g.
+the dictionary r.t.m. used in his Internet Worm) is:
+
+  pass.chk -w pass.words
+
+  Also, try some of the options in the password program, such as "-b",
+"-g", "-s", and "-c", which add checks for backward, gecos, single
+letter & number, and upper and lower case guesses, respectively.  Of
+course, each option will increase the time needed to crack the
+passwords, so experiment!  See what is reasonable for your hardware
+capabilities and resources.
+
+  I've included the fast crypt functions that are used in Crack; if you
+want to try those (highly recommended!), uncomment lines 96-97 in the
+makefile, and comment out the normal compile line (95).  Better yet,
+get the full Crack package from uunet.uu.net or somewhere else.  It
+does a great job at cracking passwords.  I might try to integrate the
+whole package at some later time, but it might just be wasted work;
+they work well separately.
+
+   By using the "pass_diff.chk" program, you can check only accounts
+that have _changed_ their password since the last time you've checked --
+this can save enormous amounts of time with large systems.  This way,
+you can check your users thoroughly once, then only check them when
+their passwords change (possibly to something less secure).  Be careful,
+though, if you use this and then later expand your checks and/or the
+dictionary you use to search for passwords, since the earlier accounts
+that were already checked with an inferior method will not be checked
+again until they change their password.  See the file "passwords" in the
+"extensions" directory for a replacement "passwd" program that can
+disallow poor passwords to begin with.
+
+   The file "is_able.lst" contains a list of files that are to be
+checked for world readability and/or writability.  You should look at
+this file and add or delete any files you feel are important to your
+system.
+
+   After running COPS, if any warnings are given that compromise any
+individual user's account (such as a world writable .profile or home
+directory, a guessed password, etc.), and the problem is not corrected
+immediately (or you are not sure whether or not it is worth hassling the
+user to change it), try this:
+
+   If you are using the shell version, edit the file "init_kuang", and
+add the compromised user(s) uids and groups in their respective target
+lines (below lines 20 and 26, respectively).  If you are running the
+perl version, create a file with the compromised users listed in it (see
+kuang.1 in the perl distribution).  Now run kuang again to see if the
+users can compromise the entire system.  You may change your mind about
+not thinking they are a problem!  In addition, kuang does not have to
+have "root" as a target (the last line).  Try putting in system
+administrators or other powerful figures to see if they are in danger as
+well.  If you have "perl" installed on your system, try the perl version
+of kuang -- "kuang.pl" (you'll have to unpack the shar file this is
+inside -- "kuang.pl.shar", and you may have to edit the first line of the
+file "kuang.pl", to reflect where the location that perl is on your system),
+because it is a more powerful, faster, and more versitile version.
+
+  That's it!  Congratulations for reading this far :-)  Browse around
+the COPS directories for more goodies; the "extra_src", "docs", and
+"extensions" directories all have interesting things in them.  Don't
+forget to try CARP to analyze your network's data (*ONLY USABLE WITH
+"cops -v" RESULT FILES*) , and let me know how it goes.  Finally, good
+luck.  Send me ideas, flames, kudos, whatever.
+
+ -- dan

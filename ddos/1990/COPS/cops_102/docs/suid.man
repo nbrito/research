@@ -1,0 +1,51 @@
+findsuid \- find changes in setuid and setgid files
+.sp
+SYNOPSIS
+.sp
+.ul
+findsuid
+.sp
+DESCRIPTION
+.PP
+Findsuid is a shell script intended to be run periodically by
+.ul
+cron (8)
+in order to spot changes in files with the suid or sgid bits set.
+.PP
+.ul
+Findsuid
+uses 
+.ul
+find (1)
+to search system directories for all files with the 4000 or 2000 permission
+bits set.  It then compares these files with the contents of a ``stop file''
+(by default
+.ul
+suid.stop
+) containing
+.ul
+\*Qls -lga\*U
+output for known setuid or setgid programs.  In addition, it flags any
+setuid or setgid programs that are shell scripts.
+Any additions or changes to this list represent potential security
+problems, so they are reported by mail to system administrators for further
+investigation.
+.sp
+FILES
+.sp
+.nf
+suid.stop	the ``stop file''
+.fi
+.sp
+SEE ALSO
+.sp
+find(1), chmod(1), cron(8)
+.sp
+BUGS
+.sp
+The location of the stop file, the directories to be searched and the
+names of users to be informed of changes are all defined by shell variables
+in the source.
+.PP
+Keeping the stop files up to date with changes to all
+the suid files on more than a couple of hosts is a royal pain!

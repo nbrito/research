@@ -1,0 +1,44 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  is_able.chk
+#
+#   This shell script checks the permissions of all files and directories
+# listed in the configuration file "is_able.lst", and prints warning messages
+# according to the status of files.  You can specify world or group readability
+# or writeability.  See the config file for the format of the configuration
+# file.
+#
+#   Mechanism:  This shell script parses each line from the configure file
+# and uses the "is_able.pl" program to check if any of
+# the directories in question are writable by world/group.
+#
+
+require 'is_able.pl';
+require 'file_mode.pl';
+require 'glob.pl';
+
+if ($ARGV[0] eq '-d') {
+    shift;
+    $debug = $glob'debug = 1;  # maybe should turn off glob'debug afterwards
+}
+
+unshift (@ARGV, "is_able.lst" ) unless @ARGV;
+
+while (<>) {
+    next if /^\s*#/;
+    split;
+    next unless @_ == 3;
+    ($file, $x, $y) = @_;
+    @files = $file =~ /[\[?*]/ ? &'glob($file) : ($file);
+    for $file (@files) {
+	print STDERR "is_able $file $x $y\n" if $debug;
+	&'is_able($file, $x, $y);
+    }
+}
+
+1;

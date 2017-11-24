@@ -1,0 +1,39 @@
+.TH DEV.CHK 1 "December 31, 1989"
+.UC 4
+.SH NAME
+dev.chk  \- Checks writability of devices and special files.
+.SH SYNOPSIS
+.B dev.chk
+[
+\-g
+]
+.SH DESCRIPTION
+.I dev.chk
+checks the permissions of /dev/mem, /dev/kmem, and
+all devs listed in the file /etc/fstab (the
+.I mount
+command would be
+a preferable way of getting the file system name, but the syntax of the
+output is variable from machine to machine), and flags them if they are
+readable by using the
+.I is_readable
+command, unless they are NFS mounted,
+in which case they are ignored.  It also checks for unrestricted NFS
+mountings in /etc/exports, and finally checks a small number of key files
+that should not be world readable.
+.PP
+options are:
+.TP
+.B \-g
+Check for group writability as well as world.
+.SH FILES
+.EX 0
+/usr/adm/sulog
+/etc/btmp
+/.netrc 
+/etc/fstab
+/etc/exports
+L.sys
+.EE
+.SH "SEE ALSO"
+is_writable(1)

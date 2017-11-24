@@ -1,0 +1,83 @@
+:
+#
+#  Usage: chk_strings filename
+#
+#  This will check pathnames inside executable files for writability,
+# using the "strings" command and egrep.
+#
+#  I have identified three basic types of strings containing paths to files:
+# 1)
+#    /path1/path2/file			/* standard */
+# 2) 
+#    '/path1/path2/file'		/* standard, in single quotes */
+# 3)
+#    :/path1/file1:/path2/file2		/* a path for searching */
+#
+#  For the first two, I simply test the writability; for the last, I
+# parse it into seperate paths and check each one in turn.
+#
+AWK=/bin/awk
+SED=/bin/sed
+EGREP=/usr/bin/egrep
+TEST=/bin/test
+ECHO=/bin/echo
+SORT=/usr/bin/sort
+STRINGS=/usr/ucb/strings
+
+if test ! -s $STRINGS
+	then
+	exit 0
+fi
+
+if test $# -eq 0
+	then
+	$ECHO "Usage: $0 file"
+	exit 2
+fi
+
+while test 0 -ne $#
+	do
+	# $ECHO Checking $1...
+	if ./is_writable $1 ; then
+		$ECHO "Warning!  Root executed File $1 is _World_ writable!"
+		fi
+
+	# get the first two types:
+
+#   /path1/path2/file			/* standard */
+#   '/path1/path2/file'		/* standard, in single quotes */
+#   :/path1/file1:/path2/file2		/* a path for searching */
+
+# test_files=`$STRINGS $1 | $EGREP "/.*/" | $AWK '{for (i=1;i<=NF;i++) 
+test_files=`$STRINGS $1|$SED -n -e 's/^.*[pP][aA][tT][hH]=//' -e '/\/.*\//p' |
+	$AWK '{for (i=1;i<=NF;i++) 
+	if ((res = substr($i,1,1))=="/") 
+		printf("%s\n",$i)
+	else if ((res != ":") && (res2=substr($i,2,1))=="/")
+		printf("%s\n",substr($i,2,length($i)-2))}
+	/:/ {
+		resk=substr($0, index($0,"=")+1, length($0) - index($0,"=")) \
+		split($0, path, ":");	\
+		for (j in path) printf("%s\n",path[j])}' | $SORT -u`
+
+	shift
+	done
+
+	for i in $test_files
+		do
+		if $TEST ! -d "$i" -o ! -f "$i" ; then
+			i=`$ECHO $i | $SED -e 's/[:;"]//g' -e "s/[']//g"`
+			if $TEST ! -f "$i" ; then
+				continue
+				fi
+			fi
+		
+		if $TEST -n "`$ECHO $i | $EGREP /tmp\|/dev/null\|/dev/tty\|/dev/printer\|/dev/console`" ; then
+			continue
+			fi
+		if ./is_writable "$i" ; then
+			$ECHO "Warning!  File $i (inside root executed file $1) is _World_ writable!"
+			fi
+		done
+
+# end of script

@@ -1,0 +1,136 @@
+#!/bin/sh
+#
+#  Usage: pass.mail cops_result_file
+#
+# This scans through a result file and mails a warning note to
+# anyone who had their password guessed.  You'll need to edit
+# the note sent to correspond with your own site information.
+#
+#  Originally was sent to me by Bud Bowman -- I changed it a bit;
+# put everything in one file, rather than having a separate
+# warning message file, and put in what I think to be a more
+# generic warning note, mostly stolen from Dave Curry's excellent
+# "white paper" from SRI (via anon-ftp, SPAM.ITSTD.SRI.COM (128.18.4.3)
+# as the file "pub/security-doc.tar.Z, last time I looked.)
+#
+
+AWK=/bin/awk
+MAIL=/bin/mail
+TEST=/bin/test
+ECHO=/bin/echo
+
+# usage stuff:
+if $TEST $# -gt 1 -o $# -eq 0 ; then
+        $ECHO "Usage: $0 cops_result_file"
+        exit 2
+	fi
+
+if $TEST ! -f "$1" ; then
+	$ECHO "Can't open $1"
+	exit 2
+	fi
+
+#
+# Search for guessed passwords and notify the owners
+######################################################
+#
+# for user in zen
+for user in `$AWK '/Guessed:/ {print $5}' $1` 
+	do
+	$MAIL $user << END_OF_NOTE
+
+  Hello, $user -- your password has been discovered by our automatic
+security password guesser.  This means that you must change your
+password within 7 days, or your account will be disabled (you can get
+the account reinstated by calling or mailing the number provided below.)
+If you are not sure how to choose a "good", or difficult to guess
+password, I've included some guidelines at the bottom of this letter.
+In case you are wondering, you have not been singled out -- all passwords
+on the system are checked periodically.
+
+  If you have any comments/questions regarding this message, or
+if you believe you received this note in error, feel free to call
+or e-mail <name #2> at:
+
+<foo@bar>
+
+x99999
+
+=====================================
+
+     The object when choosing a password is to  make  it  as
+difficult as possible for a cracker to make educated guesses
+about what you've chosen.  This leaves  him  no  alternative
+but  a brute-force search, trying every possible combination
+of letters, numbers, and  punctuation.   A  search  of  this
+sort, even conducted on a machine that could try one million
+passwords per second (most machines can try  less  than  one
+hundred per second), would require, on the average, over one
+hundred years to complete.  With this as our  goal,  and  by
+using the information in the preceding text, a set of guide-
+lines for password selection can be constructed:
+
+     o    Don't use your login  name  in  any  form  (as-is,
+          reversed, capitalized, doubled, etc.).
+
+     o    Don't use your first or last name in any form.
+
+     o    Don't use your spouse's or child's name.
+
+     o    Don't use other information easily obtained  about
+          you.   This  includes license plate numbers, tele-
+          phone numbers, social security numbers, the  brand
+          of  your  automobile,  the  name of the street you
+          live on, etc.
+
+     o    Don't use a password of all  digits,  or  all  the
+          same  letter.   This  significantly  decreases the
+          search time for a cracker.
+
+     o    Don't use a word contained in (English or  foreign
+          language)  dictionaries,  spelling lists, or other
+          lists of words.
+
+     o    Don't use a password shorter than six characters.
+
+     o    Do use a password with mixed-case alphabetics.
+
+     o    Do use a password with  nonalphabetic  characters,
+          e.g., digits or punctuation.
+
+     o    Do use a password that is easy to remember, so you
+          don't have to write it down.
+
+     o    Do use a  password  that  you  can  type  quickly,
+          without  having  to  look  at  the keyboard.  This
+          makes it harder for someone to steal your password
+          by watching over your shoulder.
+
+     Although this list may seem to restrict passwords to an
+extreme,  there  are  several  methods  for choosing secure,
+easy-to-remember passwords that obey the above rules.   Some
+of these include the following:
+
+     o    Choose a line or two from a song or poem, and  use
+          the  first letter of each word.  For example, ``In
+          Xanadu did Kubla  Kahn  a  stately  pleasure  dome
+          decree'' becomes ``IXdKKaspdd.''
+
+     o    Alternate between one consonant  and  one  or  two
+          vowels,  up  to  eight  characters.  This provides
+          nonsense words that are usually pronounceable, and
+          thus  easily remembered.  Examples include ``rout-
+          boo,'' ``quadpop,'' and so on.
+
+     o    Choose  two  short  words  and  concatenate   them
+          together with a punctation character between them.
+          For    example:    ``dog;rain,''     ``book+mug,''
+          ``kid?goat.''
+
+     The importance  of  obeying  these  password  selection
+rules  cannot be overemphasized.  The Internet worm, as part
+of its strategy for breaking into new machines, attempted to
+crack  user passwords.
+END_OF_NOTE
+
+done

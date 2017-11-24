@@ -1,0 +1,207 @@
+#!/bin/sh
+#
+#  Sun module for bug/vulnerability checking
+#
+ECHO=/bin/echo
+TEST=/bin/test
+LS=/bin/ls
+LS_OPTS="-slagL"
+ARCH=/bin/arch
+GREP=/bin/grep
+EGREP=/usr/bin/grep
+DMESG=/etc/dmesg
+AWK=/bin/awk
+SORT=/bin/sort
+UNIQ=/bin/uniq
+
+# uncomment this if you don't do any kernel hacking... this will check
+# this as well as the object files that modify it.
+# KERNEL=/vmunix
+
+BUG="$AWK -f ./bug_cmp"
+word_smithing="could have a hole/bug"
+
+if $TEST ! -f ./bug_cmp ; then
+	$ECHO "Must have bug compare module, ./bug_cmp, to run..."
+	exit 2
+	fi
+
+# what is the date?  We just need the month and year...
+# Format: Fri Feb  7 14:16:55 PST 1992
+if $TEST $# -eq "2" ; then
+	real_date="$1 $2"
+else
+	real_date=`$DATE | $AWK '{print $2, $NF}'`
+	fi
+
+# try to find OS version... thanks brad (powell)!
+release_level=`$DMESG | $GREP SunOS | $AWK '{print $3}' | $SORT | $UNIQ`
+if $TEST -z "$release_level" ; then
+	release_level=`$EGREP '[3-4]\.[0-5]' /etc/motd | \
+		$AWK '{for (i=1;i<=NF;i++) if ($i ~ /[3-4]\.[0-5]/) print $i}'`
+	fi
+
+# sendmail
+#
+# Patch ID# 100099-01 for SunOS 4.1
+# Patch ID# 100100-01 for SunOS 4.0, 4.0.1, 4.0.3
+# Patch ID# 100108-01 for Sun386i (sunOS 4.0.2)
+sendmail="/usr/lib/sendmail"
+fix_date="30 Jul 1990"
+cert_advis="CA-90:01"
+if $TEST -f "$sendmail" ; then
+	cur_date=`$LS $LS_OPTS $sendmail | $AWK '{print $8, $7, $9}'`
+	$ECHO $sendmail $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# restore
+#
+# This problem affects
+# SunOS 4.0, 4.0.1, and 4.0.3 systems.  It does not appear in SunOS 3.5.
+# FIX: 1) Make restore non-setuid by becoming root and doing a 
+# chmod 750 /usr/etc/restore
+restore="/usr/etc/restore"
+cert_advis="CA-89:02"
+fix_date="26 Jul 1989"
+if $TEST -f "$restore" ; then
+	cur_date=`$LS $LS_OPTS $restore | $AWK '{print $8, $7, $9}'`
+	$ECHO $restore $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# TIOCCONS
+#
+# Sun Patch ID : for SunOS 4.1, SunOS 4.1_PSR_A 100187-01
+# Sun Patch ID : for SunOS 4.1.1 100188-01
+fix_date="17 Dec 1990"
+cert_advis="CA-90:12"
+for TIOCCONS in /sys/sun*/OBJ/cons.o $KERNEL ; do
+	if $TEST -f "$TIOCCONS" ; then
+		date=`$LS $LS_OPTS $TIOCCONS | $AWK '{print $8, $7, $9}'`
+		$ECHO $TIOCCONS $fix_date $cur_date $cert_advis $real_date | $BUG
+		fi
+	done
+
+# selection_svc
+#
+# Patch ID# 100085-03
+sel_svc="/bin/sunview1/selection_svc"
+fix_date="5 Sep 1990"
+cert_advis="CA-90:05"
+if $TEST -f "$sel_svc" ; then
+	cur_date=`$LS $LS_OPTS $sel_svc | $AWK '{print $8, $7, $9}'`
+	$ECHO $sel_svc $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# lpd
+#
+# Patch ID# 100305-06
+lpd="/usr/lib/lpd"
+fix_date="12 Sep 1991"
+cert_advis="CA-91:10a"
+if $TEST -f "$lpd" ; then
+	cur_date=`$LS $LS_OPTS $lpd | $AWK '{print $8, $7, $9}'`
+	$ECHO $sel_svc $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# /bin/mail
+#
+# Patch ID# 100224-01 - date in README is off by one year.
+bin_mail="/bin/mail"
+fix_date="15 Jan 1991"
+cert_advis="CA-91:01a"
+if $TEST -f "$bin_mail" ; then
+	cur_date=`$LS $LS_OPTS $bin_mail | $AWK '{print $8, $7, $9}'`
+	$ECHO $bin_mail $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# telnetd and rlogind
+#
+# Patch ID# 100125-03
+fix_date="27 Mar 1991"
+cert_advis="CA-91:02a"
+telnetd="/usr/etc/in.telnetd"
+rlogind="/usr/etc/in.rlogind"
+if $TEST -f "$telnetd" ; then
+	cur_date=`$LS $LS_OPTS $telnetd | $AWK '{print $8, $7, $9}'`
+	$ECHO $telnetd $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+$ECHO $release_level | $GREP 4.1.1 > /dev/null
+if $TEST $? -ne "0" -a -f "$rlogind" ; then
+	cur_date=`$LS $LS_OPTS $rlogind | $AWK '{print $8, $7, $9}'`
+	$ECHO $rlogind $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# makeinstall and winstall
+#
+# 20 May 1991
+# SunOS Source Tape Installation Vulnerability
+# fix is to: chmod ug-s /usr/release/bin/{makeinstall, winstall}
+cert_advis="CA-91:07"
+makeinstall=/usr/release/bin/makeinstall
+winstall=/usr/release/bin/winstall
+(./is_able $makeinstall s s | $GREP SUID) > /dev/null 2>/dev/null
+if $TEST $? -eq "0" ; then
+	$ECHO "Warning!  $makeinstall $word_smithing!  ($cert_advis)"
+	fi
+(./is_able $winstall s s | $GREP SUID )> /dev/null 2>/dev/null
+if $TEST $? -eq "0" ; then
+	$ECHO "Warning!  $winstall $word_smithing!  ($cert_advis)"
+	fi
+
+
+# mountd
+#
+# Patch for SunOS /usr/etc/rpc.mountd
+# Patch ID# 100296-01
+fix_date="15 Jul 1991"
+cert_advis="CA-91:09"
+mountd="/usr/etc/rpc.mountd"
+if $TEST -f "$mountd" ; then
+	cur_date=`$LS $LS_OPTS $mountd | $AWK '{print $8, $7, $9}'`
+	$ECHO $mountd $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# divide and conquer, er, multiply...
+#
+# 18 September 1991
+# SunOS SPARC Integer Division Vulnerability
+# Patch ID# 100376-01
+fix_date="18 Sep 1991"
+cert_advis="CA-91:16"
+for divide in /sys/sun4*/OBJ/crt.o $KERNEL ; do
+	if $TEST -f "$divide" ; then
+		cur_date=`$LS $LS_OPTS $divide | $AWK '{print $8, $7, $9}'`
+		$ECHO $divide $fix_date $cur_date $cert_advis $real_date | $BUG
+		fi
+	done
+
+# NFS stuff
+#
+# Patch ID's# 100173-07, 100121-08, 100424-01
+# NFS Jumbo 4.1.1, NFS Jumbo 4.1, fsirand 4.1.1
+fix_date="6 Dec 1991"
+cert_advis="CA-91:21"
+for i in /sys/sun*/OBJ/nfs_subr.o $KERNEL ; do
+	if $TEST -f "$nfs" ; then
+		cur_date=`$LS $LS_OPTS $nfs | $AWK '{print $8, $7, $9}'`
+		$ECHO $nfs $fix_date $cur_date $cert_advis $real_date | $BUG
+		fi
+	done
+
+# loadmodule
+#
+# SunOS OpenWindows V3.0 Patch
+# all sun4 and sun4c architectures running SunOS 4.1.1.
+# Patch ID# 1076118
+loadmodule="$OPENWINHOME/bin/loadmodule"
+fix_date="16 Dec 1991"
+cert_advis="CA-91:22"
+if $TEST -f "$loadmodule" ; then
+	host=`$ARCH`
+	if $TEST "$host" = "sun4" -o "$host" = "sun4c" ; then
+		cur_date=`$LS $LS_OPTS $loadmodule | $AWK '{print $8, $7, $9}'`
+		$ECHO $loadmodule $fix_date $cur_date $cert_advis $real_date | $BUG
+		fi
+	fi
+
+# finis

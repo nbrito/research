@@ -1,0 +1,133 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#   passwd.chk
+#
+# composer@chem.bu.edu
+#
+# Check password file -- /etc/passwd -- for incorrect number of fields,
+# duplicate uid's, non-alphanumeric uids, and non-numeric group id's.
+# 
+# Mechanism:  This script ensures that each line of the passwd file (in
+# $etc, line 47) has 7 fields and is non-blank, as well as examining the
+# file for any duplicate users.  It then checks to ensure that the first
+# character of the login name is alphanumeric, and that all uid and gid
+# numbers are indeed numeric and non-negative.  It also checks the
+# validity of the home directory.
+# 
+# For yellow pages passwords, it does the same checking, but in order to
+# get a listing of all members of the password file, it does a "ypcat
+# passwd" and uses the output from that as a passwd file.
+# 
+# The /etc/passwd file has a very specific format, making the task fairly
+# simple.  Normally it has lines with 7 fields, each field separated by a
+# colon (:).  The first field is the user id, the second field is the
+# encrypted password (an asterix (*) means the group has no password,
+# otherwise the first two characters are the salt), the third field is the
+# user id number, the fourth field is the group id number, the fifth field
+# is the GECOS field (basically holds miscellaneous information, varying
+# from site to site), the sixth field is the home directory of the user,
+# and lastly the seventh field is the login shell of the user.  No blank
+# lines should be present.  Uid's will be flagged if over 8 chars, unless
+# the $OVER_8 variable (line 45) is set to "YES".
+# 
+# If a line begins with a plus sign (+), it is a yellow pages entry.  See
+# passwd(5) for more information, if this applies to your site.
+# 
+
+require 'pathconf.pl';
+require 'pass.cache.pl';
+
+package passwd_chk;
+
+#   Used for Sun C2 security group file. 'FALSE' (default) will flag
+# valid C2 passwd syntax as an error, 'TRUE' attempts to validate it.
+# Thanks to Pete Troxell for pointing this out.
+$C2='FALSE' if ! defined($C2);
+
+#  Some systems allow long uids; set this to 'TRUE', if so (thanks
+# to Pete Shipley (lot of petes around here, eh?)):
+$OVER_8='NO' if ! defined($OVER_8);
+
+#
+# Important files:
+$etc_passwd = $'PASSWD || '/etc/passwd';
+
+#   Check $etc_passwd for potential problems, or use the alternate method
+# set in cops.cf:
+if (!"$'GET_PASSWD") {
+	open(Passwd, $etc_passwd) ||
+		warn "$0: Can't open $etc_passwd: $!\n";
+	}
+else {
+	open(Passwd, "$'GET_PASSWD|") ||
+		warn "$0: Can't open $etc_passwd: $!\n";
+	}
+&chk_passwd_file_format('Passwd');
+close Passwd;
+
+# check ypcat passwd for potential problems... (same checks)
+if (-s $'YPCAT && -x _) {
+    open(YPasswd, "$'YPCAT passwd 2>/dev/null |")
+	|| die "$0: Can't popen $'YPCAT: $!\n";
+    &chk_passwd_file_format('YPasswd');
+    close YPasswd;
+}
+  
+sub chk_passwd_file_format {
+    local($file) = @_;
+    local($W) = "Warning!  $file file,";
+    undef %users;
+  
+    while (<$file>) {
+	# should really check for correct YP syntax
+	next if /^[-+]/;    # skipping YP lines for now
+
+	print "$W line $., is blank\n", next if /^\s*$/;
+
+	# make code a little more readable .. use names.. 
+	($user,$pass,$uid,$gid,$gcos,$home,$shell) = split(?:?);
+	$users{$user}++;    # keep track of dups
+	print "$W line $., does not have 7 fields:\n\t$_" if (@_ != 7);
+	print "$W line $., nonalphanumeric username:\n\t$_"
+	    if $user !~ /^[_A-Za-z0-9-]+$/;
+	print "$W line $., numeric username:\n\t$_"
+	    if $user =~ /^\d+$/;
+	print "$W line $., login name > 8 characters:\n\t$_"
+	    if ( ! $OVER_8 && length($user) > 8);
+	print "$W line $., no password:\n\t$_" unless $pass;
+	print "$W line $., invalid password field for C2:\n\t$_"
+	    if ($C2 && $pass =~ /^##/ && "##$user" ne $pass);
+	if ($uid !~ /^\d+$/) {
+	    if ($uid < 0) {
+		print "$W line $., negative user id (uid):\n\t$_";
+	    } else {
+		print "$W line $., nonnumeric user id (uid):\n\t$_";
+	    }
+	}
+	# what about checks for certain ranges of UIDs .. -composer
+	print "$W line $., user $user has uid == 0 and is not root\n\t$_"
+	    if $uid == 0 && $user ne "root";
+	print "$W line $., nonnumeric group id (gid):\n\t$_"
+	    unless $gid =~ /^\d+$/;
+	print "$W line $., invalid home directory:\n\t$_"
+	    unless $home =~ m:^/:;
+
+    }
+    # find duplicate usernames
+    # not the best way, but it works ...
+    $dup_warned = 0;
+    for (sort keys %users) {
+	(print "Warning!  Duplicate username(s) found in $file:\n"),
+	    $dup_warned++ if !$dup_warned && $users{$_} > 1;
+	print "$_ " if $users{$_} > 1;
+    }
+    print "\n" if $dup_warned;
+}
+  
+1;
+# end of passwd.chk file

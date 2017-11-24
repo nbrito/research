@@ -1,0 +1,89 @@
+.TH CARP 1 "February 12, 1992"
+.UC 4
+.SH NAME
+carp \- COPS data analysis tool
+.SH SYNOPSIS
+.B carp
+[
+\-x
+]
+cops_directory
+.SH DESCRIPTION
+.I carp
+(COPS Analysis and Report Program) is a data analysis tool that
+views and analyze multiple COPS result files (important -- the
+COPS result files must have been created with the -v flag;
+.I carp
+needs the extra information.)  It is run by
+specifying the root of the cops directory tree that contains
+various cops output files (as long as the results files are in
+subdirectories of the cops directory, it will find them, presumably
+from a network of data.  It checks all subdirectories (and hence
+hostnames) containing cops reports (they are named something like
+"1992_Dec_31".)  It then runs two subprograms; a report analyzer
+.I (carp.anlz)
+and a table generator
+.I (carp.table),
+to produce the final output, which will look something like:
+.PP
+.nf
+hostname      rep date     crn dev ftp grp hme is pass
+=======================================================
+neuromancer  1992_Jan_27  | 1 |   | 2 |   | 1 | 2 |   |
+sun          1992_Jan_26  |   |   | 2 | 2 | 1 | 2 |   |
+death        1992_Jan_15  |   |   |   | 2 | 1 | 2 | 0 |
+.fi
+.PP
+The date is the date the cops report was created, the other headers
+correspond to the various checks that cops runs; 
+.I cron.chk, 
+.I ftp.chk,
+etc.  The number refers to the severity of the most serious warning
+from that host on that particular check:
+.br
+.IP
+0 == a problem that, if exploited, can gain root access almost instantly
+for an intruder.
+.IP
+1 == a serious security problem, such as a guessed password.
+.IP
+2 == a possibly serious security problem, but one that is difficult
+to analyze via a mere program.  Look at the problems in question,
+and decide for yourself.
+.br
+Blanks mean that no problem was found (*not* that no problem exists!)
+.PP
+All of these numbers are in the
+.I carp.anlz
+program (see the comments at the top of that file); they can be modified
+to best suit your needs... and, of course, you should look at the actual
+cops report for more information on the specific problems encountered.
+.PP
+options are:
+.TP
+.B \-x
+Output the path to the result file so that
+.I xcarp
+will be able to find the specific host COPS report information.
+.PP
+In addition, there are two sister tools that can be used in conjunction
+with
+.I carp
+\-- an X previewer (
+.I xcarp;
+note that
+.I xcarp
+will only work if the "-x" flag is used when running
+.I carp),
+and a filter 
+.I (carp2ps)
+that will generate postscript code suitable for printing (or framing,
+I guess.)
+.SH "SEE ALSO"
+.EX 0
+carp.anlz(1)    carp2ps(1)    xcarp(vaporware right now; soon to exist)
+.EE
+.SH BUGS
+.I carp
+dies silently and horribly if the "-v" option wasn't used to generate
+the COPS reports.

@@ -1,0 +1,169 @@
+:
+#
+#  Usage: misc.chk
+#
+#  This shell script checks a variety of miscellaneous potential
+# security problems that really don't belong anywhere else.
+#
+#  Right now this looks for to see if tftp & rexd are enabled,
+# to check if the uudecode alias is in the mail alias file and
+# not commented out, and if uudecode can create a SUID file.
+#
+#  Mechanism:  tftp.chk will try to get /etc/motd from the localhost.
+# Not much too it; just connect and try to get it.  For rexd, just
+# look in the /etc/{inetd.conf,servers} file to see if it's enabled (e.g.,
+# not commented out).
+#
+#  Warning:  it may take a minute or so to complete the test, since tftp
+# might take a while to get the test file, or it may take a while to time
+# out the connection (which is what usually happens if the test fails.)
+
+#
+#  Location of stuff:
+TFTP=/usr/ucb/tftp
+GREP=/bin/grep
+ECHO=/bin/echo
+TEST=/bin/test
+AWK=/bin/awk
+SED=/bin/sed
+RM=/bin/rm
+UUDECODE=/usr/bin/uudecode
+CMP=/bin/cmp
+
+# shells to look for in inetd.conf:
+all_shells="/bin/sh /bin/csh /bin/ksh /usr/local/bin/tcsh /usr/local/bin/bash"
+for i in $all_shells ; do
+	if $TEST -f $i ; then
+		shells=$shells" "$i
+		fi
+	done
+
+# look for uudecode alias in $aliases
+aliases=/usr/lib/aliases
+uu=decode
+
+# look for rexd in $inetd; this file could be "/etc/servers", too!
+if $TEST -f "/etc/inetd.conf" ; then
+	inetd="/etc/inetd.conf"
+elif $TEST -f "/usr/etc/inetd.conf" ; then
+	inetd="/usr/etc/inetd.conf"
+elif $TEST -f "/etc/servers" ; then
+	inetd="/etc/servers"
+	fi
+# else give up!
+rexd=rexd
+
+# tmp and target file
+TARGET=/etc/motd
+TMP=./tmp.$$
+
+#  Read from $inetd to see if daemons are running.
+# Comments are lines starting with a "#", so ignore.
+# Checking for rexd:
+#
+# If sysV based
+if $TEST "$inetd" = "/etc/servers" ; then
+	if $TEST -n "`$AWK '{if($1~/^#/)next;else if(\"'$rexd'\"==$3)print}' $inetd`" ; then
+		$ECHO Warning!  $rexd is enabled in $inetd!
+		fi
+	# 3rd field is program?
+	files=`$AWK '{if ($1 ~ /^#/) next; else print $3}' $inetd`
+
+# else BSD (e.g. the right way :-))
+else
+	if $TEST -n "`$AWK '{if ($1 ~ /^#/) next; else if (\"'$rexd'\" == $NF) print}' $inetd`" ; then
+		$ECHO Warning!  $rexd is enabled in $inetd!
+		fi
+	# 6th field is program:
+	files=`$AWK '{if ($1 ~ /^#/) next; else print $6}' $inetd`
+	fi
+
+#   Check to see if anything started $inetd is writable or is
+# the same size as a user shell:
+if $TEST -n "$files" ; then
+	for i in $files ; do
+		# use chk_strings if paranoid; e.g. "chk_strings $i"
+		if $TEST -r $i ; then
+			# ./is_able $i w w
+			if ./is_writable $i ; then
+				$ECHO "Warning!  File $i (in $inetd) is _World_ writable!"
+				fi
+
+			for shell in $shells ; do
+				if $TEST -z "`$CMP $shell $i 2> /dev/null`"
+					then
+					$ECHO Warning!  Shell $shell is \(hidden\?\) in $inetd as $i!
+					fi
+				done
+			fi
+		done
+	fi
+
+# Checking for uudecode alias:
+res=`$SED -n '/^[^#]*|*"'$uu'"/p' $aliases`
+
+if $TEST -n "$res"
+	then
+	$ECHO Warning!  $uu is enabled in $aliases!
+	fi
+
+if $TEST -f $TMP ; then
+#	$ECHO "You've got to be kidding.  Tmp file $TMP already exists!"
+	exit 1
+	fi
+
+
+# uucode stuff -- thanks to pete shipley...
+$UUDECODE << EOD_
+begin 4755 ./foobar.$$
+ 
+end
+EOD_
+
+if $TEST -n "`./is_able $UUDECODE s s`" ; then
+    $ECHO Warning!  $UUDECODE is SUID!
+fi
+
+if $TEST -n "`./is_able ./foobar.$$ s s`"; then
+    $ECHO Warning!  $UUDECODE creates setuid files!
+fi
+
+$RM -f ./foobar.$$
+
+#  The rest is all for tftp stuff:
+#
+#   Get the local hostname...
+if $TEST -s /bin/hostname ; then
+	HOSTNAME=`/bin/hostname`
+elif $TEST -s /bin/uname ; then
+	HOSTNAME=`/bin/uname -n`
+elif $TEST -s /usr/bin/uuname ; then
+	HOSTNAME=`/usr/bin/uuname -l`
+	fi
+if $TEST -z "$HOSTNAME" ; then
+	HOSTNAME="foobar"
+	fi
+
+if $TEST -z "$HOSTNAME" ; then
+#	$ECHO "Unable to find hostname"
+	exit 1
+	fi
+
+#   Do the dirty work -- check tftp for the localhost, if it was found;
+# this might take a bit, since tftp might have to time out.
+{
+$TFTP << _XXX_
+connect $HOSTNAME
+get $TARGET $TMP
+quit
+_XXX_
+}  > /dev/null 2> /dev/null
+
+if $TEST -s $TMP ; then
+	$ECHO "Warning!  tftp is enabled on $HOSTNAME!"
+	fi
+
+$RM -f $TMP
+
+exit 0
+# end of script

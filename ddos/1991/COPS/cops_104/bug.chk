@@ -1,0 +1,128 @@
+#!/bin/sh
+#
+#  bug.chk [arch]
+#
+#   This uses publically available (available via anon-ftp from 
+# cert.sei.cmu.edu) data to determine if a security bug is present.  It
+# checks the date of the program in question against the cert advisory
+# date, and, if it is older than that, it flags it as a potential
+# bug/vulnerability.
+#
+#  Right now, it either uses your argument as an archetecture type, or
+# tries to figure out what kind of platform you're running
+# on, and then looks at the bugs known for your host, in a file named
+# "bug.chk.arch_type".
+#
+ECHO=/bin/echo
+TEST=/bin/test
+GREP=/bin/grep
+LS=/bin/ls
+LS_OPTS="-slagL"
+AWK=/bin/awk
+SH=/bin/sh
+DATE=/bin/date
+
+# the bug comparison module; current vs. bug date
+BUG="$AWK -f ./bug_cmp"
+
+# Do you decend from 4.3 BSD?
+bsd43=yes
+platform="./platform"
+
+if $TEST ! -f ./bug_cmp ; then
+	$ECHO "Must have bug compare module, ./bug_cmp, to run..."
+	exit 2
+	fi
+
+# what is the date?  We just need the month and year...
+# Format: Fri Feb  7 14:16:55 PST 1992
+real_date=`$DATE | $AWK '{print $2, $NF}'`
+
+# what kind of machine are we on?
+#
+if $TEST "$1" != "" ; then
+	host_type=$1
+else
+	host_type=`$platform`
+	fi
+
+#
+#  Do a few (old) generic checks, then go to machine specific drek...
+#
+
+#
+# Generic sendmail problem -- worm used this...
+sendmail="/usr/lib/sendmail"
+fix_date="1 Dec 1988"
+cert_advis="CA-88:01"
+if $TEST -f "$sendmail" ; then
+	cur_date=`$LS $LS_OPTS $sendmail | $AWK '{print $8, $7, $9}'`
+	$ECHO $sendmail $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+#
+#   If running BSD based stuff, check login, fingerd, and ftpd,
+# plus the more recent rdist hole.
+login="/bin/login"
+all_locations="/etc /bin /usr/bin /usr/etc /usr/ucb"
+if $TEST "$bsd43" -eq "yes" -a -f "$login" ; then
+	fix_date="21 Dec 1988"
+	cert_advis="CA-89:01"
+	cur_date=`$LS $LS_OPTS $login | $AWK '{print $8, $7, $9}'`
+	$ECHO $login $fix_date $cur_date $cert_advis $real_date | $BUG
+	for location in $all_locations ; do
+		# have to check for sun's naming schema also...
+		if $TEST -f "$location/ftpd" ; then
+			ftp="$location/ftpd"
+		elif $TEST -f "$location/in.ftpd" ; then
+			ftp="$location/in.ftpd"
+			fi
+		if $TEST -f "$location/fingerd" ; then
+			finger="$location/fingerd"
+		elif $TEST -f "$location/in.fingerd" ; then
+			finger="$location/in.fingerd"
+			fi
+		if $TEST -f "$location/rdist" ; then
+			rdist="$location/rdist"
+			fi
+		done
+	cur_date=`$LS $LS_OPTS $ftp | $AWK '{print $8, $7, $9}'`
+	$ECHO $ftp $fix_date $cur_date $cert_advis $real_date | $BUG
+	cur_date=`$LS $LS_OPTS $finger | $AWK '{print $8, $7, $9}'`
+	$ECHO $finger $fix_date $cur_date $cert_advis $real_date | $BUG
+
+	#
+	# rdist is special
+	#
+	# These vendors are *not* affected: Amdahl, AT&T System V,
+	# Data General DG/UX for AViiON Systems, Sequent Computer Systems
+	# (note they will begin to ship rdist in February 1992, but
+	# it will be the corrected version)
+	#
+	fix_date="22 Oct 1991"
+	#   Sun put out another one after that date... you probably want
+	# this date instead...
+	fix_date="23 Oct 1991"
+
+	cert_advis="CA-91:20"
+	cur_date=`$LS $LS_OPTS $rdist | $AWK '{print $8, $7, $9}'`
+	$ECHO $rdist $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# host specific ones....
+if $TEST -n "$host_type" ; then
+	if $TEST -f "./bug.chk.$host_type" ; then
+		$SH ./bug.chk.$host_type $real_date
+	else
+		# check to see if I'm a sun...
+		$ECHO $host_type | $GREP "sun" > /dev/null
+		if $TEST $? -eq "0" ; then
+			./bug.chk.sun $real_date
+		else
+			:
+			# $ECHO Bug list for $host_type not found...
+			fi
+		fi
+	fi
+
+# finis

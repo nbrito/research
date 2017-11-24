@@ -1,0 +1,62 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  This combines user.chk and home.chk.  It searches for home directories
+# and various user startup files for world writability, as well as flagging
+# any .rhosts and .netrc files that are readable.  You can change the
+# files checked by changing @ftable and @readables, respectively.
+# 
+
+#
+# check for writable files in all user's homes
+#
+require "pass.cache.pl";
+require "is_able.pl";
+
+# files checked for:
+@ftable = ("rhosts", "profile", "login", "logout", "cshrc",
+	   "bashrc", "bash_profile", "inputrc", "screenrc",
+	   "kshrc", "tcshrc", "netrc", "forward", "dbxinit",
+	   "distfile", "exrc", "emacsrc", "remote", "mh_profile",
+	   "xinitrc", "xsession", "Xdefaults", "Xresources", "rninit");
+
+@readables = ("netrc", "rhosts");
+
+local(%done);
+
+# what's the point of doing a keys and using $i ??
+# why not just do "for $dir (values %uname2dir) {" ????
+for $i (keys %uname2dir) {
+    $dir = $uname2dir{$i};
+    #   I don't want to hear about every file in their home dir, if 
+    # is WW, but still need to check the .netrc file for readability...
+    next unless $dir;
+    next if $done{$dir}++;
+    if (-e $dir) { 
+        if (&is_able($dir, "w", "w")) {
+            for $r (@readables) {
+                if (-s "$dir/.$r") {
+                    &is_able("$dir/.$r", "w", "r");
+		}
+	    }
+            next;
+	}
+        for $file (@ftable) {
+            $foo_file = $dir . "/.$file";
+            if (-e $foo_file) {
+                &is_able($foo_file, "w", "w");
+                for $r (@readables) {
+                    if ($file eq $r && -s $foo_file) {
+                        &is_able($foo_file, "w", "r");
+		    }
+		}
+	    }
+	}
+    }
+}
+
+1;

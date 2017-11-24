@@ -1,0 +1,66 @@
+.TH PASS.CHK 1 "Feb 4, 1992"
+.UC 4
+.SH NAME
+pass.chk  \- Checks for poor passwords in a password file.
+.SH SYNOPSIS
+.B pass.chk
+[
+options
+]
+.SH DESCRIPTION
+By default
+.I pass.chk
+only checks for accounts with passwords the same
+as the login name. The following options add more extensive checking. (The
+tradeoff is cpu time -- with all options enabled it can run into the 100's
+of MINUTES.) Any argument that does not begin with a "-" is assumed to be
+a file name. (A single '-' means stdin.) If no file name is given, /etc/passwd
+is used.
+.PP
+Options are:
+.TP
+.B \-v
+verbose -- list all guesses on stdout
+.TP
+.B \-u
+output the username on the line of the password file
+currently being checked. If the program stops
+abruptly you will then know how far it got.
+.TP
+.B \-w file
+use the list of words contained in "file" as likely
+passwords. Words in the file are one to a line.
+A variable, "ARB_CONST", on line 6 of the source file, "pass.c",
+determines how many words can be in the dictionary file.  Default is 32000.
+.TP
+.B \-b
+check all guesses backwards too
+.TP
+.B \-g
+use the Full Name portion of the gecos field, the user's .plan, .forward,
+and .signature files to generate more guesses
+.TP
+.B \-s
+check the single letters a-z, A-Z, 0-9 as passwords
+.TP
+.B \-c
+with each guess, check for all lower case and
+all upper case versions too.
+.TP
+.B \-n
+complain about null passwords (default is to keep quiet)
+.TP
+.B \-p
+print the password when guessed
+.TP
+.B \-P file
+use an alternate password file
+.PP
+If used on a Sun or Sun compatible, compiling with the -DC2 flag will
+enable C2/shadow passwords to be cracked (it must be run as root, however,
+to read the shadow password file.)
+.SH FILES
+.br
+.nf
+/etc/passwd
+.fi

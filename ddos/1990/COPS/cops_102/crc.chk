@@ -1,0 +1,92 @@
+:
+
+# commands 'n stuff:
+AWK=/bin/awk
+SED=/bin/sed
+SORT=/usr/bin/sort
+MV=/bin/mv
+MAIL=/bin/mail
+CAT=/bin/cat
+TEST=/bin/test
+ECHO=/bin/echo
+RM=/bin/rm
+DATE=/bin/date
+
+# files used:
+crc_list=./crc_list	# lists files used
+crc_seed=./crc_seed	# optional -- contains seed
+crc_old=./crc_old	# old crc values
+crc_tmp=./crc_tmp	# temp storage for the new crc's
+crc_res=./crc_res	# difference between new and old crc's
+bit_bucket=/dev/null	# junk goes here
+results=./crc_results	# results go here; deleted & mailed, or
+			# saved here, depending on the "MAIL" flag.
+
+# Do you want it mailed?  If "YES", the results file gets deleted
+MMAIL=NO
+# who gets the report?
+INFORM="foo@bar.edu"
+
+#   If you don't use an argument, and don't have a seed file, generate
+# a semi-random seed:
+if $TEST $# -eq 1 ; then
+	seed=$1
+else
+	if $TEST ! -s $crc_seed ; then
+		seed=$$
+		$ECHO $seed > $crc_seed
+	else
+		seed=`$CAT $crc_seed`
+		fi
+	fi
+
+# AIX has a broken awk.
+# files=`$AWK '/^#/ {next} {print $1}' $crc_list | $SORT -u`
+files=`$SED '/^#.*$/d' $crc_list | $SORT -u`
+
+# $ECHO crc\'ing, with seed $seed
+for i in $files
+	do
+	./crc -v -i $seed $i >> $crc_tmp 2> $bit_bucket
+	done
+
+# First time used, create the database:
+if $TEST ! -s $crc_old ; then
+	$MV $crc_tmp $crc_old
+	exit 0
+	fi
+
+# any differences?
+./crc_check $crc_old $crc_tmp > $crc_res
+
+if $TEST -s $crc_res ; then
+
+	# get the hostname:
+	if $TEST -s /bin/hostname ; then
+                HOSTNAME=`/bin/hostname`
+        elif $TEST -s /bin/uname ; then
+                HOSTNAME=`/bin/uname -n`
+        elif $TEST -s /usr/bin/uuname ; then
+                HOSTNAME=`/usr/bin/uuname -l`
+                fi
+        if $TEST -z "$HOSTNAME" ; then
+                HOSTNAME="foobar"
+                fi
+
+	$ECHO >> $results
+	$ECHO ATTENTION:                        >> $results
+	$ECHO "CRC Security Report for "`$DATE` >> $results
+	$ECHO "From host $HOSTNAME"             >> $results
+	$ECHO >> $results
+	$CAT $crc_res >>$results
+
+	if $TEST $MMAIL = "YES" ; then
+		$MAIL $INFORM < $results
+		$RM $results
+		fi
+	fi
+
+$RM -f $crc_tmp $crc_res
+
+#  end it all....
+exit 0

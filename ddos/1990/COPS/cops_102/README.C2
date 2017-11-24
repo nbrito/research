@@ -1,0 +1,676 @@
+
+Dan,
+
+  Please find enclose four (4) files: passwd.chk, passwd.file.chk, group.chk,
+and group.file.chk. These are the files to allow checking of the Sun C2
+security variations of SunOS. They will perform checking of the yellow pages
+version if so selected by the TEST_YP variable being TRUE in the passwd.chk
+and group.chk files. The testing of the SUN C2 security is performed by setting
+the SUN_SECURITY variable to TRUE in the passwd.chk and group.chk files. 
+
+Pete Troxell
+
+#!/bin/sh
+# This is a shell archive (produced by shar 3.49)
+# To extract the files from this archive, save it to a file, remove
+# everything above the "!/bin/sh" line above, and type "sh file_name".
+#
+# made 01/08/1991 02:50 UTC by df@death.cert.sei.cmu.edu
+#
+# existing files will NOT be overwritten unless -c is specified
+#
+# This shar contains:
+# length  mode       name
+# ------ ---------- ------------------------------------------
+#   1609 -rwx------ group.chk
+#   6191 -rwx------ group.file.chk
+#   1650 -rwx------ passwd.chk
+#   7715 -rwx------ passwd.file.chk
+#
+# ============= group.chk ==============
+if test -f 'group.chk' -a X"$1" != X"-c"; then
+	echo 'x - skipping group.chk (File already exists)'
+else
+echo 'x - extracting group.chk (Text)'
+sed 's/^X//' << 'SHAR_EOF' > 'group.chk' &&
+#!/bin/sh
+#
+#   group.chk
+#
+#  Check group file -- /etc/group -- for incorrect number of fields,
+# duplicate groups, non-alphanumeric group names, and non-numeric group
+# id's.
+#
+ECHO=/bin/echo
+RM=/bin/rm
+TEST=/bin/test
+YPCAT=/usr/bin/ypcat
+X
+#
+# Enhanced Security Features addes by Pete Troxell:
+#
+#   Used for Sun C2 security group file.  FALSE (default) will flag
+# valid C2 group syntax as an error, TRUE attempts to validate it. When
+# using this option the script must be executed as root or su since the file
+# /etc/security/group.adjunct is read protected from everybody except root.
+#
+SUN_SECURITY=FALSE
+X
+#
+# Enable/Disable testing of the Yellow Pages group file(s)
+#
+TEST_YP=FALSE
+X
+#
+# Important files:
+#
+etc_group=/etc/group
+etc_secure_group=/etc/security/group.adjunct
+yp_group=./grp$$
+yp_secure_group=./sgrp$$
+X
+yp=false
+yp_secure=false
+X
+#
+# Testing $yp_group for potential problems....
+#
+if $TEST -f $YPCAT -a $TEST_YP = "TRUE"
+X	then
+if $TEST -s $YPCAT
+X	then
+X	$YPCAT group > $yp_group 2>/dev/null
+X	if $TEST $? -eq 0
+X		then
+X		yp=true
+X	fi
+X	if $TEST $yp = "true" -a $SUN_SECFURITY = "TRUE"
+X		then
+X		$YPCAT -t group.adjunct.byname > $yp_secure_group 2>/dev/null
+X		if $TEST $? -eq 0
+X			then
+X			yp_secure=true
+X		fi
+X	fi
+fi
+fi
+X
+#
+# Test the system group file
+#
+group.file.chk $etc_group $etc_secure_group $SUN_SECURITY
+X
+#
+# Test yellow pages password file
+#
+if $TEST "$yp" = "true"
+X	then
+X	$ECHO
+X	$ECHO "***** Testing the Yellow Pages password file(s) ******"
+X	$ECHO
+X	group.file.chk $yp_group $yp_secure_group $SUN_SECURITY
+X	fi
+X
+#
+# Clean up after ourselfs
+#
+$RM -f $yp_group
+$RM -f $yp_secure_group
+# end
+SHAR_EOF
+chmod 0700 group.chk ||
+echo 'restore of group.chk failed'
+Wc_c="`wc -c < 'group.chk'`"
+test 1609 -eq "$Wc_c" ||
+	echo 'group.chk: original size 1609, current size' "$Wc_c"
+fi
+# ============= group.file.chk ==============
+if test -f 'group.file.chk' -a X"$1" != X"-c"; then
+	echo 'x - skipping group.file.chk (File already exists)'
+else
+echo 'x - extracting group.file.chk (Text)'
+sed 's/^X//' << 'SHAR_EOF' > 'group.file.chk' &&
+#!/bin/sh
+#
+#   group.file.chk
+#
+# Awk part based on _passwd_ from _The AWK Programming Language_, page 78
+#
+#   Mechanism:  Group.check uses awk to ensure that each line of the group
+# has 4 fields, as well as examining each line for any duplicate groups or
+# any duplicate user id's in a given group by using "sort -u" to ferret
+# out any duplications.  It also checks to make sure that the password
+# field (the second one) is a "*", meaning the group has no password (a
+# group password is usually not necessary because each member listed on 
+# the line has all the privilages that the group has.)  All results are
+# echoed to standard output.  Finally it ensures that the group names
+# are alphanumeric, that the group id's are numeric, and that there are
+# no blank lines.  For yellow pages groups, it does the same checking,
+# but in order to get a listing of all members of the groups, it does a
+# "ypcat group > ./$$" and uses that temporary file for a groupfile.
+# It removes the tmp file after using it, of course.
+#   The /etc/group file has a very specific format, making the task
+# fairly simple.  Normally it has lines with 4 fields, each field
+# separated by a colon (:).  The first field is the group name, the second
+# field is the encrypted password (an asterix (*) means the group has no
+# password, otherwise the first two characters are the salt), the third
+# field is the group id number, and the fourth field is a list of user
+# ids in the group.  If a line begins with a plus sign (+), it is a yellow
+# pages entry.  See group(5) for more information.
+#   The SUN /etc/security/group.adjunct file also has a very specific
+# format, makeing the check task simple. Each entry has 2 fields separated 
+# by a colon (:). THe first field is the user name which matches the user
+# name contained in the /etc/group file. The second field is the encrypted
+# password (an asterix (*) means the group has no password, otherwise the 
+# first two characters are the salt). The password contained in the 
+# /etc/group file is comprised of the #$user_id where the user_id matches
+# the entry of the first field in both group files.
+#
+X
+#
+# Parameters
+#
+group_file=$1
+group_adjunct_file=$2
+SUN_SECURITY=$3
+X
+#
+# Utilities
+#
+AWK=/bin/awk
+DIFF=/usr/bin/diff
+ECHO=/bin/echo
+JOIN=/usr/bin/join
+RM=/bin/rm
+SORT=/usr/bin/sort
+TEST=/bin/test
+UNIQ=/usr/bin/uniq
+X
+#
+# Important files:
+#
+join_group_1=./grp$$.1.join
+join_group_2=./grp$$.2.join
+sort_group=./grp$$.sort
+sort_secure_group=./sgrp$$.sort
+X
+#
+# Testing the group file for problems
+#
+result=`$AWK -F: '{print $1}' $group_file | $SORT |$UNIQ -d`
+if $TEST "$result"
+X	then
+X	$ECHO "Warning!  Duplicate gid(s) found in group file:"
+X	for USER in $result
+X	do
+X		$ECHO "	$USER"
+X	done
+fi
+X
+#
+#   First line is for a yellow pages entry in the group file.
+# It really should check for correct yellow pages syntax....
+#
+$AWK 'BEGIN {FS = ":" } {
+X	if (substr($1,1,1) != "+") { \
+X	if ($0 ~ /^[ 	]*$/) { printf("Warning!  Group file, line %d, is blank\n", NR) } else {
+X	if (NF != 4) { printf("Warning!  Group file, line %d, does not have 4 fields: \n\t%s\n", NR, $0) } \
+X	if ($1 !~ /[A-Za-z0-9]/) {
+X		printf("Warning!  Group file, line %d, nonalphanumeric user id: \n\t%s\n", NR, $0) } \
+X	if ($2 != "" && $2 != "*") {
+X		if ("'$SUN_SECURITY'" != "TRUE")
+X			printf("Warning!  Group file, line %d, has password: \n\t%s\n", NR, $0)
+X		else {
+X			if ("#$"$1 != $2)
+X				printf("Warning!  Group file, line %d, invalid password field for SUN C2 Security: \n\t%s\n", NR, $0) } \
+X		} \
+X	if ($3 !~ /[0-9]/) {
+X		printf("Warning!  Group file, line %d, nonnumeric group id: \n\t%s\n", NR, $0) \
+X	}}}} ' $group_file
+X
+#
+# Ignore all groups with less than two members.
+#
+awk -F: '
+X	split($4, users, ",") > 1 {
+X		ct = 0
+X		for (i in users) {
+X			curuser = users[i]
+X			for (j in users) {
+X				if (j > i && curuser == users[j]) {
+X					if (ct++ == 0) print "Warning!  Group "$1" has duplicate user(s):"
+X					print curuser
+X				}
+X			}
+X		}
+X	}
+X	' $group_file
+X
+#
+# Perform checks on the security enhanced version of SUNOS
+#
+if $TEST $SUN_SECURITY = "TRUE"
+X	then
+X	result=`$AWK -F: '{print $1}' $group_adjunct_file | $SORT -t: | $UNIQ -d`
+X	if $TEST "$result"
+X		then
+X		$ECHO
+X		$ECHO "Warning!  Duplicate uid(s) found in group adjunct file:"
+X		for USER in $result
+X		do
+X			$ECHO "	$USER"
+X		done
+X	fi
+X	#
+X	# Check that for each entry in the group file that there is a matching
+X	# entry in the group.adjunct file.
+X	#
+X	$SORT -t: -o $sort_group $group_file
+X	$SORT -t: -o $sort_secure_group $group_adjunct_file
+X	$JOIN -t: $sort_group $sort_secure_group > $join_group_1
+X	$JOIN -t: -a1 $sort_group $sort_secure_group > $join_group_2
+X	result=`$DIFF $join_group_1 $join_group_2`
+X	if $TEST "$result"
+X		then
+X		$ECHO
+X		$ECHO "Warning!  Matching record(s) in group adjunct file not found for"
+X		$ECHO "these records in group file:"
+X		PREV=$$
+X		for USER in $result
+X		do
+X			if $TEST $PREV = ">"
+X				then
+X				$ECHO "	$USER"
+X			fi
+X			PREV=$USER
+X		done
+X	fi
+X	#
+X	# Check that for each entry in the group.adjunct file that there is a 
+X	# matching entry in the group file.
+X	#
+X	$RM -f $join_group_2
+X	$JOIN -t: -a2 $sort_group $sort_secure_group > $join_group_2
+X	result=`$DIFF $join_group_1 $join_group_2`
+X	if $TEST "$result"
+X		then
+X		$ECHO
+X		$ECHO "Warning!  Matching record(s) in group file not found for"
+X		$ECHO "these records in group adjunct file"
+X		PREV=$$
+X		for USER in $result
+X		do
+X			if $TEST $PREV = ">"
+X				then
+X				$ECHO "	$USER"
+X			fi
+X			PREV=$USER
+X		done
+X	fi
+X	#
+X	# Test the fields in the group.adjunct file for validity
+X	#
+X	$AWK 'BEGIN {FS = ":" } \
+X		{if (substr($1,1,1) != "+") { \
+X		if ($0 ~ /^[ 	]*$/) { printf("\nWarning!  Group adjunct file, line %d, is blank\n", NR) } else {
+X		if (NF != 2) {
+X			printf("\nWarning!  Group adjunct file, line %d, does not have 2 fields: \n\t%s\n", NR, $0) } \
+X		if ($1 !~ /[A-Za-z0-9]/) {
+X			printf("\nWarning!  Group adjunct file, line %d, nonalphanumeric login: \n\t%s\n", NR, $0) } \
+X		if ($2 != "" && $2 != "*") {
+X			printf("\nWarning!  Group adjunct file, line %d, has password: \n\t%s\n", NR, $0) } \
+X		}}}' $group_adjunct_file
+fi
+X
+#
+# Clean up after ourself
+#
+$RM -f $join_group_1
+$RM -f $join_group_2
+$RM -f $sort_group
+$RM -f $sort_secure_group
+# end
+SHAR_EOF
+chmod 0700 group.file.chk ||
+echo 'restore of group.file.chk failed'
+Wc_c="`wc -c < 'group.file.chk'`"
+test 6191 -eq "$Wc_c" ||
+	echo 'group.file.chk: original size 6191, current size' "$Wc_c"
+fi
+# ============= passwd.chk ==============
+if test -f 'passwd.chk' -a X"$1" != X"-c"; then
+	echo 'x - skipping passwd.chk (File already exists)'
+else
+echo 'x - extracting passwd.chk (Text)'
+sed 's/^X//' << 'SHAR_EOF' > 'passwd.chk' &&
+#!/bin/sh
+#
+#   passwd.chk
+#
+#  Check passsword file -- /etc/passswd -- for incorrect number of fields,
+# duplicate uid's, non-alphanumeric uids, and non-numeric group id's.
+#
+#
+ECHO=/bin/echo
+RM=/bin/rm
+TEST=/bin/test
+YPCAT=/usr/bin/ypcat
+X
+#
+# Enhanced Security Features added by Pete Troxell:
+#
+#   Used for Sun C2 security password adjunct file.  FALSE (default) will flag
+# valid SUN C2 passwd syntax as an error, TRUE attempts to validate it. When 
+# using this option, the script must be executed as root or su since the file
+# /etc/security/passwd.adjunct is read protected from everybody except root.
+#
+SUN_SECURITY=FALSE
+X
+#
+# Enable/Disable testing of the Yellow Pages password file(s)
+#
+TEST_YP=FALSE
+X
+#
+# Important files:
+#
+etc_passwd=/etc/passwd
+etc_secure_passwd=/etc/security/passwd.adjunct
+yp_passwd=./pwd$$
+yp_secure_passwd=./spwd$$
+X
+yp=false
+yp_secure=false
+X
+#
+# Testing $yp_passwd for potential problems....
+#
+if $TEST -f $YPCAT -a $TEST_YP = "TRUE"
+X	then
+if $TEST -s $YPCAT
+X	then
+X	$YPCAT passwd > $yp_passwd 2>/dev/null
+X	if $TEST $? -eq 0
+X		then
+X		yp=true
+X	fi
+X	if $TEST $yp = "true" -a $SUN_SECURITY = "TRUE"
+X		then
+X		$YPCAT -t passwd.adjunct.byname > $yp_secure_passwd 2>/dev/null
+X		if $TEST $? -eq 0
+X			then
+X			yp_secure=true
+X		fi
+X	fi
+fi
+fi
+X
+#
+# Test the system password file
+#
+passwd.file.chk $etc_passwd $etc_secure_passwd $SUN_SECURITY
+X
+#
+# Test yellow pages password file
+#
+if $TEST "$yp" = "true"
+X	then
+X	$ECHO
+X	$ECHO "***** Testing the Yellow Pages password file(s) *****"
+X	$ECHO
+X	passwd.file.chk $yp_passwd $yp_secure_passwd $SUN_SECURITY
+X	fi
+X
+#
+# Clean up after ourselfs
+#
+$RM -f $yp_passwd
+$RM -f $yp_secure_passwd
+# end
+SHAR_EOF
+chmod 0700 passwd.chk ||
+echo 'restore of passwd.chk failed'
+Wc_c="`wc -c < 'passwd.chk'`"
+test 1650 -eq "$Wc_c" ||
+	echo 'passwd.chk: original size 1650, current size' "$Wc_c"
+fi
+# ============= passwd.file.chk ==============
+if test -f 'passwd.file.chk' -a X"$1" != X"-c"; then
+	echo 'x - skipping passwd.file.chk (File already exists)'
+else
+echo 'x - extracting passwd.file.chk (Text)'
+sed 's/^X//' << 'SHAR_EOF' > 'passwd.file.chk' &&
+#!/bin/sh
+#
+#   passwd.file.chk
+#
+#  Check passsword file -- /etc/passswd -- for incorrect number of fields,
+# duplicate uid's, non-alphanumeric uids, and non-numeric group id's.
+#
+# Awk part from _The AWK Programming Language_, page 78
+#
+#  Mechanism:  Passwd.check uses awk to ensure that each line of the file
+# has 7 fields, as well as examining the file for any duplicate users
+# by using "sort -u".  It also checks to make sure that the password
+# field (the second one) is either a "*", meaning the group has no password,
+# or a non-null field (which would mean that the account has a null
+# password.)  It then checks to ensure that all uids are alphanumeric,
+# and that all user id numbers are indeed numeric.  For yellow pages
+# passwords, it does the same checking, but in order to get a listing of
+# all members of the password file, it does a "ypcat passwd > ./$$" and
+# uses that temporary file for a passfile.  It removes the tmp file after
+# using it, of course.
+#   The /etc/passwd file has a very specific format, making the task
+# fairly simple.  Normally it has lines with 7 fields, each field
+# separated by a colon (:).  The first field is the user id, the second
+# field is the encrypted password (an asterix (*) means the user id has no
+# password, otherwise the first two characters are the salt), the third
+# field is the user id number, the fourth field is the group id number,
+# the fifth field is the GECOS field (basically holds miscellaneous
+# information, varying from site to site), the sixth field is the home
+# directory of the user, and lastly the seventh field is the login shell
+# of the user.  No blank lines should be present.
+#   The SUN /etc/security/passwd.adjunct file also has a very specific 
+# format, making the check task simple. Each entry has 7 fields, each field 
+# separated by a colon (:). The first field is the user name which matches 
+# the user name contained in the /etc/passwd file. The second field is the 
+# encrypted password (an asterix (*) means the user login is disabled,
+# otherwise the first two characters are the salt). The password contained
+# in the /etc/passwd file is comprised of ##user_id where the user_id 
+# matches the entry of the first field in both password files. The third
+# through fifth specify the minimum, maximum, and default security labels
+# for the user. The sixth and seventh fields specify which auditing flags
+# should be always or never monitored.
+#   If a line begins with a plus sign (+), it is a yellow pages entry.
+# See passwd(5) for more information, if this applies to your site.
+#
+X
+#
+# Parameters
+#
+passwd_file=$1
+passwd_adjunct_file=$2
+SUN_SECURITY=$3
+X
+#
+# Utilities
+#
+AWK=/bin/awk
+DIFF=/usr/bin/diff
+ECHO=/bin/echo
+JOIN=/usr/bin/join
+RM=/bin/rm
+SORT=/usr/bin/sort
+TEST=/bin/test
+UNIQ=/usr/bin/uniq
+X
+#
+# Important files:
+#
+join_passwd_1=./pwd$$.1.join
+join_passwd_2=./pwd$$.2.join
+sort_passwd=./pwd$$.sort
+sort_secure_passwd=./spwd$$.sort
+X
+#
+# Testing the passwd file for problems
+#
+result=`$AWK -F: '{print $1}' $passwd_file | $SORT -t: | $UNIQ -d`
+if $TEST "$result"
+X	then
+X	$ECHO
+X	$ECHO "Warning!  Duplicate uid(s) found in password file:"
+X	for USER in $result
+X	do
+X		$ECHO "	$USER"
+X	done
+fi
+X
+#
+#   First line is for a yellow pages entry in the password file.
+# It really should check for correct yellow pages syntax....
+#
+$AWK 'BEGIN {FS = ":" } \
+X	{if (substr($1,1,1) != "+") { \
+X	if ($0 ~ /^[ 	]*$/) { printf("\nWarning!  Password file, line %d, is blank\n", NR) } else {
+X	if (NF != 7) {
+X		printf("\nWarning!  Password file, line %d, does not have 7 fields: \n\t%s\n", NR, $0) } \
+X	if ($1 !~ /[A-Za-z0-9]/) {
+X		printf("\nWarning!  Password file, line %d, nonalphanumeric login: \n\t%s\n", NR, $0) } \
+X	if ($2 == "") {
+X		printf("\nWarning!  Password file, line %d, no password: \n\t%s\n", NR, $0) } \
+X 	if ("'$SUN_SECURITY'" == "TRUE" && "##"$1 != $2) {
+X		printf("\nWarning!  Password file, line %d, invalid password field for SUN C2 Security: \n\t%s\n", NR, $0) } \
+X	if ($3 !~ /[0-9]/) {
+X		printf("\nWarning!  Password file, line %d, nonnumeric user id: \n\t%s\n", NR, $0) } \
+X	if ($3 == "0" && $1 != "root") {
+X		printf("\nWarning!  Password file, line %d, user %s has uid = 0 and is not root\n\t%s\n", NR, $1, $0) } \
+X	if ($4 !~ /[0-9]/) {
+X		printf("\nWarning!  Password file, line %d, nonnumeric group id: \n\t%s\n", NR, $0) } \
+X	if ($6 !~ /^\//) {
+X		printf("\nWarning!  Password file, line %d, invalid login directory: \n\t%s\n", NR, $0) } \
+X	}}}' $passwd_file
+X
+#
+# Perform checks on the security enhanced version of SUNOS
+#
+if $TEST $SUN_SECURITY = "TRUE"
+X	then
+X	result=`$AWK -F: '{print $1}' $passwd_adjunct_file | $SORT -t: | $UNIQ -d`
+X	if $TEST "$result"
+X		then
+X		$ECHO
+X		$ECHO "Warning!  Duplicate uid(s) found in password adjunct file:"
+X		for USER in $result
+X		do
+X			$ECHO "	$USER"
+X		done
+X	fi
+X	#
+X	# Check that for each entry in the passwd file that there is a matching
+X	# entry in the passwd.adjunct file.
+X	#
+X	$SORT -t: -o $sort_passwd $passwd_file
+X	$SORT -t: -o $sort_secure_passwd $passwd_adjunct_file
+X	$JOIN -t: $sort_passwd $sort_secure_passwd > $join_passwd_1
+X	$JOIN -t: -a1 $sort_passwd $sort_secure_passwd > $join_passwd_2
+X	result=`$DIFF $join_passwd_1 $join_passwd_2`
+X	if $TEST "$result"
+X		then
+X		$ECHO
+X		$ECHO "Warning!  Matching record(s) in password adjunct file not found for"
+X		$ECHO "these records in password file:"
+X		PREV=$$
+X		for USER in $result
+X		do
+X			if $TEST $PREV = ">"
+X				then
+X				$ECHO "	$USER"
+X			fi
+X			PREV=$USER
+X		done
+X	fi
+X	#
+X	# Check that for each entry in the passwd.adjunct file that there is a 
+X	# matching entry in the passwd file.
+X	#
+X	$RM -f $join_passwd_2
+X	$JOIN -t: -a2 $sort_passwd $sort_secure_passwd > $join_passwd_2
+X	result=`$DIFF $join_passwd_1 $join_passwd_2`
+X	if $TEST "$result"
+X		then
+X		$ECHO
+X		$ECHO "Warning!  Matching record(s) in password file not found for"
+X		$ECHO "these records in password adjunct file"
+X		PREV=$$
+X		for USER in $result
+X		do
+X			if $TEST $PREV = ">"
+X				then
+X				$ECHO "	$USER"
+X			fi
+X			PREV=$USER
+X		done
+X	fi
+X	#
+X	# Test the fields in the passwd.adjunct file for validity
+X	#
+X	$AWK 'BEGIN {FS = ":" } \
+X		{if (substr($1,1,1) != "+") { \
+X		if ($0 ~ /^[ 	]*$/) { printf("\nWarning!  Password adjunct file, line %d, is blank\n", NR) } else {
+X		if (NF != 7) {
+X			printf("\nWarning!  Password adjunct file, line %d, does not have 7 fields: \n\t%s\n", NR, $0) } \
+X		if ($1 !~ /[A-Za-z0-9]/) {
+X			printf("\nWarning!  Password adjunct file, line %d, nonalphanumeric login: \n\t%s\n", NR, $0) } \
+X		if ($2 == "") {
+X			printf("\nWarning!  Password adjunct file, line %d, no password: \n\t%s\n", NR, $0) } \
+X		#
+X		# Fields 3-5 are ignored since they deal with labels which are
+X		# currently unused on the SUN (perhaps a future B-level??)
+X		#
+X		# Fields 6+7 contain audit flags for the user and are selected
+X		# from the following: dr, dw, dc, da, lo, ad, p0, p1, and all.
+X		# More than 1 flag can be selected by separating flags with a 
+X		# comma (,).
+X		#
+X		if ($6 != "") {
+X			j=1
+X			len=length($6)
+X			for (i=1; i<=len; i++) {
+X				if ((substr($6,i,1) != ",") && (i < len)) 
+X					continue
+X				if (i == len)
+X					token=substr($6,j,i-j+1)
+X				else
+X					token=substr($6,j,i-j)
+X				j=i+1
+X				if (token == "dr") continue
+X				if (token == "dw") continue
+X				if (token == "dc") continue
+X				if (token == "da") continue
+X				if (token == "lo") continue
+X				if (token == "ad") continue
+X				if (token == "p0") continue
+X				if (token == "p1") continue
+X				if (token == "all") continue
+X			printf("\nWarning!  Password adjunct file, line %d, invalid audit flag: %s\n\t%s\n", NR, token, $0) } \
+X			}
+X		}}}' $passwd_adjunct_file
+fi
+X
+#
+# Clean up after ourself
+#
+$RM -f $join_passwd_1
+$RM -f $join_passwd_2
+$RM -f $sort_passwd
+$RM -f $sort_secure_passwd
+# end
+SHAR_EOF
+chmod 0700 passwd.file.chk ||
+echo 'restore of passwd.file.chk failed'
+Wc_c="`wc -c < 'passwd.file.chk'`"
+test 7715 -eq "$Wc_c" ||
+	echo 'passwd.file.chk: original size 7715, current size' "$Wc_c"
+fi
+exit 0

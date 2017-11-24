@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+#  Apollo module for bug/vulnerability checking
+#
+ECHO=/bin/echo
+TEST=/bin/test
+LS=/bin/ls
+LS_OPTS="-slagL"
+ARCH=/bin/arch
+GREP=/bin/grep
+AWK=/bin/awk
+UNIQ=/usr/bin/uniq
+BUG="$AWK -f ./bug_cmp"
+
+if $TEST ! -f ./bug_cmp ; then
+	$ECHO "Must have bug compare module, ./bug_cmp, to run..."
+	exit 2
+	fi
+
+# try to find out OS version:
+if $TEST -f /com/bldt ; then
+	bldt=/com/bldt
+elif $TEST -f /usr/apollo/bin/bldt ; then
+	bldt=/usr/apollo/bin/bldt
+	fi
+if $TEST -f "$bldt" ; then
+	release_level=`$bldt | $AWK '{ for (i = 1; i <= NF; i++) 
+		if ($i == "revision") print $(i+1) }' | $UNIQ`
+	fi
+
+# what is the date?  We just need the month and year...
+# Format: Fri Feb  7 14:16:55 PST 1992
+if $TEST $# -eq "2" ; then
+        real_date="$1 $2"
+else
+        real_date=`$DATE | $AWK '{print $2, $NF}'`
+        fi
+
+# crp
+#
+# Was this ever officially fixed?
+crp="/usr/apollo/bin/crp"
+fix_date="18 Dec 1991"
+cert_advis="CA-91:23"
+if $TEST -f "$crp" ; then
+	cur_date=`$LS $LS_OPTS $crp | $AWK '{print $8, $7, $9}'`
+	$ECHO $crp $fix_date $cur_date $cert_advis $real_date | $BUG
+	fi
+
+# finis

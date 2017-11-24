@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+# carp2ps carp_result_file
+#
+#   CARP 2 Postscript converter -- takes a carp text output file
+# (or standard in) and converts it to postscript output.
+#
+AWK=/bin/awk
+CAT=/bin/cat
+TEST=/bin/test
+ECHO=/bin/echo
+RM=/bin/rm
+carp_awk="./carp.awk"
+
+if $TEST $# -ne "1" -o ! -f "$1" ; then
+	$ECHO "Usage: $0 carp_result_file"
+	exit 2;
+	fi
+carp_ps="$1.ps"
+
+$CAT > $carp_ps << EO_PS
+%!
+
+%set line height to 40 lines per page, assuming 50 point borders
+/lineht 692 40 div def
+/col1 80 def
+/col2 160 def
+/col3 240 def
+
+/colwd {
+  612 col1 sub col3 sub numcols div
+} def
+
+/dotitle {
+  /y 742 def
+  /Times-Roman findfont 20 scalefont setfont
+  title stringwidth pop 2 div 306 exch sub y moveto
+  title show
+} def
+
+/doheader {
+  /y y 42 sub def
+  /Times-Roman findfont 12 scalefont setfont
+  col1 y moveto (Hostname) show
+  col2 y moveto (Report Date) show
+  /Times-Bold findfont 12 scalefont setfont
+  /x col3 def
+  1 2 numcols {
+    pop
+    newpath
+    x y 4 sub moveto 0 lineht rlineto colwd 0 rlineto 0 lineht neg rlineto
+    closepath 0.85 setgray fill 0 setgray
+    /x x colwd 2 mul add def
+  } for
+  /x col3 def
+  1 1 numcols {
+    x y moveto
+    headray exch 1 sub get
+    dup stringwidth pop /w exch def
+    w colwd 1 sub gt {
+      0.5 0 rmoveto
+      gsave colwd 1 sub w div 1 scale show grestore
+    } {
+      w 2 div neg colwd 2 div add 0 rmoveto
+      show
+    } ifelse
+    /x x colwd add def
+  } for
+  /y y 4 sub def
+  gsave 1.5 setlinewidth col1 y moveto 612 col1 sub y lineto stroke grestore
+} def
+
+/newline {
+  /Times-Roman findfont 12 scalefont setfont
+  /y y lineht sub def
+  exch
+  col1 y moveto show
+  col2 y moveto show
+  /x col3 def
+  1 2 numcols {
+    pop
+    newpath
+    x y 2 sub moveto 0 lineht rlineto
+      colwd 0 rlineto 0 lineht neg rlineto
+      closepath 0.85 setgray fill 0 setgray
+    /x x colwd 2 mul add def
+  } for
+  /x col3 def
+} def
+
+/donothing {
+  /x x colwd add def
+} def
+
+/dofull {
+  newpath
+  x colwd 2 div add y 6 add 6 0 360 arc gsave fill grestore stroke
+  /x x colwd add def
+} def
+
+/dohalf {
+  newpath
+  x colwd 2 div add y 6 add 6 0 360 arc gsave 1 setgray fill grestore stroke
+  x colwd 2 div add y 6 add 6 180 360 arc
+  closepath fill
+  /x x colwd add def
+} def
+
+/doempty {
+  newpath
+  x colwd 2 div add y 6 add 6 0 360 arc gsave 1 setgray fill grestore stroke
+  /x x colwd add def
+} def
+
+0.5 setlinewidth
+EO_PS
+
+# tack on the real results:
+$AWK -f $carp_awk $1 >> $carp_ps
+
+# done

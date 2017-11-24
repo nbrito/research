@@ -1,0 +1,56 @@
+#
+# $0 "bug_name" "fix_date" "cur_date" "cert_advisory_number" \
+#		"real_date" "greater_than_date"
+#
+#  Dates are like "day month year"; e.g.  "6 Dec 1991"
+#
+{ 
+word_smithing="could have a hole/bug"
+month["Jan"] =  1;
+month["Feb"] =  2;
+month["Mar"] =  3;
+month["Apr"] =  4;
+month["May"] =  5;
+month["Jun"] =  6;
+month["Jul"] =  7;
+month["Aug"] =  8;
+month["Sep"] =  9;
+month["Oct"] = 10;
+month["Nov"] = 11;
+month["Dec"] = 12;
+
+bug_name     = $1
+
+fix_day      = $2
+fix_month    = month[$3]
+fix_year     = $4
+# want to accept YY or YYYY. breaks in 2088.  Thanks, wietse!
+if (fix_year < 88) fix_year += 2000
+else if (fix_year < 100) fix_year += 1900
+
+cur_day      = $5
+cur_month    = month[$6]
+cur_year     = $7
+cert_advis   = $8
+real_month   = month[$9]
+real_year    = $10
+great_day    = $11
+great_month  = month[$12]
+great_year   = $13
+
+if (index(cur_year, ":")) {
+	if (cur_month > real_month)
+		cur_year = real_year - 1
+	else
+		cur_year = real_year
+	}
+
+# print "bug-in-question", bug_name
+# print "fix-DATES", fix_month, fix_day, fix_year
+# print "cur-DATES", cur_month, cur_day, cur_year
+# print "real-DATE", real_month, real_year
+
+if ((cur_year < fix_year) || ((cur_year==fix_year) && (cur_month < fix_month)) || ((cur_year==fix_year) && (cur_month==fix_month) && cur_day < fix_day))
+	printf("Warning!  %s %s!  (%s)\n", bug_name, word_smithing, cert_advis)
+
+}

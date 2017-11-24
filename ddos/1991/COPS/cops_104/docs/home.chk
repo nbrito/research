@@ -1,0 +1,9 @@
+.TH HOME.CHK 1 "December 31, 1989"
+.UC 4
+.SH NAME
+home.chk  \- Checks user home directories for world writability.
+.SH SYNOPSIS
+.B home.chk
+.SH DESCRIPTION
+This checks all of the user home directories (it calls getpwent() to
+get user directories) for world writability.

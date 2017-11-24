@@ -1,0 +1,6 @@
+which will change the file to have a name of the form, "dangerous.<oldname>.x"
+where <oldname> is the original name of the file, and 'x' is an integer.
+For example, if your .profile was owned by another user, the fix would be
+to rename it to be "dangerous.profile.1", assuming that file did not
+already exist.  If it did, it would try "dangerous.profile.2", and so on,
+until it acquired a file name which was not already taken.

@@ -1,0 +1,54 @@
+V1.00 First Release.
+
+V1.02 Patched a few minor bugs.
+1. Changing  S_un to s.addr which abreviates the structure, but also
+makes it more compatible to compile on other machines.
+2. The closing of files was changed from close(file) -> fclose(file).
+3. Unnecessary variables have been removed.
+4. One of the nested loops was incorrectly bracketted around the wrong command.
+5. Incorrectly calling the function getname(a). Changed to getname(&a).
+
+V1.03 Minor bugs fixed that make it more compatible on other unixes.
+1. Check for NULL file before closing ISS.log. Caused core dump on some unixes.
+2. Included <strings.h>
+3. Added siginterrupt (SIGALRM,1) to varies parts. Apparently on some machines,
+ the signal wasn't being caught until this was set.
+
+V1.10 Added new features and better routines.
+1. Changed the method of how to scan allowing a user to be more specific
+in which hosts are scanned.
+2. Option "-p" implemented to scan individual hosts for all opening tcp port.
+3. Sending a QUIT to the SMTP and FTP port.
+4. Can now enter just one ip-address to probe that host.
+5. Option -o to change the output to something other than ISS.log.
+  if "-o -" is spefied, - becomes stdout. Allowing for easier debugging and
+  testing.
+
+V1.20 Modified a few more minor bugs.
+1. Used htonl() and htons() hopefully to fix byte order of addresses on some machines.
+2. Made the socket descriptions all conform to (sd) and changed
+close(s) to close(sd).
+3. Added more checking of read(s, &c, 1) routines.
+4. Allowing the user to just enter one ip-addr to scan that particular host
+for security holes.
+5. Checks "NoName" as a domainname guess.
+6. Increased size of hostnames within program.
+
+V1.21 Few fixes.
+1. Options -e and -y turned off more than just what they were suppose to.
+2. Cleaned up some code for routines that allowed users to select which 
+hosts to scan.
+3. Made time-outs longer and checks slightly more efficent for ftp and smtp.
+4. #ifdef sun siginterrupt routine.
+5. Including <string.h> except for pyramid systems.
+
+V1.3 Big bug and added many vulnerability checking packes
+1. On little endian Unix machines, the byte order for the address was being
+flipped around.  Therefore if you wanted to scan 1.2.3.4, it would
+actually scan 4.3.2.1. Thanks to Barney Wolff, barney@databus.com for
+fixing the bug and doing a Unixware port.
+2. Added Nfsbug and YPX to the ISS packaging to allow administrators
+to further check their problems.
+3. Added strobe to the package to allow faster TCP port scanning.
+
+

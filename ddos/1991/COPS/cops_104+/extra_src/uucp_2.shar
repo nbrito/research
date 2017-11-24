@@ -1,0 +1,1190 @@
+#!/bin/sh
+# This is a shell archive (produced by shar 3.49)
+# To extract the files from this archive, save it to a file, remove
+# everything above the "!/bin/sh" line above, and type "sh file_name".
+#
+# made 03/06/1992 21:28 UTC by zen@death
+# Source directory /big/zen/COPS/test/extra_src
+#
+# existing files will NOT be overwritten unless -c is specified
+#
+# This shar contains:
+# length  mode       name
+# ------ ---------- ------------------------------------------
+#   1567 -rwx------ uucp.cf
+#  21246 -rwx------ uucp.pl
+#  14922 -rw------- uucp.txt
+#
+# ============= uucp.cf ==============
+if test -f 'uucp.cf' -a X"$1" != X"-c"; then
+	echo 'x - skipping uucp.cf (File already exists)'
+else
+echo 'x - extracting uucp.cf (Text)'
+sed 's/^X//' << 'SHAR_EOF' > 'uucp.cf' &&
+#
+#  "uucp.chk" config file
+#
+$BSD423		= "yes";		# 4.2 & 4.3 BSD?
+$sysVultrix	= "no";			# SVR2 or Ultrix?
+$valid_uucp_shell = "uucico";
+$callback	= "no";
+$Commands	= "rmail:rnews";	# use full pathnames for more sec.
+X
+#
+#  Version 2 stuff:
+#
+# Defaults:
+$v2_polling     = "/usr/spool/uucppublic";
+$v2_local       = "/usr/spool/uucppublic";
+X
+X
+#
+#  BNU/HDB stuff:
+#
+# Admin-definable: field default values, according to dan :-)
+#   Vars are prepended with "mach_" or "log_", depending if affect
+# MACHINE= or LOGFILE=, respectively.
+X
+$mach_request	= "yes";
+$log_request	= "yes";
+$sendfiles	= "no";
+$mach_pubdir	= "/usr/spool/uucppublic";
+$mach_read	= "/usr/spool/uucppublic";
+$mach_write	= "/usr/spool/uucppublic";
+$mach_noread	= "/etc:/usr/lib/uucp";
+$mach_nowrite	= "/etc:/usr/lib/uucp";
+$log_pubdir	= "/usr/spool/uucppublic";
+$log_read	= "/usr/spool/uucppublic";
+$log_write	= "/usr/spool/uucppublic";
+$log_noread	= "/etc:/usr/lib/uucp";
+$log_nowrite	= "/etc:/usr/lib/uucp";
+$validate	= "no";			# want a validate field?  Who cares?
+X
+# MACHINE and LOGFILE exceptions --
+#
+#  These can override the above; if you want to let someone from the
+# outside have read/write access to /, for instance, you put them in
+# your %log_exceptions list (see example below); this all gets resolved
+# in the uuprint function.
+#
+# Examples (they always are in pairs, representing ("machine","exception")
+#
+#  %mach_exceptions = ("death", "READ",
+#                      "cert", "NOWRITE");
+#  %log_exceptions  = ("foobar", "READ");
+#
+%log_exceptions	= ("","");
+%mach_exceptions= ("","");
+SHAR_EOF
+chmod 0700 uucp.cf ||
+echo 'restore of uucp.cf failed'
+Wc_c="`wc -c < 'uucp.cf'`"
+test 1567 -eq "$Wc_c" ||
+	echo 'uucp.cf: original size 1567, current size' "$Wc_c"
+fi
+# ============= uucp.pl ==============
+if test -f 'uucp.pl' -a X"$1" != X"-c"; then
+	echo 'x - skipping uucp.pl (File already exists)'
+else
+echo 'x - extracting uucp.pl (Text)'
+sed 's/^X//' << 'SHAR_EOF' > 'uucp.pl' &&
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+X        if 0;
+X
+#
+#  uucp.chk [-b2d] [-a admin] [-P Permissions] [-U USERFILE] [-L L.cmds]
+#
+#  uucp.chk -- a uucp security sweep tool.  By default, it tries to
+# figure out what kind of uucp system you're running.  If it can't,
+# it dies; you can specify which type you have with either the -b
+# option (for BNU/HDB style) or -v (for version 2.)
+#
+#  Other options (may go away?):
+#
+# -a specify an administrator (overrides default)
+# -d debug/verbose mode
+# -P specify an alternate Permissions file
+# -U specify an alternate USERFILE file
+# -L specify an alternate L.cmds file
+#
+X
+# what do we need?  Getopts, password stuff, ownership and writability,
+# + some misc stuff:
+require "getopts.pl";
+require "pass.cache.pl";
+require 'is_able.pl';
+require 'file_mode.pl';
+require 'glob.pl';
+require 'fgrep.pl';
+require 'file_owner.pl';
+require 'pathconf.pl';
+X
+# config file...
+require 'uucp.cf';
+X
+# are they using it right?  Getopts stuff:
+$usage = "Usage: $0 [-db2Pa]\n";
+die $usage unless &Getopts('db2P:S:L:U:a:');
+X
+# mail alias file?:
+@mail_aliases=("/usr/lib/aliases", "/etc/alias", "/etc/sendmail/aliases");
+X
+@potential_admin_dirs=("/usr/lib/uucp", "/etc/uucp");	# one of these, right?
+for $dir (@potential_admin_dirs) {
+X	if (-d $dir) {
+X		$admin_dir=$dir;
+X		print "admin directory: $admin_dir\n";
+X		next;
+X		}
+X	}
+if (!$admin_dir) {
+X	die "Error -- cannot find admin directory!\n";
+X	}
+X
+#
+#   SPECIAL FILE AREA!  This is where L.cmds, Permissions, USERFILE, etc.
+# all get set!  Wheep, wheep, wheep, and all that.
+#
+if (defined($opt_U)) { $USERFILE = $opt_U; }
+else { $USERFILE = "$admin_dir/USERFILE"; }
+if (defined($opt_P)) { $Permissions = $opt_P; }
+else { $Permissions = "$admin_dir/Permissions"; }
+if (defined($opt_S)) { $Systems = $opt_S; }
+else { $Systems = "$admin_dir/Systems"; }
+X
+$remote_unknown = "$admin_dir/remote.unknown";
+$Admin = "$admin_dir/.Admin";
+$foreign = "$admin_dir/foreign";
+X
+#
+# Commands file can be one of several:
+@L = ("L.cmds", "L-cmds", "uuxqtcmds");
+if (defined($opt_L)) { $L_cmd = $opt_L; }
+else {
+X	for $l (@L) {
+X		if (-f $admin_dir . "/" . $l) {
+X			$L_cmd = $admin_dir . "/" . $l;
+X			last;
+X			}
+X		}
+X	}
+X
+#
+#  Get down to business -- the main program starts here:
+#
+X
+# what kind of uucp?
+print "what kind of uucp?\n";
+&determine_type();
+X
+print "admin_user: $admin_user default_user: $default_user\n";
+X
+# mail alias or forwarding or ?
+print "\nmail forwarding?\n";
+&mail_chk();
+X
+# basic, generic checks, not dependant on what flavor of uucp you run:
+print "\ngeneric stuff:\n";
+&generic_checks();
+X
+# BNU/HDB or V2 stuff?
+X
+if ($BNU eq "yes") {
+X	print "\nBNU/HDB stuff:\n";
+X	&uucp_bnu_checks();
+X	}
+elsif ($V2 eq "yes") {
+X	print "\nV2 stuff:\n";
+X	&uucp_v2_checks();
+X	}
+else {
+X	print "Error -- what are you running?\n";
+X	}
+X
+# Check the file permissions -- hopefully rewritten in perl someday
+#
+if ($BNU eq "yes") { $uutype = "bnu"; }
+else { $uutype = "v2"; }
+system("./filecheck -k $uutype ./uufiles.list 2>/dev/null");
+X
+# end of main driver
+X
+X
+#########################################
+######  Functions called by above  ######
+#########################################
+X
+X
+#
+#  What kind of uucp?
+#################################################
+sub determine_type {
+#  BIG CHECK! #  BIG CHECK! #  BIG CHECK!
+#  BIG CHECK! #  BIG CHECK! #  BIG CHECK!
+#  BIG CHECK! #  BIG CHECK! #  BIG CHECK!
+#
+# try to figure if V2 or BNU:
+X
+# -a forces an account as an admin user:
+if (defined($opt_a)) {
+X	$admin_user=$opt_a;
+X	}
+X
+if ((-f $USERFILE || defined($opt_2)) && !defined($opt_b)) {
+X	print "Hmm... Working with a Version 2 system, I think...\n";
+X	$V2="yes";
+X	$BNU="no";
+X
+X	if (!$admin_user) { 
+X		if ($uname2uid{"nuucp"}) {
+X			$admin_user="nuucp";
+X			}
+X		elsif ($uname2uid{"uucpa"}) {
+X			$admin_user="uucpa";
+X			}
+X		}
+X	if ($uname2uid{"uucp"}) {
+X		$default_user="uucp";
+X		}
+X	}
+elsif (-f $Permissions || defined($opt_b)) {
+X	print "Hmm... Working with a HDB/BNU system, I think...\n";
+X	$BNU="yes";
+X	$V2="no";
+X
+X	if (!$admin_user) {
+X		if ($uname2uid{"uucp"}) {
+X			$admin_user="uucp";
+X			}
+X		}
+X
+X	if ($uname2uid{"nuucp"}) {
+X		$default_user="nuucp";
+X		}
+X	elsif ($uname2uid{"uucicio"}) {
+X		$default_user="uucicio";
+X		}
+X	}
+else	{ die "Error -- cannot determine if V2 or BNU/HDB!\n"; }
+X
+}
+X
+#
+#   These are things that apply to all uucp's; determinining
+# what users are using it, and checking/finding basic info about the
+# user; home dir, shell, etc.
+######################################################################
+sub generic_checks {
+X
+X
+#  Ok -- now I'm checking to see if all the uids, home-dirs, and shells
+# are all the same for all the users except the admin account:
+if ($opt_d) { print "All uucp users found:\n"; }
+for $user (keys %uname2uid) {
+X	#
+X	#   Find the users using uucp -- it's possible to use a couple of 
+X	# different methods.  One is to grep for "uu" in the password file(s).
+X	# another is to look for uucico for a shell, but that could miss
+X	# some potential uucp users that are misconfigured.  Another is to
+X	# look for names starting with "u" or "uu" or "U".  What to choose?
+X	# as always, let the administrator decide!  
+X	if ($user =~ /^U/ || $user =~ /^uu/ ||
+X	   $uname2shell{$user} =~ /uucico/ || $user =~ /uucp/) {
+X		if ($opt_d) { print "UUuser ", ++$n, " $user\n"; }
+X		if ($user ne $admin_user) {
+X			if ($uname2uid{$user} eq $uname2uid{$default_user}) {
+X				print "UWarning!  User $user id should be different from administrator account(s)!\n";
+X				}
+X			if (!$not_first) {
+X				$all_users{$user} = $user;
+X				$u = $uids{$user} = $uname2uid{$user};
+X				$g = $gids{$user} = $uname2gid{$user};
+X				if ($uname2dir{$user}!="") {
+X					$h = $home{$user} = $uname2dir{$user};
+X					}
+X				else { $h = "/"; }
+X				if ($uname2shell{$user} ne "") {
+X					$s = $shell{$user} = $uname2shell{$user};}
+X				else { $s = $shell{$user} = "/bin/sh"; }
+X				$not_first = 1;
+X				}
+X			else {
+X				$all_users{$user} = $user;
+X				$uids{$user} = $uname2uid{$user};
+X				$gids{$user} = $uname2gid{$user};
+X				$home{$user} = $uname2dir{$user};
+X				$shell{$user} = $uname2shell{$user};
+X				$pass{$user} = $uname2passwd{$user};
+X				}
+X			}
+X		}
+X	}
+X
+# if only one user (admin-type), check it out...
+if (! defined(%all_users) && $admin_user) {
+X	print "Only one user -- the admin account, $admin_user.  Checking it\n";
+X	$all_users{$admin_user} = $admin_user;
+X	$u = $uids{$admin_user} = $uname2uid{$admin_user};
+X	$g = $gids{$admin_user} = $uname2gid{$admin_user};
+X	$h = $home{$admin_user} = $uname2dir{$admin_user};
+X	$s = $shell{$admin_user} = $uname2shell{$admin_user};
+X	$pass{$admin_user} = $uname2passwd{$admin_user};
+X	}
+X
+for $user (keys %all_users) {
+X	if ($uids{$user} != $u) {
+X		printf("User %s uid %d doesnt match %d\n",
+X			$all_users{$user}, $uids{$user}, $u);
+X		}
+X	if ($gids{$user} != $g) {
+X		printf("User %s gid %d doesnt match %d\n",
+X			$all_users{$user},$gids{$user}, $u);
+X		}
+X	if ($home{$user} != $h) {
+X		printf("User %s home %s doesnt match %s\n",
+X			$all_users{$user},$home{$user}, $h);
+X		}
+X	if ($shell{$user} != $s) {
+X		printf("User %s shell %s doesnt match %s\n",
+X			$all_users{$user},$shell{$user}, $s);
+X		}
+X	if ($shell{$user} !~ /$valid_uucp_shell/) {
+X		print "UWarning!  User $user shell should be $valid_uucp_shell, not $shell{$user}\n";
+X		}
+X	}
+X
+}	# end generic_checks
+X
+X
+#
+#  Ok, now check to make sure mail to uucp is done right;
+# it either is mailed to a mail alias, or there is a .forward
+# file that is not owned by uucp & points to some other user
+#
+################################################################
+sub mail_chk {
+for $alias (@mail_aliases) {
+X	if (!-f $alias) { next; }
+X	open (ALIAS, $alias) || die "Can't open $alias\n";
+X	while (<ALIAS>) {
+X		chop;
+X		if (/$admin_user:/) {
+X			$mail_alias=$_;
+X			last;
+X			}
+X		}
+X	close ALIAS;
+X	if ($mail_alias) { last; }
+X	}
+X
+if ($mail_alias) { print "Mail Alias $mail_alias\n"; }
+else { print "No Mail Alias found\n"; }
+X
+# no alias, check forwarding:
+if (! $mail_alias) {
+X	$forward = $uname2dir{$admin_user} . "/.forward";
+X	if (! -f $forward) {
+X		print "UWarning -- no mail alias and no .forward file for uucp\n";
+X		}
+X	else {
+X		&is_able($forward, "w", "w");
+X		open (MA, $forward) || die "Can't open $forward";
+X		while (<MA>) {
+X			print "Mail forwarded to $_\n";
+X			if ($_ =~ /$admin_user/) {
+X				print "UWarning -- mail should not go to $admin_user\n";
+X				last;
+X				}
+X			}
+X		close MA;
+X		}
+X	if ($admin_user eq &'Owner($uname2dir{$admin_user})) {
+X		print "UWarning -- no mail alias and uucp-home-dir owned by $admin_user\n";
+X		}
+X	}
+X
+}	# end mail_check
+X
+#
+#  Trying to do BNU/HDB uupc checking
+#
+# Does case matter for names?  Osu-cis==osu-cis?
+#
+#################################################################
+sub uucp_bnu_checks {
+X
+#
+# Admin-definable:
+X
+# 13 deadly fields, according to G&S -- is "ALIAS" a valid field?
+($fields{"MACHINE"},	$fields{"LOGNAME"},	$fields{"REQUEST"},
+$fields{"SENDFILES"},	$fields{"PUBDIR"},	$fields{"READ"},
+$fields{"WRITE"},	$fields{"NOREAD"},	$fields{"NOWRITE"},
+$fields{"CALLBACK"},	$fields{"COMMANDS"},	$fields{"VALIDATE"},
+$fields{"MYNAME"}) = 
+X	("MACHINE", "LOGNAME", "REQUEST", "SENDFILES", "PUBDIR", "READ",
+X	"WRITE", "NOREAD", "NOWRITE", "CALLBACK", "COMMANDS", "VALIDATE",
+X	"MYNAME");
+X
+open (PERM, $Permissions) || die "Can't open $Permissions\n";
+while (<PERM>) {
+X	next if (/^#/ || /^\s*$/);
+X	chop;
+X
+X	#   Hmm... got to get rid of those pesky \'s at the end of lines,
+X	# and join them together:
+X	$line .= " $_";
+X	if (/\\$/) { $line =~ s/.$//; next; }
+X
+X	# parse these suckers!  They shold be in the form:
+X	#
+X	# VALUE=pair[:pair1:part2] VALUE2=pair3[...]
+X	#
+X	@line = split(/\s/, $line);
+#	print "BAR: ", @line;
+X	while (@line) {
+X		$field = pop(@line);
+X		if ($field =~ /^\s*$/) { next; }
+X
+X		($name, $value) = split(/=/, $field);
+X		if (! $fields{$name}) { print "Illegal field:$name _\n"; }
+X		elsif ($current{$name}) {
+X			print "Field: already set: $name\n";
+X			}
+X		else { $current{$name} = $value; }
+X
+X		# We want uniqueness in our machines/lognames:
+X		if ($name eq "MACHINE") {
+X			@machines = split(/:/, $value);
+X			while (@machines) {
+X				$i = pop(@machines);
+#				print "Machines: $i\n";
+X				if ($all_machines{$i}) {
+X					&uuprint("MACHINE $i not unique!\n");
+X					}
+X				else { $all_machines{$i} = $i; }
+X				}
+X			}
+X		elsif ($name eq "LOGNAME") {
+X			# $all_lognames{$name} = $value;
+X			@lognames = split(/:/, $value);
+X			while (@lognames) {
+X				$i = pop(@lognames);
+#				print "Lognames: $i\n";
+X				if ($all_lognames{$i}) {
+X					&uuprint("LOGNAME $i not unique!\n");
+X					}
+X				else { $all_lognames{$i} = $i; }
+X				}
+X			}
+X		}
+X
+X	#
+X	######################
+X	# Main checking part #
+X	######################
+X	#  What I'm doing here is looking to see if there are any lines in
+X	# the Permissions file that go against what is set above:
+X	#
+X
+X	# ok, now; is it a MACHINE line, LOGNAME, or what?
+X	if ($line =~ /MACHINE/) {
+X		if ($current{"REQUEST"} && $request &&
+X		   ($current{"REQUEST"} ne $request)) {
+X			&uuprint("MACH-Request policy mismatch\n", "REQUEST");
+X			}
+X		if ($current{"PUBDIR"} && $mach_pubdir &&
+X		   &dir_chk($current{"PUBDIR"}, $mach_pubdir)) {
+X			&uuprint("MACH-Pubdir policy mismatch\n", "PUBDIR");
+X			}
+X		if ($current{"READ"} && $mach_read &&
+X		   &dir_chk($current{"READ"}, $mach_read)){
+X			&uuprint("MACH-Read policy mismatch\n", "READ");
+X			}
+X		if ($current{"WRITE"} && $mach_write &&
+X		   &dir_chk($current{"WRITE"}, $mach_write)){
+X			&uuprint("MACH-Write policy mismatch\n", "WRITE");
+X			}
+X		if ($current{"NOREAD"} && $mach_noread &&
+X		   &dir_chk($current{"NOREAD"}, $mach_noread)){
+X			&uuprint("MACH-no-Read policy mismatch\n", "NOREAD");
+X			}
+X		if ($current{"NOWRITE"} && $mach_nowrite &&
+X		   &dir_chk($current{"NOWRITE"}, $mach_nowrite)){
+X			&uuprint("MACH-no-Write policy mismatch\n", "NOWRITE");
+X			}
+X		if ($current{"COMMANDS"}) {
+X			if ($Commands && ($current{"COMMANDS"} eq "ALL")) {
+X				&uuprint("COMMANDS=ALL!\n", "COMMANDS");
+X				}
+X			elsif (&dir_chk($Commands&&($current{"COMMANDS"}, $Commands))){
+X				&uuprint("Commands policy mismatch\n", "COMMANDS");
+X				}
+X			}
+X		}
+X	elsif ($line =~ /LOGNAME/) {
+X		if ($current{"REQUEST"} && $log_request &&
+X		   ($current{"REQUEST"} ne $log_request)) {
+X			&uuprint("LOG-Request policy mismatch\n", "REQUEST");
+X			}
+X		if ($current{"PUBDIR"} && $log_pubdir &&
+X		   &dir_chk($current{"PUBDIR"}, $log_pubdir)){
+X			&uuprint("LOG-Pubdir policy mismatch\n", "PUBDIR");
+X			}
+X		if ($current{"READ"} && $log_read &&
+X		   &dir_chk($current{"READ"}, $log_read)){
+X			&uuprint("LOG-Read policy mismatch\n", "READ");
+X			}
+X		if ($current{"WRITE"} && $log_write &&
+X		   &dir_chk($current{"WRITE"}, $log_write)){
+X			&uuprint("LOG-Write policy mismatch\n", "WRITE");
+X			}
+X		if ($current{"NOREAD"} && $log_noread &&
+X		   &dir_chk($current{"NOREAD"}, $log_noread)){
+X			&uuprint("LOG-no-Read policy mismatch\n", "NOREAD");
+X			}
+X		if ($current{"NOWRITE"} && $log_nowrite &&
+X		   &dir_chk($current{"NOWRITE"}, $log_nowrite)){
+X			&uuprint("LOG-no-Write policy mismatch\n", "NOWRITE");
+X			}
+X		# sendfilles, validate, and callback are a bit different; if
+X		# default=no, doesn't hurt to say yes:
+X		if ($current{"SENDFILES"} eq "yes" && $sendfiles &&
+X		   ($current{"SENDFILES"} ne $sendfiles)) {
+X			&uuprint("LOG-Sendfile policy mismatch\n", "SENDFILES");
+X			}
+X		if ($current{"CALLBACK"} eq "yes" && $callback &&
+X		   ($current{"CALLBACK"} ne $callback)) {
+X			&uuprint("LOG-Callback policy mismatch\n", "CALLBACK");
+X			}
+X		if ($current{"VALIDATE"} eq "yes" && $validate &&
+X		   ($current{"VALIDATE"} ne $validate)) {
+X			&uuprint("Validate policy mismatch\n", "VALIDATE");
+X			}
+X
+X		}
+X	else { &uuprint("Hey -- what *does* this line do?\n"); }
+X
+X	# If there was an error, print out what we know about the entry:
+X	if ($uuerror) {
+X		print $uu_error_message;
+X		if ($current{"LOGNAME"}) {
+X			print "LOGNAME=$current{'LOGNAME'}:\n";
+X			}
+X		else {
+X			print "MACHINE=$current{'MACHINE'}:\n";
+X			}
+X		for $values (keys %current) {
+X			if ($all_errs{$fields{$values}}) {
+X				print "\t$fields{$values}=$current{$values}\n";
+X				}
+X			}
+X		print "\n";
+X		$uuerror = 0;
+X		}
+X
+X	undef($line, $uu_error_message, %current, %all_errs);
+X	}
+X
+close(Permissions);
+X
+#   make sure all machines in Permissions file are in Systems file
+# (if can read the systems file!)
+if (open(SYSTEM, $Systems)) {
+X	while (<SYSTEM>) {
+X		next if (/^\s*$/ || /^#/);
+X		($sysname, $junk) = split;
+X		$all_sys_names{$sysname} = $sysname;
+X		}
+X	for $i (keys %all_sys_names) {
+X		if (!$all_sys_names{$i}) {
+X			print "UWarning!  System in $Permissions file, but not in $Systems!\n";
+X			}
+X		}
+X	}
+close SYSTEM;
+X
+#######################################
+# Various checks specific to BNU uucp.
+#######################################
+#
+# "remote.unknown" must be executable to prevent unknown machines
+# from logging in.
+#
+if (! -x $remote_unknown) {
+X        print "UWarning -- no executable $remote_unknown -- unknown machine logins allowed!\n";
+X        }
+X
+#
+# ".Admin/foreign" must be writable for login attempts by unknown
+# machines to be logged.
+#
+local($is_able'silent) = 1;
+if (-f $foreign) {
+X        $owner = $uid2names{&'Owner($foreign)};
+X
+X        if ($owner ne "uucp") {
+X                print "UWarning -- $foreign is not owned by uucp!\n";
+X                }
+X
+X        if (!(&is_able($foreign, "w", "w") ||
+X            &is_able($foreign, "g", "w")) &&
+X            $owner != "uucp") {
+X                print "UWarning - .Admin/foreign is not writable by uucp\n";
+X                }
+X
+X        &is_able($foreign, "w", "r");
+X        }
+else {
+X        $owner = $uid2names{&'Owner($Admin)};
+X        if (!(&is_able($Admin, "w", "w") ||
+X            &is_able($Admin, "g", "w")) &&
+X            $owner != "uucp") {
+X                print "UWarning - $Admin cannot be created by uucp\n";
+X                }
+X        }
+local($is_able'silent) = 0;
+X
+}	#### END of BNU checks!
+X
+#
+#  This checks to see if a (group of?) directory is a higher up the
+# tree, or equal too, another directory (or group of).  For instance,
+# the directory /usr/foo is higher than /usr/foo/bar.  / is higher
+# than all directories.  The tricky part comes when you have multiple
+# dirs (separated by ":"'s); you test the first set against the second
+# set; if the second set are all higher or equal than the first, then return
+# 0.  For instance -- first set: /usr/foo:/usr/tmp  second set:
+# /usr/foo:/usr  Would return 0, because the /usr in the second set
+# is lower than all of the first set.  Note a single directory entry
+# of / in the second set will always return true.
+#
+sub dir_chk {
+local($d1, $d2) = @_;
+X
+undef(%dir1, @dir1, @dir2);
+X
+@dir1 = split(/:/, $d1);
+@dir2 = split(/:/, $d2);
+X
+print "Going into dir_chk with: ", @dir1, "___ ", @dir2, "\n" if $opt_d;
+X
+# convert dir1 into assoc. array:
+for $i (@dir1) { $dir1{$i} = $i; }
+X
+for $i (@dir2) {
+X	print "Try: $i\n" if $opt_d;
+X	for $j (values %dir1) {
+X		print "against: $j\n" if $opt_d;
+X		if (($i eq $j) || ($i eq substr($j, 0, length($i)))) {
+X			print "Match: $j == $i\n" if $opt_d;
+X			$dir1{$j} = "";
+X			next;
+X			}
+X		}
+X	}
+X
+for $i (values %dir1) {
+X	if ($i) { return 1; }
+X	}
+X
+return 0;
+}	# end of dir_chk
+X
+#
+#  This prints out an error message, and flags $uuerror so that the entire
+# line will be printed out at the end (of each entry, that is); exceptions
+# to the basic rules that were set at the top of the HDB/BNU section are
+# handled here, as an optional second arg to the uuprint function.  The
+# thing checks the second arg, which is the type of message being warned
+# about e.g. "READ" or whatever.  It then checks the exception lists,
+# kept in %mach_ and %log_ exceptions up at the top.
+#
+sub uuprint {
+local ($message, $type) = @_;
+X
+if (!$type) {
+X	$uu_error_message = "UWarning!  $message" . $uu_error_message;
+X	$uuerror = 1;
+X	}
+else {
+X	if ($line =~ /MACHINE/) {
+X		if ($mach_exceptions{$current{"MACHINE"}} ne $type) {
+X			$uu_error_message = "UWarning!  $message" . $uu_error_message;
+X			$all_errs{$type} = 1;
+X			$uuerror = 1;
+X			}
+X		}
+X	if ($line =~ /LOGNAME/) {
+X		if ($log_exceptions{$current{"LOGNAME"}} ne $type) {
+X			$uu_error_message = "UWarning!  $message" . $uu_error_message;
+X			$all_errs{$type} = 1;
+X			$uuerror = 1;
+X			}
+X		}
+X	}
+X
+}
+X
+X
+#####################################################################
+#
+#  Trying to do the V2 uucp checking...
+#
+#   First, parse the USERFILE.  Play with it for awhile; then hit the
+# L.cmds file.
+#
+#####################################################################
+sub uucp_v2_checks {
+X
+#
+# USERFILE Checks:
+#
+open USERFILE, $USERFILE || die "Can't open $USERFILE\n";
+while (<USERFILE>) {
+X	next if (/^#/);
+X	chop;
+X
+X	# parse out the fields; username, system-name, callback, and path:
+($username,$sysname,$callback,@path) = $_ =~ /(\S*),(\S*)\s*(c?)\s*(\/.*)/;
+# ($username,$sysname,$callback,@path) = $_ =~ /(\S*),(\S*)\s*(\S*)\s*(\/.*)/;
+#	print "u $username __ s ..$sysname.. c $callback __ p @path\n";
+X
+X	if ($callback eq "yes") {
+X		# Ultrix does strange stuff here...
+X		if ($callback ne "c") {
+X			print "UWarning!  Callback is not set in $USERFILE!\n";
+X			}
+X		}
+X
+X	#  Need two blank fields, on one or two lines, right?
+X	if (!@polling && !$username) {
+X		@polling = @path;
+X		if ($BSD423 eq "yes" && !$sysname) {
+X			@local_user = @path;
+X			# print "UWarning!  What are you trying to do? ',' by itself is insecure!\n";
+X			}
+X		next;
+X		}
+X	if (!$sysname && !@local_user && $sysVultrix eq "no") {
+X		@local_user = @path;
+X		$sysname="DEFAULT";
+X		# next;
+X		}
+X
+X	# load the data into the master arrays; do various things with dups
+X	if ($system{$sysname} eq $sysname) {
+X		for $user (keys %users) {
+X			if ($user eq $users{sysname}) {
+X				print "Duplicate user/sys information: $_\n";
+X				}
+X			}
+X		}
+X	else {
+X		$system{$sysname} = $sysname;
+X		$paths{$sysname} = @path;
+X		$users{$sysname} = $username;
+#		print "WHY: $system{$sysname} $paths{$sysname} $users{$sysname}\n";
+X		}
+X	}
+X
+# check defaults to see if they match what SA specified:
+# print "Defaults: ", @polling, " __ " , @local_user, "\n";
+for $i (@polling) {
+X	if ($i ne $v2_polling) {
+X		print "UWarning!  Polling dir-Policy mismatch: $i\n";
+X		}
+X	}
+for $i (@local_user) {
+X	if ($i ne $v2_local) {
+X		print "UWarning!  Local dir-Policy mismatch: $i\n";
+X		}
+X	}
+X	
+X
+# are all users USERFILE in passwd file, and vice versa?
+for $i (values %users) {
+X	if ($i && ! $uname2uid{$i} ) {
+X		print "UWarning!  User $i is in $USERFILE, but not in system password file!\n";
+X		}
+X	}
+for $i (keys %all_users) {
+X	if (! $users{$i} ) {
+X		print "UWarning!  User $i is in system password file, but not in $USERFILE!\n";
+X		}
+X	}
+X
+#    Ok, let's talk commands now... are all commands in L.cmd in our defaults,
+# (listed in $Commands way up there)?
+if (open (L_SYS, $L_cmd)) {
+X	while (<L_SYS>) {
+X		chop;
+X		if (/PATH/) {
+X			($L_path = $_) =~ (/^\s*PATH=(.*)$/);
+X			}
+X		else {
+X			print "Error -- one command per line in $L_cmd\n" if
+X				( split > 1);
+X			push (@comms, $_);
+X			}
+X		}
+X	close (L_SYS);
+X	(@sys_comm) = split(/:/, $Commands);
+X	# search from default commands allowed/set way up above:
+X	while (@comms) {
+X		$comm = pop(@comms);
+X		for $i (@sys_comm) {
+X			if ($comm =~ /$i/) { $comm_flag = 1; }
+X			}
+X		if (!$comm_flag) {
+X			print "UWarning!  Command $comm in $L_cmd not in allowed commands!\n";
+X			}
+X		$comm_flag = 0;
+X		}
+X	}
+else { warn "Can't open $L_cmd\n"; }
+X
+}
+SHAR_EOF
+chmod 0700 uucp.pl ||
+echo 'restore of uucp.pl failed'
+Wc_c="`wc -c < 'uucp.pl'`"
+test 21246 -eq "$Wc_c" ||
+	echo 'uucp.pl: original size 21246, current size' "$Wc_c"
+fi
+# ============= uucp.txt ==============
+if test -f 'uucp.txt' -a X"$1" != X"-c"; then
+	echo 'x - skipping uucp.txt (File already exists)'
+else
+echo 'x - extracting uucp.txt (Text)'
+sed 's/^X//' << 'SHAR_EOF' > 'uucp.txt' &&
+X
+X              (Warning!  Rambling text ahead!)
+X
+X  Here's my first attempt at some uucp security stuff.  This post has
+two parts, which are files in no particular order.  Included is this
+header, which is a bunch of questions and stuff, some code to check
+uucp stuff, and some docs.  I need help, tho -- hence this post.
+Probably this will all go into COPS, in any case...
+X
+X  A lot of what this code does seems to be similar to uucheck does
+(and currently is a bit chatty, so that I can see what is going on),
+but this code attempts to be configurable to your site, so that you can
+set your policy to be what you want, and see what strays from that policy.
+X
+=========================================
+X
+X  Included:
+X
+uucp.chk	(the main checking thing)
+uucp.cf		(the config file for above)
+X
+X  All the support files for uucp.chk are in the perl directory.  You need:
+X
+fgrep.pl file_mode.pl file_owner.pl getopts.pl glob.pl
+is_able.pl pass.cache.pl pathconf.pl
+X
+X  There is *NO* documentation (yet) for the uucp stuff!  Look at the
+comments in uucp.chk and uucp.cf, as well as in this file for help.
+X
+=========================================
+X
+X  Now Comes The Important Stuff!
+X  Now Comes The Important Stuff!
+X  Now Comes The Important Stuff!
+X
+X  However, mostly what I want are comments on the assumptions that I made
+with the code -- can someone give me some answers?  Here I go:
+X
+X  Ok, what I'll do is go over my general strategy, and then try to go
+over each point that I'll be testing on.  Unfortunately, there appear
+to be quite a few sub-flavors of uucp, not mentioning, of course, the
+basic two, HoneyDanBer/Basic Networking Utilities (henceforth known as
+HDB/BNU) and Version 2 (V2).  I'm not sure about other OS's, but Ultrix,
+at least, has seen it fit to add some rather... well, interesting features.
+I'd love to hear comments from all of you on what you'd like to see
+covered, if I don't in this document.  I took/stole/borrowed most of 
+this from Rik Farrows book, plus a whole lot more from garfinkle/spafford's
+new nutshell book on unix security, so if they're wrong, so am I :-)
+In addition, I'm going to go over some comments from various people,
+including bill davidsen's article (I'll mostly refer to the first page,
+so it's no big deal to read it.)
+X
+X  Ok, first -- overall strategy:
+X
+1) figure out what kind of uucp you're running, and set various variables
+X	accordingly.  Determine the administrator's account, if it exists
+X	(usually uucp, nuucp, or something like that), and the various
+X	directories things are kept -- both the home dirs of the users and
+X	the various config files (L.sys and such.)
+X
+2) check the generic uucp problems that might exist on any system;
+X	where mail to uucp goes to, determine who the uucp-users are,
+X	where their homes are, if they have the same uid/gid, etc.
+X	File permissions and ownership go here, too.
+X
+3) check the specifics to hdb/bnu and v2.  This will be assisted by
+X	looking at a variety of variables that are set by the admin
+X	of the site; they *try* to correspond to what kind of policy
+X	the SA wants.
+X
+X
+X  Now, each in turn.
+X  
+=========================================================================
+X  #1:
+X
+X  First, I look for the directories the uucp special files are kept;
+either in /usr/lib/uucp or /etc/uucp.  If they aren't there, then
+there is trouble -- you'll have to change a variable, @potential_admin_dirs,
+to reflect other spots where the files might be.  These kind of variables
+might be inline code, might be in a config file, I don't know; depends
+on popular demand, I guess.
+X
+X  Next, I check for two files in the above directory.  If I find a
+"USERFILE", I call it V2.  If I find a "Permissions" file, I call
+it HDB/BNU.
+X
+X  Uucp users seem to fall into three groups, although you could coalesce
+all three into one account in theory.  The first is the administrator
+account.  It *is* uucp.  It owns all the home directories of all the
+other users, as well as all the files normally associated and SUID'd
+to uucp.  The only file that is *not* owned by this is the L.sys file,
+although that's debateable (comments?).  From what I've seen, the current
+line of thinking says that you should have two separate accounts, one
+like this first one I described, but either without a valid shell or
+without a valid password (*'d out or whatever), and one account with
+that is otherwise a duplicate password entry, but with a valid shell
+(and a slightly different name.)  I'm not sure *why* you want to have two
+accounts, one with a login shell, one with no valid shell.  Anyone
+care to explain why this might be a good idea or not?
+X
+X  I find administrator accounts as follows; if you run V2, I look
+for "nuucp" or "uucpa" (you can also specify a specific account on
+the command line.)  If you run HDB, I look for nuucp.  The second
+account is either (with V2) "uucp" or (with HDB) "nuucp" or "uucicio".
+X
+X  Finally, the third type are the actual users of uucp.  These accounts
+have uucico as their shell (or some other non-interactive-shell type);
+there are two ways of managing these, it seems, too.  They certainly should
+all have a different uid than the admin-uucp account, but some say that
+each should have a unique uid, and some say that they can all have
+the same id.  Comments?
+X
+X  By default, uucp users are found by one of three methods; either looking
+at the username of an account -- if it starts with a "U" or "uu", I
+flag it --  or if it has "uucico" as a shell, or finally if any user
+name contains the string "uucp" (this last one should catch nuucp, among
+others.)
+X
+======================================================================
+X
+X  #2:
+X
+X  Ok... Generic stuff.  Where does the e-mail to the uucp-admin user go to?
+You want it either going to a mail alias (!= uucp-admin) or you could have
+a .forward file that is not world-writable or owned by the uucp-admin account.
+Another point, tho -- what happens to mail to the normal uucp users?  Should
+there be mail aliases, or what?  Especially (?) if they all have different
+uids.
+X
+X  Next, I check to see if all the uucp-uids/gids, home-dirs, and shells
+are all the same, except for the admin account (obviously, this might
+change, depending on your answers to #1); in addition, all of their
+shells (minus the admin-account) should be uucico.  I check the admin
+user as well, if that account is the only one found.  All the uucp accounts
+should have the same home dir, but uucp-admin should own it.  This brings
+up a point -- in G&S, "the home dir for the uucp [admin] user should not be
+in the /usr/spool/uucp/uucppublic directory, or any other dir that can
+be written to by a uucp user.  Doing so allows an outside user to subvert
+the system."  Hmm.  Well, it makes sense; I mean, you could put a .forward
+file in there if it was writable, but why do I see so many systems set
+up this way?  Are they wrong, or is there some other reason?
+X
+X  Finally, permissions and ownership of key files.  Although some of
+these are already taken care of by generic cops, I'll go over everything,
+just in case.
+X
+X  As usual, a couple of different ways of thinking about things -- I
+haven't put in this part yet (in my code), because I'm not sure what the
+best thing to do is.  Ok, the non-executable-files in /usr/lib/uucp or
+any other uucp type directory should be either owned by root or by
+uucp-admin, and readable and writable only by the owner.  Can root 
+own these things without problems (except L.sys)?  All suid files,
+if they exist, should be suid to uucp-admin.  All other programs relating
+to uucp (are there any besides "/usr/bin/uu*"?) should be owned by
+root (?), non-readable but executable by all, except the suid ones
+(anyone have a list?), which are all suid uucp.
+X
+X  Bill says in his article:
+X
+"If your system will allow it, make up a group just for uucp dialin, put
+all the dialing id's there, and don't allow anyone but owner to execute
+uucico (chmod 4700 uucico). On some systems this may not work, and you
+will have to put the dialin id's as group uucp, and allow that group to
+execute uucico (chmod 4710 uucico)."
+X
+X  Does this sound like good stuff?  What is the reasoning behind this?
+What can someone do, if they can execute uucico?  Is it just because
+of the debug option?
+X
+X  Looking at the various uucp systems I have access to (just 3 right now),
+I see that there are many different files that are world writable.  Is
+there some kind of list, or some rule of thumb, that says what files
+can be writable?  I suppose if /usr/spool/uuppublic is world writable,
+then it doesn't matter much about the files there; but what about the
+lock files and all of these strange subdirs?  How 'bout them?  Should
+both /usr/spool/uucppublic and /usr/spool/uucp be world-writable?
+X
+X  Sigh.  So many questions... ok, onto the next section.
+X
+======================================================================
+X
+X  #3:
+X
+X  HDB/BNU and V2 specifics.  Does case matter for names here?  I think
+so, but does a system name of "Osu-cis" == "osu-cis"?  Anyway, I'll go
+over what I did for HDB/BNU, then V2...
+X
+HDB/BNU:
+X
+X  What I did here was interesting to me, at least.  I thought that by
+merely checking against what I felt were the "right values" for all
+of the name-value pair things was overly restrictive, and probably not
+too useful.  So what I did was use the idea of a *policy* -- the SA
+sets up what they consider to be their site's policy, sets up any
+exceptions that they want, and check against this.  You have 13 fields
+here, I think (is "ALIAS" a real field?):
+X
+MACHINE, LOGNAME, REQUEST, SENDFILES, PUBDIR, READ,
+WRITE, NOREAD, NOWRITE, CALLBACK, COMMANDS, VALIDATE, and MYNAME
+X
+X  Some of these are useful for LOGNAME= lines, some for MACHINE=, and
+some are good for both.  So what you have are initial values (SA changeable)
+for all of them (sample perl code):
+X
+$mach_request   = "yes";
+$log_request    = "yes";
+$sendfiles      = "yes";
+$mach_pubdir    = "/usr/spool/uucppublic";
+$log_pubdir     = "/usr/spool/uucppublic";
+[...]
+$validate       = "no";                 # want a validate field?  Who cares?
+X
+X
+X  You then have exceptions, in system-field pairs:
+X
+%mach_exceptions = ("death", "READ",
+X                    "cert", "NOWRITE");
+%log_exceptions  = ("foobar", "READ");
+X
+X
+X  What this does is then go through all of the systems in your Permissions
+file, and check for any discrepencies.  If one is found, and it isn't on
+the exception list (for either logname or machine, as applicable), then
+a warning is issued.
+X
+X  Now quite honestly, I don't know if this has much "real world" use.  But
+it seems neat.  It also checks for duplicate entries for a system, fields
+set more than once (for the same system), and illegal fields (or ones that
+I don't know about).  In addition, it always will allow you to set something
+to be *more* secure, even if your default is less so; for instance, if you
+set $sendfiles to be "yes", you can still say a system to be "no", since
+that is more restrictive, without a warning being issued.  This holds for
+sendfiles, validate, and callback.  With callback, with V2 and HDB/BNU,
+there is a variable that you set; if true, it will flag all systems with
+it not set, unless in the exception list (right now, exceptions aren't
+too established for V2, but it will be easy to add if desired.)
+X
+X  A comment on this method; if you have a lot of machines lumped together,
+say "LOGNAME=foo:bar:alpha:beta:...", then if you want an exception for
+machine "foo", you'll have to split it off into it's own line, currently.
+I think that's reasonable -- exceptions should be set off from the rest,
+anway.  You could also say "%log_exception=("foo:bar:alpha...","READ");
+if you wanted, I guess.
+X
+X  Ok, questions now.
+X
+X  First, I don't check to see if commands allowed via "COMMANDS=" use
+a full path.  Is this a problem?  (BTW, if set to "ALL", I flag that.)
+X
+X  Are the defaults any good?  Is there anything that *should* be set,
+that isn't by default?  Or is this too OS specific?  If no path is set
+(say in PUBDIR, READ, etc.), is the default bad news, or usually just
+/usr/spool/uucppublic?  Or again, is this too OS specific?  I realize
+if you mess with the source, all bets are off, but I'm talking generic
+stuff here.  Ditto, with V2 -- default paths==bad?
+X
+X  As a last check, I look to see if all systems in the Permissions file
+are in the Systems file.  Is this a valid/good check to do?
+X
+X  Finally, a comment on a problem that you might not know about (bonus
+for reading this far :-))  If you run HDB/BNU, and you have a shell
+script, "remote.unknown", that gets executed, look out.  There's a
+replacement simple C program in rik's book.  Put it, or something else,
+in there.
+X
+X  Ok, onward to:
+X
+======================================================================
+X	
+Version 2:
+X
+X  Well, this isn't as fun as HDB/BNU.  Plus, some vendors have mucked
+around with this.  Finally, I only have one small site to test with,
+and it (cert) runs ultrix, so it's doubly bad (as I've said earlier,
+ultrix has several modifications that make it incompatible, at least
+in their L.cmds and USERFILE, which is where I get my info for this
+part.
+X
+X  A few questions to start things off.  First, these commas and the
+first two fields are confusing to me.  Let me see if I can get this
+straight -- ok, in non-BSD 4.2 and 4.3 systems, you *must* have two
+lines, one missing a system name, one missing a user name (in BSD,
+they can be the same line.)  Correct?  Do you want these at the
+bottom of the file, or does it matter?  So:
+X
+,foo   /usr/spool/uucppublic
+bar,   /usr/spool/uucppublic
+X
+X  Is ok.  Now, what does this mean?  I *think* it means this.  "foo"
+is a system called by the local system, and never logs in.  Does that
+mean you need an entry for each system that you are calling?  "bar"
+is a local user name.  Should each uucp-user in the pw file have an entry?
+X
+X  According to Rik, if a lone comma is in the first field (i.e. no
+system or user), then that's a wildcard entry, and anything not matching
+any other entries above uses this.  How about BSD systems?  Does this
+still apply?  Is the comma a bad thing, if you have a restrictive
+path on the same line, say, ", /usr/spool/uucppublic"?  What happens if
+you don't have a wildcard, and someone tries to log in (and isn't
+specifically mentioned)?  Hmm.  As you can tell, I'm pretty clueless here :-)
+X
+X
+X  Ok, here's what I checked --
+X
+X  If callback is set to "yes", you must have it in your USERFILE.
+It checks to see if the defaults, the lines missing a system or username,
+are matching what you said they could be (default /usr/spool/uucppublic),
+and it checks to see if all users named in the USERFILE are in the password
+file, and vice versa (for uucp-users in the password file).
+X
+X  Finally, it checks to see if you have "allowable" commands (also set
+via variable) in L.sys.  Should I check the path?
+X
+X
+X  Sigh.  That's all.  Hope you haven't given up yet.  And thanks in
+advance, for your help!
+X
+X -- dan
+SHAR_EOF
+chmod 0600 uucp.txt ||
+echo 'restore of uucp.txt failed'
+Wc_c="`wc -c < 'uucp.txt'`"
+test 14922 -eq "$Wc_c" ||
+	echo 'uucp.txt: original size 14922, current size' "$Wc_c"
+fi
+exit 0

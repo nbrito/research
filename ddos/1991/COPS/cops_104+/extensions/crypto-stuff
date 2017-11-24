@@ -1,0 +1,9 @@
+
+
+  Snefru and MD4 are both digital signature algorithms that are much more
+secure than the crc producer in this package.  Snefru was posted to
+comp.unix.sources, volume 21, I believe, and is hence available from any
+c.u.s. archive site, like uunet.uu.net; MD4 is available via anon-ftp from
+theory.lcs.mit.edu.  You might check them out if you're really serious about
+your binaries and stuff.
+

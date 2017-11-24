@@ -1,0 +1,32 @@
+This is chkacct v1.0:
+
+Ok, four steps to making this run at your site:
+
+1) Change the path names and the guru dude in .m4 file if they're
+different for your site.
+
+2) Make a link named "defines.m4" to the appropriate m4 file, "bsd.m4", 
+"sysV.m4".
+
+3) Change the installation path in the Makefile from /usr/local/ to
+the directory you wish to install it in.
+
+4) Change the pathname at the top of the perl script, "rhosts.pl", to
+reflect your site's PERL location.
+
+The most cryptic part about this package is probably the m4(1) defines
+used to tailor the shell script to a variety of Unix platforms.  What
+I'm shooting for is a single set of source which will be run through m4(1)
+and will output a nice, architecture specific shell script.  I account
+for differences in things like ls(1) and find(1) options by using
+m4(1) macros which depend on some other variable passed to m4(1).
+
+This would be a good time to thank Dan Trinkle of the Purdue CS Dept.
+He took the time to make some detailed suggestions about chkacct, all
+of which I believe made it to this version.  Implementing Dan's
+suggestions widened the potential audience of sysadmin users of
+chkacct, and I am grateful for his time.
+
+Shabbir J. Safdar
+Purdue University Computer Center
+(shabby@cc.purdue.edu)

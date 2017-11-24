@@ -1,0 +1,215 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#
+#  Usage: root.chk
+#
+#  This script checks pathnames inside root's startup files for 
+# writability, improper umask settings (world writable), non-root
+# entries in /.rhosts, writable binaries in root's path,
+# and to ensure that root is in /etc/ftpuser.
+#
+# Also check for a single "+" in /etc/hosts.equiv (world is trusted),
+# and that /bin, /etc and certain key files are root owned, so that you
+# can't, say, rcp from a host.equived machine and blow over the password
+# file... this may or may not be bad, decide for yourself.
+# Startup files are /.login /.cshrc /.profile
+#
+#  Mechanism:  These files contain paths and filenames that are stripped
+# out using "grep".  These strings are then processed by the "is_able"
+# program to see if they are world writable.  Strings of the form:
+#
+#	path=(/bin /usr/bin .)
+#		and
+#	PATH=/bin:/usr/bin:.:
+#
+# are checked  to ensure that "." is not in the path.  All
+# results are echoed to standard output.  In addition, some effort was
+# put into parsing out paths with multiple lines; e.g. ending in "\",
+# and continuing on the next line.  Also, all executable files and 
+# directories in there are checked for writability as well.
+#
+#  For umask stuff, simply grep for umask in startup files, and check
+# umask value.  For /etc/ftpuser, simple grep to check if root is in
+# the file.  For /etc/hosts.equiv, just check to see if "+" is alone
+# on a line by awking it.
+#
+
+# rewritten in perl by tchrist@convex.com
+# 
+
+# root startup/important files
+
+require 'file_owner.pl';
+require 'fgrep.pl';
+require 'suckline.pl';
+require 'is_able.pl';
+require 'chk_strings.pl';
+require 'glob.pl';
+
+package root_chk;
+
+# use -a true if you care about non-executables
+# in root's path
+
+$ARGV[0] eq '-a' && ($all_files++, shift);
+
+die "usage: root.chk [-a]\n" if @ARGV;
+
+$W = 'Warning! ';
+
+$cshrc	= '/.cshrc';
+$profile= '/.profile';
+$rhosts = '/.rhosts';
+
+$| = 1;
+
+@big_files= ('/.login', '/.cshrc', '/.profile', '/.logout' );
+
+# root should own *at least* these, + $big_files; you can check for all files
+# in /bin & /etc, or just the directories (the default.)
+# root_files="/bin /bin/* /etc /etc/* $big_files $rhosts"
+@root_files= ('/bin','/etc',@big_files,$rhosts,'/etc/passwd','/etc/group');
+
+# misc important stuff
+$ftp='/etc/ftpusers';
+$equiv='/etc/hosts.equiv';
+
+#   should't have anyone but root owning /bin or /etc files/directories
+# In case some of the critical files don't exist (/.rhost), toss away error
+# messages
+
+if (@bad_files = grep (-e && &'Owner($_), @root_files)) {
+    print "$W  Root does not own the following file(s):\n";
+    print "\t@bad_files\n";
+} 
+
+local($chk_strings'recurse) = 1 unless defined $chk_strings'recurse;
+
+for $file (@big_files) {
+    open file || next;
+
+    &'chk_strings($file);
+
+    # check for group or other writable umask
+    while (<file>) {
+	next if /^\s*#/;
+	next unless /umask\s*(\d+)/;
+	next unless ~oct($1) & 022;
+	print "$W root's umask set to $1 in $file\n";
+    } 
+} 
+
+print "$W $ftp exists and root is not in it\n" 
+    if -e $ftp && !&'fgrep($ftp,'root');
+
+print "$W A \"+\" entry exists in $equiv!\n" if &'fgrep($equiv, '^\+$');
+
+if (open rhosts) {
+    while (<rhosts>) {
+	next unless /\S+\s+(\S+)/ && $1 ne 'root';
+	print "$W Non-root entry in $rhosts! $1\n";
+    }
+} 
+close(rhosts);
+
+undef @rootpath;
+
+# checking paths...
+#
+# Get the root paths from $csh.
+
+if (open(CSHRC, $cshrc)) {
+    $path = '';
+    while (<CSHRC>) {
+	next if /^\s*#/;
+	chop unless /\\$/;
+	if (/set\s+path\s*=/) {
+	    $_ = &'suckline($cshrc, $_);
+	    s/.*set\s+path\s*=\s*//;
+	    s/\((.*)\)/$1/;
+	    s/#.*/./;
+	    @tmppath = grep($_ ne '', split(' '));
+	    for (@tmppath) { $whence{$_} .= " " . $cshrc; } 
+	    push(@rootpath, @tmppath);
+	} 
+    } 
+    close(CSHRC);
+} 
+
+if (open login) {
+    $path = '';
+    while (<cshrc>) {
+	next if /^\s*#/;
+	chop unless /\\$/;
+	if (/set\s+path\s*=/) {
+	    $_ = &'suckline('login', $_);
+	    s/.*set\s+path\s*=\s*//;
+	    s/\((.*)\)/$1/;
+	    s/#.*/./;
+	    @tmppath = grep($_ ne '', split(' '));
+	    for (@tmppath) { $whence{$_} .= " " . $login; } 
+	    push(@rootpath, @tmppath);
+	} 
+    } 
+    close(login);
+}
+
+if (open profile) {
+    $path = '';
+    while (<profile>) {
+	next if /^\s*#/;
+	chop unless /\\$/;
+	if (/PATH=/) {
+	    $_ = &'suckline('profile', $_);
+	    s/.*PATH=//;
+	    s/#.*//;
+	    s/;.*//;
+	    @tmppath = split(/:/);
+	    for (@tmppath) { $whence{$_} .= " " . $profile; } 
+	    push(@rootpath, @tmppath);
+	} 
+    } 
+    close(profile);
+} 
+
+for (keys %whence) {
+    $whence{$_} =~ s/^ //;
+    $whence{$_} =~ s/ / and /g;
+} 
+
+undef %seen;
+grep($seen{$_}++, @rootpath);
+
+$is_able'silent = 1;
+for (keys %seen) {
+    if (!-e && $_ ne ".") {
+	print "$W path component $_ in $whence{$_} doesn't exist!\n";
+	next;
+    } 
+
+    if (/^\.?$/) {  # null -> dot
+	print "$W \".\" (or current directory) is in root's path in $whence{$_}!\n";
+    } elsif (&'is_writable($_)) {
+	print "$W Directory $_ is _World_ writable and in root's path in $whence{$_}!\n";
+	next;
+    }
+
+    foreach $file (&'glob("$_/*")) {
+	# can't just check -x here, as that depends on current user
+	$is_executable = -f $file && (&'Mode($file) & 0111);
+	if (($all_files || $is_executable) && 
+		    ($how = &'is_writable($file, 'w', 'w'))) {
+	    print "$W _World_ $how ",
+		    $is_executable ? 'executable' : 'file',
+		" $file in root path component $_ from $whence{$_}!\n";
+	} 
+    }
+} 
+
+$is_able'silent = 0;
+
+1;

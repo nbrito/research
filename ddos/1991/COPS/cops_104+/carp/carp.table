@@ -1,0 +1,97 @@
+#
+# is going to accept input something like:
+#
+# cops_dir/architecture_dir/hostname/cops_report_file root.chk 2
+#
+#  Where the first field is the path to the report file (relative
+# or absolute to the cops dir), the second is the check that generated
+# the warning message, and the last is the warning level.
+
+#  This is something like what the final report will be:
+#
+# hostname     date crn dev ftp grp hme is pass msc pwd rc root usr
+# ===================================================================
+#             |    |   |   |   |   |   |   |   |   |   |   |   |
+#
+#  TO ADD NEW CHECKS -- just add a line near the bottom; bug.chk is
+# used as an example.  Note you'll also have to add this to "carp" --
+# see comments there, too...
+#
+# find the most serious problems
+{
+if (type[$2] == "")     type[$2] = $3
+else if (type[$2] > $3) type[$2] = $3
+# print "type:", $2, $3, "now", type[$2]
+
+# something like "arch/hostname/1992_Dec_31" or "hostname/1992_Dec_31", etc.
+# print "one, Line:", $1, ",", $0
+if (final == "") {
+	res=split($1, host_date, "/");
+
+	if (res >= 2) {
+		host = sprintf("%s",host_date[res-1])
+		date = sprintf("%s",host_date[res])
+		}
+	else if (res == 1) {
+		host = "unknown"
+		date = sprintf("%s",host_date[res])
+		}
+	else {
+		host = "unknown"
+		date = "unknown"
+		}
+
+	host_len=length(host)
+	date_len=length(date)
+	diff = 25 - date_len - host_len
+
+	final=sprintf("%s", host)
+	for (j=1; j < diff; j++)
+		final=sprintf("%s ",final);
+	final=sprintf("%s%s", final, date)
+	}
+}
+
+#
+#
+#  Final printing, etc...
+END {
+printf("%s  |", final)
+
+for (i in type)
+	if (type[i] == 3) type[i] = " "
+
+if (type["cron.chk"] != "") { printf(" %s |", type["cron.chk"]) }
+else printf(" ? |")
+if (type["dev.chk"] != "") { printf(" %s |", type["dev.chk"]) }
+else printf(" ? |")
+if (type["ftp.chk"] != "") { printf(" %s |", type["ftp.chk"]) }
+else printf(" ? |")
+if (type["group.chk"] != "") { printf(" %s |", type["group.chk"]) }
+else printf(" ? |")
+if (type["home.chk"] != "") { printf(" %s |", type["home.chk"]) }
+else printf(" ? |")
+if (type["is_able.chk"] != "") { printf(" %s |", type["is_able.chk"]) }
+else printf(" ? |")
+if (type["pass.chk"] != "") { printf(" %s |", type["pass.chk"]) }
+else printf(" ? |")
+if (type["misc.chk"] != "") { printf(" %s |", type["misc.chk"]) }
+else printf(" ? |")
+if (type["passwd.chk"] != "") { printf(" %s |", type["passwd.chk"]) }
+else printf(" ? |")
+if (type["rc.chk"] != "") { printf(" %s |", type["rc.chk"]) }
+else printf(" ? |")
+if (type["root.chk"] != "") { printf(" %s |", type["root.chk"]) }
+else printf(" ? |")
+if (type["user.chk"] != "") { printf(" %s |", type["user.chk"]) }
+else printf(" ? |")
+if (type["kuang"] != "") { printf(" %s |\n", type["kuang"]) }
+else print " ? |"
+
+#  Note -- if adding this, change the last line above to *not* print
+# a newline; e.g. take the "\n" out of the printf, and make the
+# last "print" a printf like the rest of 'em.
+#
+# if (type["bug.chk"] != "") { printf(" %s |\n", type["bug.chk"]) }
+# else print " ? |"
+}

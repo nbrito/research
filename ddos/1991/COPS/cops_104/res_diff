@@ -1,0 +1,53 @@
+:
+#
+#  res_diff /path/to/secure_directory current_report
+#
+#   This shell script just looks to see if anything has changed since
+# the last time... it just cuts out the first line (the date) and does
+# a diff... returns a 0 if it has changed, a 1 otherwise...
+#
+#  Started to use head and tail, but some SysV doesn't have 'em.  Bah!  Who
+# needs 'em anyway, when you have awk :-)
+#
+#
+# Explicitly specified pattern to match only report files
+# (yyyy_Mon_dd), so as to allow us to store other sorts of things
+# in the hostname subdirectories as well.  -- PASR 11/01/91
+# 
+DIFF=/bin/diff
+TEST=/bin/test
+AWK=/bin/awk
+LS=/bin/ls
+RM=/bin/rm
+ECHO=/bin/echo
+TOUCH=/bin/touch
+
+#
+# Important files:
+if $TEST -d "$1" ; then
+	old_file=`$LS -t $1/[0-9][0-9][0-9][0-9]_[A-Z][a-z][a-z]_[0-9]* | $AWK 'NR==1'`
+else
+	$ECHO Error -- directory $1 does not exist for $0
+	exit 2
+	fi
+
+if $TEST x"$old_file" = x ; then
+	# No previous file exists -- make an empty one.
+	old_file=$1/1776_Jul_4
+	$TOUCH $old_file
+	fi
+	
+# has anything changed?
+$AWK 'NR > 5' $old_file > /tmp/tmp.$$.foo
+$AWK 'NR > 5' $2 > /tmp/tmp.$$.bar
+
+if $TEST -n "`$DIFF /tmp/tmp.$$.foo /tmp/tmp.$$.bar`" ; then
+	$RM -f /tmp/tmp.$$.foo /tmp/tmp.$$.bar
+	$ECHO There is a difference....
+	exit 1
+	fi
+
+$RM -f /tmp/tmp.$$.foo /tmp/tmp.$$.bar
+# echo There is no difference....
+exit 0
+# end

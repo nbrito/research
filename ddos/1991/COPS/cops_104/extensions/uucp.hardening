@@ -1,0 +1,245 @@
+From davidsen@crdos1.crd.ge.com Mon Jun 24 21:39:17 1991
+Organization: GE Corporate R&D Center
+Date: Fri, 21 Jun 91 23:32:54 EDT
+To: df@cert.sei.cmu.edu
+Subject: uucp hardening
+
+Well, I might not get to it tomorrow, so I did it tonight. Here's the
+stuff I have on uucp hardening. It's not all I know, but all I have
+written down...
+
+I give, I give! I got 60+ requests for this so here it is.
+
+I am reposting a few articles about uucp hardening which I have used as
+a starting point for hardening my own system. I don't totally agree
+with all the things in them, but they are useful input. In particular, I
+like to leave uucp as the main uucp file owner, and move all the logins
+to other UIDs.
+
+This is the heart of what I do; change all data files in /usr/lib/uucp
+to be owned by uucp, rw to owner only, all uucp programs, such as
+uucico, uuxqt, uucp, etc, should all be owned by uucp and run setuid.
+The uucp related programs in /usr/bin should be done as well, except
+uuto and uupick if you have them, they failed on my system when setuid.
+
+The uucp account is made no login. A second account having the same UID
+and GID is setup with your favorite shell to do maintenence. The second
+login should follow uucp in the passwd file, to allow mail to work
+correctly. Then each system dialing into yours is given its own
+username and UID, and its login shell is set to /usr/lib/uucp/uucico
+(or wherever uucico lives in your system). This prevents anyone from
+running under the uucp UID.
+
+If your system will allow it, make up a group just for uucp dialin, put
+all the dialing id's there, and don't allow anyone but owner to execute
+uucico (chmod 4700 uucico). On some systems this may not work, and you
+will have to put the dialin id's as group uucp, and allow that group to
+execute uucico (chmod 4710 uucico).
+
+In all cases, no interactive users should run as UID or GID uucp, other
+than the maintenence account. This will prevent executing uucico with
+debug set and getting login info about systems you call, and/or forcing
+calls you don't want to originate and pay for.
+
+Here are the original articles I read about uucp hardening, they were
+the starting point for my learning curve in this matter. They were
+originally on the unix-pc, but contain info directly applicable to any
+"old" uucp, and with modifications to HDB as well.
+================
+Path: chinet!ethos!gizzmo!fthood!egray
+From: egray@fthood
+Newsgroups: unix-pc.uucp
+Subject: uucp security
+Message-ID: <6700001@fthood>
+Date: 24 Nov 86 19:14:00 GMT
+Lines: 117
+Nf-ID: #N:fthood:6700001:000:5839
+Nf-From: fthood!egray    Nov 24 14:14:00 1986
+
+
+The 'rules' of uucp security were not applied to the Unix PC, perhaps
+because it was assumed that it was going to be a 'home' computer.  That
+might well be the case in quite a few instances but in other situtations,
+the Unix PC might be in a 'hostile' environment.  The following dicussion
+is directed to those your wish to harden their uucp security.
+
+The first rule is to have an administrative account to own the uucp
+commands and directories (call it 'uucpadm' for example).  This account
+should NOT have the same UID number as the 'uucp' account.  The account
+should be a normal 'user' account and have one of the standard shells in
+the 7th field of the password file instead of /usr/lib/uucp/uucico.  The
+purpose of this is to prevent a user on a remote system using 'uucp' from
+gaining access to your uucp commands and directories.
+
+The second rule is to restrict execute permission on the uucico program.
+Any person who can execute this command can turn on the debugging with
+the -x option and gain access to the login and passwords to your uucp
+accounts on all of your remote systems.  This can be easily prevented by
+removing the execute permission to 'others'.
+
+The third rule ties the first two together.  In order for your uucp
+accounts to be able to execute 'uucico', you must create a group for
+these users.  This group (call it 'uucpgrp' for example) would be
+assigned to the uucico program the uucp directories and to the 'uucp'
+accounts.  In this way only members of this group would have execute
+permission on 'uucico'.
+
+Some additional consideration should be given to providing unique UID's
+for each 'uucp' account.  For example, if the remote machines 'sys1'
+and 'sys2' both call your system then they should have unique UID's but
+share the same group.  This is to provide an accurate accounting records
+of login times, etc.
+
+Every uucp file and directory should have it's write permission removed
+to 'others'.  The files /usr/lib/uucp/L.sys and /usr/lib/uucp/USERFILE
+should be set to mode 400 (read to the owner and no access to the
+group or 'others').
+
+The /usr/lib/uucp/USERFILE determines which accounts should have 'free
+reign' over your files.  This file should be set to give read permission
+to whatever files your remotes systems need.  On a 'generic' account
+like 'uucp', the read permission should be set to /usr/spool/uucppublic.
+This is to allow the machine calling in as 'uucp' to gain access to
+only those files that you have placed in the /usr/spool/uucppublic
+directory.
+ 
+This is the /usr/spool/uucp directory:
+
+drwxrwxr-x  2 uucpadm uucpgrp     272 Nov 23 19:13 .
+drwxrwxr-x  5 root    bin          80 Oct 11  1985 ..
+-rw-------  1 uucpadm uucpgrp      58 Nov 23 18:33 AUDIT
+-rw-rw-r--  1 uucpadm uucpgrp      97 Nov 23 18:33 ERRLOG
+-rw-rw-rw-  2 root    root          4 Nov 23 19:11 LCK..ph0
+-rw-rw-r--  1 uucpadm mail         78 Jun  5 04:30 LOGDEL
+-rw-rw-r--  1 uucpadm uucpgrp       0 Nov 23 18:33 LOGFILE
+-rw-rw-rw-  2 root    root          4 Nov 23 19:11 LTMP.44
+-rw-r--r--  1 uucpadm uucpgrp    7320 Nov 23 18:33 Log-WEEK
+-rw-rw-r--  1 uucpadm uucpgrp    1693 Nov 23 18:33 SYSLOG
+-rw-r--r--  1 uucpadm mail         59 Nov 10 05:30 o.Log-WEEK
+-rw-r--r--  1 uucpadm uucpgrp     792 Nov 23 18:33 o.Log-WEEK.z
+-rw-rw-r--  1 uucpadm uucpgrp     202 Nov 23 18:33 o.SYSLOG
+
+This is the /usr/lib/uucp directory:
+
+drwxrwxr-x  4 uucpadm uucpgrp     368 Oct 11  1985 .
+drwxrwxr-x 13 bin     bin         992 Oct 11  1985 ..
+drwxrwxr-x  2 uucpadm uucpgrp      32 Jan  1  1970 .OLD
+drwxrwxr-x  2 uucpadm uucpgrp      32 Jan  1  1970 .XQTDIR
+-rw-r--r--  1 root    uucpgrp     606 Nov 23 18:33 L-devices
+-rw-r--r--  1 uucpadm uucpgrp      24 Jan  1  1970 L-dialcodes
+-r--r--r--  1 uucpadm uucpgrp      39 Aug 11 09:54 L.cmds
+-r--------  1 uucpadm uucpgrp     180 Nov 23 18:33 L.sys
+-r--------  1 root    daemon      180 Sep 24 17:19 L.sys.bak
+-rw-r--r--  1 uucpadm uucpgrp      18 Nov 23 18:33 L_stat
+-rw-r--r--  1 uucpadm uucpgrp      26 Nov 23 18:33 L_sub
+-rw-r--r--  1 uucpadm uucpgrp      84 Nov 23 18:33 R_stat
+-rw-r--r--  1 uucpadm uucpgrp      22 Nov 23 18:33 R_sub
+-rw-rw-rw-  1 uucpadm uucpgrp       4 Nov 23 18:33 SEQF
+-r--------  1 uucpadm uucpgrp      55 Aug 11 16:13 USERFILE
+-r--r--r--  1 uucpadm uucpgrp    2581 Jan  1  1970 modemcap
+---s--x---  1 uucpadm uucpgrp   69376 Jan  1  1970 uucico
+---s--x--x  1 uucpadm uucpgrp   15536 Jan  1  1970 uuclean
+-rwxrwxr-x  1 uucpadm operators   390 Jun 11 20:08 uudemon.day
+-rwxrwxr-x  1 uucpadm operators   134 Jan  1  1970 uudemon.hr
+-rwxrwxr-x  1 uucpadm operators   332 Jun 11 20:08 uudemon.wk
+---x------  1 uucpadm uucpgrp    7586 Jan  1  1970 uusub
+---s--x--x  1 uucpadm uucpgrp   21616 Jan  1  1970 uuxqt
+
+These are the permissions of the uucp commands:
+
+---s--x--x  1 uucpadm bin       21942 Jan  1  1970 /usr/bin/uucp
+-rwxr-xr-x  1 bin     bin        2108 Jan  1  1970 /usr/bin/uucppwd
+---s--x--x  1 uucpadm bin        7378 Jan  1  1970 /usr/bin/uulog
+---s--x--x  1 uucpadm bin        2248 Jan  1  1970 /usr/bin/uuname
+-rwxr-xr-x  1 bin     bin        1596 Jan  1  1970 /usr/bin/uupick
+---s--x--x  1 uucpadm bin       18042 Jan  1  1970 /usr/bin/uustat
+-rwxr-xr-x  1 bin     bin         959 Jan  1  1970 /usr/bin/uuto
+---s--x--x  1 uucpadm bin       25310 Jan  1  1970 /usr/bin/uux
+
+This the line out of the /etc/group file:
+
+uucpgrp:NONE:11:uucp,uucpadm,sys1,sys2
+
+This is the part of the /etc/passwd file:
+
+uucpadm:MslxlslvaW5E2:5:11:Admin for Uucp:/usr/lib/uucp:
+uucp:QKqtywR1ggBeo:6:11:Generic Unix to Unix Copy:/usr/spool/uucppublic:/usr/lib/uucp/uucico
+usys1:bksugI32a9Z/o:7:11:UUCP for sys1:/usr/spool/uucppublic:/usr/lib/uucp/uucico
+usys2:g328dkfgl83wo:8:11:UUCP for sys2:/usr/spool/uucppublic:/usr/lib/uucp/uucico
+
+This is a sample /usr/lib/uucp/USERFILE:
+
+usys1,sys1 /
+usys2,sys2 /
+uucp, /usr/spool/uucppublic /tmp
+greg,sys1 /u/greg
+
+------------------------------
+
+Path: chinet!ethos!mtune!shlepper!andys
+From: andys@shlepper.UUCP (andy sherman)
+Newsgroups: unix-pc.uucp
+Subject: Re: uucp security
+Summary: HDB uucico does not echo passwords
+Message-ID: <119@shlepper.UUCP>
+Date: 25 Nov 86 13:51:48 GMT
+References: <6700001@fthood>
+Organization: AT&T Bell Laboratories, Middletown, NJ
+Lines: 33
+
+In article <6700001@fthood>, egray@fthood writes:
+> The second rule is to restrict execute permission on the uucico program.
+> Any person who can execute this command can turn on the debugging with
+> the -x option and gain access to the login and passwords to your uucp
+> accounts on all of your remote systems.  This can be easily prevented by
+> removing the execute permission to 'others'.
+> 
+> The third rule ties the first two together.  In order for your uucp
+> accounts to be able to execute 'uucico', you must create a group for
+> these users.  This group (call it 'uucpgrp' for example) would be
+> assigned to the uucico program the uucp directories and to the 'uucp'
+> accounts.  In this way only members of this group would have execute
+> permission on 'uucico'.
+> 
+First off, a lot of the lack of security for the 7300 uucp is in the
+version of uucp distributed with the basic system.  These
+shortcomings, incidentally, are shared with any vanilla SysV R2 UNIX
+system.  The HoneyDanBer uucp package deals with a lot of these
+security holes.  For example, there is a port of the HoneyDanBer
+uucp to the 7300 which does not echo passwords for uucico debugging.
+(I know this package is available inside of AT&T.  I don't know
+if/when it is released outside the company.)
+
+As for restricted access to uucico, I know that when I send mail,
+the uucp stuff goes across under my UID.  If you have mail set its
+UID to call uucico as uucp or mail, don't you lose the ability
+to see what user is attached to which jobs in a uustat or in the log?
+
+-- 
+andy sherman			480 Red Hill Road
+at&t bell laboratories		Middletown, NJ 07748
+DDD:	(201) 615-5708
+UUCP:	{ihnp4,allegra,akgua,cbosgd,vax135,mtune,...}!shlepper!andys
+
+------------------------------
+
+Path: chinet!ethos!mtune!mtung!jmd
+From: jmd@mtung.UUCP (JM Donnelly)
+Newsgroups: unix-pc.uucp
+Subject: Re: uucp security
+Message-ID: <837@mtung.UUCP>
+Date: 25 Nov 86 16:15:21 GMT
+References: <6700001@fthood> <119@shlepper.UUCP>
+Reply-To: jmd@mtung.UUCP (JM Donnelly)
+Organization: AT&T ISL Middletown NJ USA
+Lines: 3
+
+
+I think that protecting /usr/spool/uucp will break the terminal
+emulater (async_main) which tries to create a LCK file there.
+
+-- 
+bill davidsen		(wedu@ge-crd.ARPA -or- davidsen@crdos1.uucp)
+			{uunet | philabs}!steinmetz!crdos1!davidsen
+"Stupidity, like virtue, is its own reward" -me
+

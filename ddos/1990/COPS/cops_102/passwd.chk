@@ -1,0 +1,146 @@
+:
+#
+#   passswd.chk
+#
+#  Check passsword file -- /etc/passswd -- for incorrect number of fields,
+# duplicate uid's, non-alphanumeric uids, and non-numeric group id's.
+#
+# Awk part from _The AWK Programming Language_, page 78
+#
+#  Mechanism:  Passwd.check uses awk to ensure that each line of the file
+# has 7 fields, as well as examining the file for any duplicate users
+# by using "sort -u".  It also checks to make sure that the password
+# field (the second one) is either a "*", meaning the group has no password,
+# or a non-null field (which would mean that the account has a null
+# password.)  It then checks to ensure that all uids are alphanumeric,
+# and that all user id numbers are indeed numeric.  For yellow pages
+# passwords, it does the same checking, but in order to get a listing of
+# all members of the password file, it does a "ypcat passwd > ./$$" and
+# uses that temporary file for a passfile.  It removes the tmp file after
+# using it, of course.
+#   The /etc/passwd file has a very specific format, making the task
+# fairly simple.  Normally it has lines with 7 fields, each field
+# separated by a colon (:).  The first field is the user id, the second
+# field is the encrypted password (an asterix (*) means the group has no
+# password, otherwise the first two characters are the salt), the third
+# field is the user id number, the fourth field is the group id number,
+# the fifth field is the GECOS field (basically holds miscellaneous
+# information, varying from site to site), the sixth field is the home
+# directory of the user, and lastly the seventh field is the login shell
+# of the user.  No blank lines should be present.  Uid's will be flagged
+# if over 8 chars, unless the $OVER_8 variable (line 50) is set to "YES".
+#   If a line begins with a plus sign (+), it is a yellow pages entry.
+# See passwd(5) for more information, if this applies to your site.
+#
+AWK=/bin/awk
+TEST=/bin/test
+ECHO=/bin/echo
+SORT=/usr/bin/sort
+UNIQ=/usr/bin/uniq
+RM=/bin/rm
+YPCAT=/usr/bin/ypcat
+
+#   Used for Sun C2 security group file.  FALSE (default) will flag
+# valid C2 passwd syntax as an error, TRUE attempts to validate it.
+# Thanks to Pete Troxell for pointing this out.
+C2=FALSE
+
+#  Some systems allow long uids; set this to "YES", if so (thanks
+# to Pete Shipley (lot of petes around here, eh?)):
+OVER_8=NO
+
+#
+# Important files:
+etc_passwd=/etc/passwd
+yp_passwd=./$$
+
+yp=false
+
+# Testing $etc_passwd for potential problems....
+if $TEST -f $YPCAT
+	then
+if $TEST -s $YPCAT
+	then
+	$YPCAT passwd > $yp_passwd
+	if $TEST $? -eq 0
+		then
+		yp=true
+		fi
+	fi
+fi
+
+result=`$AWK -F: '{print $1}' $etc_passwd | $SORT |$UNIQ -d`
+if $TEST "$result"
+	then
+	$ECHO "Warning!  Duplicate uid(s) found in $etc_passwd:"
+	$ECHO $result
+fi
+
+
+#   First line is for a yellow pages entry in the password file.
+# It really should check for correct yellow pages syntax....
+$AWK 'BEGIN {FS = ":" } \
+	{if (substr($1,1,1) != "+") { \
+	if ($0 ~ /^[ 	]*$/) { printf("Warning!  Password file, line %d, is blank\n", NR) } else {
+	if (NF != 7) {
+		printf("Warning!  Password file, line %d, does not have 7 fields: \n\t%s\n", NR, $0) } \
+	if ($1 !~ /[A-Za-z0-9]/) {
+		printf("Warning!  Password file, line %d, nonalphanumeric login: \n\t%s\n", NR, $0) } \
+	if (length($1) > 8 && "'$OVER_8'" != "YES") {
+		printf("Warning!  Password file, line %d, uid > 8 chars\n\t%s\n", NR, $0) } \
+	if ($2 == "") {
+		printf("Warning!  Password file, line %d, no password: \n\t%s\n", NR, $0) } \
+ 	if ("'$C2'" == "TRUE" && $2 ~ /^##/ && "##"$1 != $2) {
+		printf("Warning!  Password file, line %d, invalid password field for C2: \n\t%s\n", NR, $0) } \
+	if ($3 !~ /^[0-9]/) {
+		if ($3 < 0) {
+			printf("Warning!  Password file, line %d, negative user id: \n\t%s\n", NR, $0) } \
+		else {
+		printf("Warning!  Password file, line %d, nonnumeric user id: \n\t%s\n", NR, $0) }} \
+	if ($3 == "0" && $1 != "root") {
+		printf("Warning!  Password file, line %d, user %s has uid = 0 and is not root\n\t%s\n", NR, $1, $0) } \
+	if ($4 !~ /[0-9]/) {
+		printf("Warning!  Password file, line %d, nonnumeric group id: \n\t%s\n", NR, $0) } \
+	if ($6 !~ /^\//) {
+		printf("Warning!  Password file, line %d, invalid login directory: \n\t%s\n", NR, $0) } \
+	}}}' $etc_passwd
+
+#
+# Test yellow pages passwords as well
+if $TEST "$yp" = "true"
+	then
+	yresult=`$AWK -F: '{print $1}' $yp_passwd | $SORT |$UNIQ -d`
+	if $TEST "$yresult"
+		then
+		$ECHO "Warning!  Duplicate uid(s) found in yellow page passwords:"
+		$ECHO $yresult
+	fi
+
+	$AWK 'BEGIN {FS = ":" } \
+		{ if ($0 ~ /^[ 	]*$/) { printf("Warning!  YPassword file, line %d, is blank\n", NR) } else {
+		if (NF != 7) {
+			printf("Warning!  YPassword file, line %d, does not have 7 fields: \n\t%s\n", NR, $0) } \
+		if ($1 !~ /[A-Za-z0-9]/) {
+			printf("Warning!  YPassword file, line %d, nonalphanumeric login: \n\t%s\n", NR, $0) } \
+		if (length($1) > 8 && "'$OVER_8'" != "YES") {
+			printf("Warning!  YPassword file, line %d, uid > 8 chars\n\t%s\n", NR, $0) } \
+		if ($2 == "") {
+			printf("Warning!  YPassword file, line %d, no password: \n\t%s\n", NR, $0) } \
+		if ($3 !~ /^[0-9]/) {
+			if ($3 < 0) {
+			printf("Warning!  YPassword file, line %d, negative user id: \n\t%s\n", NR, $0) } \
+			else {
+			printf("Warning!  YPassword file, line %d, nonnumeric user id: \n\t%s\n", NR, $0) }} \
+		if ($3 == "0" && $1 != "root") {
+			printf("Warning!  YPassword file, line %d, user %s has uid = 0 and is not root\n\t%s\n", NR, $1, $0) } \
+		if ($4 !~ /[0-9]/) {
+			printf("Warning!  YPassword file, line %d, nonnumeric group id: \n\t%s\n", NR, $0) } \
+		if ($6 !~ /^\//) {
+			printf("Warning!  YPassword file, line %d, invalid login directory: \n\t%s\n", NR, $0) } \
+		}}' $yp_passwd
+	
+fi
+
+$RM -f $yp_passwd
+
+# end

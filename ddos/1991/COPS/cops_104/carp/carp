@@ -1,0 +1,110 @@
+#!/bin/sh
+#
+#  Useage: carp [-x] report_or_cops_dir
+#
+# -x emits a result file that can be used with the X-previewer
+#
+#  Carp is a data analysis tool for cops output, primarily designed
+# for use analyzing a cops directory tree full of cops output (presumably
+# from a network of data.)  It looks in the cops main directory (by
+# default) and finds all subdirectories (and hence hostnames) containing
+# cops reports (they are named something like "1992_Dec_31".)  It then
+# runs two subprograms; a report analyzer ("carp.anlz") and a table
+# generator ("carp.table".)  The final output will look something like:
+# 
+# hostname      rep date     crn dev ftp grp hme is pass msc pwd rc  rot usr
+# ===========================================================================
+# neuromancer  1992_Jan_27  | 1 |   | 2 |   | 1 | 2 |   |   | 2 | 2 | 2 |   |
+# sun          1992_Jan_26  |   |   | 2 | 2 | 1 | 2 |   |   | 2 | 2 |   | 1 |
+# death        1992_Jan_15  |   |   |   | 2 | 1 | 2 |   |   |   |   | 0 |   |
+#
+#  The date is the date the cops report was created, the other headers
+# correspond to the various checks that cops runs; "cron.chk", "ftp.chk",
+# etc.  The number refers to the severity of the most serious warning
+# from that host on that particular check:
+#
+# 0 == a problem that, if exploited, can gain root access for an intruder
+# 1 == a serious security problem, such as a guessed password.
+# 2 == a possibly serious security problem, but one that is difficult
+#      to analyze via a mere program.  Look at the problems in question,
+#      and decide for yourself.
+# Blanks mean that no problem was found (*not* that no problem exists!)
+#  If the -x flag was used, the pathname to the report file is printed
+# after the corresponding report line for the host.
+#
+#  All of these numbers are in the carp.anlz program; they can be modified
+# to best suit your needs... and, of course, you should look at the actual
+# cops report for more information on the specific problems encountered.
+#
+#  TO ADD NEW CHECKS -- just add a column in the echo near the bottom;
+# bug.chk is used (commented out) as an example.  Note you'll also have
+# to add stuff to "carp.table" -- see comments there, too...
+#
+# Basic stuff:
+AWK=/bin/awk
+FIND=/bin/find
+SORT=/bin/sort
+LS=/bin/ls
+ECHO=/bin/echo
+TEST=/bin/test
+
+# other progs, files:
+generator="./carp.anlz"
+tabler="./carp.table"
+
+if $TEST ! -s $generator -a ! -s $tabler ; then
+	echo Can\'t find $tabler and/or $generator...
+	exit 1
+	fi
+
+# arg stuff:
+# more arg stuff:
+if $TEST $# -eq 0 ; then
+        echo Usage: $0 [-x] directory
+        exit 2
+        fi
+
+while $TEST $# != 0
+        do      case "$1" in
+        -x)     x=yes ; shift ;;
+        *)      report_dir=$report_dir" "$1 ; shift ;;
+        esac
+        done
+
+for dir in $report_dir ; do
+	if $TEST ! -d $dir ; then
+		echo $dir is not a directory...
+		exit 3
+		fi
+	done
+
+#  find the most recent targets on all the machines...
+# a two step process; one, get the dirs the report files live in,
+# two, get the most recent one.
+targets=`$FIND $report_dir -name '[0-9][0-9][0-9][0-9]_[A-Z][a-z][a-z]_[0-9]*' \
+	-exec dirname {} \; | $SORT -u`
+
+for dir in $targets ; do
+	all_reports=`$LS -t $dir/[0-9][0-9][0-9][0-9]_[A-Z][a-z][a-z]_[0-9]* \
+		| $AWK 'NR == 1'`" "$all_reports
+	done
+
+# echo all the reports are: $all_reports
+$ECHO "COPS warning summary"
+$ECHO
+#
+#  Default headers... must think of a better way.  A potential additional
+# field might be bug.chk; to add, just add a column in the echo...
+#
+$ECHO "hostname      rep date     crn dev ftp grp hme is pass msc pwd rc root usr kng"
+$ECHO "==============================================================================="
+
+for report in $all_reports ; do
+	# extra X info for the x-program...
+	if $TEST "$x" = "yes" ; then
+		echo $report
+		fi
+	$AWK -f $generator $report | $AWK -f $tabler 
+	done
+
+# done

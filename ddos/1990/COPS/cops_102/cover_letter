@@ -1,0 +1,141 @@
+
+ To all women and men of the net, greetings...
+
+  Here are the latest changes, additions, and bug fixes to COPS; this brings
+it up to version 1.02, for those who care.  My personal stash (the latest
+copy) should always be available via anon-ftp at cert.sei.cmu.edu
+(128.237.253.5), in ~pub/cops.  In this header, I'll go through some
+thoughts, background notes, then finally get to the changes made, so if
+you don't want to listen to me, just unpack the shar files, read the README
+file, follow instructions, and you should be ready to roll.
+
+  For those who don't know, COPS is a static security checking tool that
+checks common procedural (non-bug) problems of a Un*x system.  It basically
+takes a snapshot of a system, and then generates a report of it's findings.
+On a purely empirical basis, it has successfully discovered problems that
+could compromise root on over 3/4 or more of the systems I've run it on; of
+course, the idea here is not to break root, but to let someone fix the
+problems it shows.  Note, of course, that it gives info indiscriminately, to
+whoever runs it.  Decide if you do or don't want to learn about the
+information it can give about your system, but remember -- someone else
+probably already has it.
+
+  After writing COPS, I started working for CERT.  I had always suspected,
+but didn't know, that most breakins were caused by pretty trivial problems...
+now I *know* it's true (or at least the ones we've found out about :-)).
+In the breakins I've seen while working for CERT, using COPS probably could
+have prevented 60-75% of them.  The most common problems?  Poor passwords,
+guest accounts, accounts with no passwords, and improperly managed systems
+(+ in host.equiv, poorly set up remote daemons, etc.)  Interestingly, to
+me at least, I wrote the original intro to COPS exactly one year ago today.
+How times don't change... I was worried this would be fairly obsolete soon,
+but it looks like it'll be good at least for another few years.
+
+   The kit is broken into modules, each one driven by a master shell script;
+you can usually get it running within 30 minutes or so if you've never used
+it before (5 or 10 if you only scan the README); if you've used it in the
+past, you can set it up on a new machine in a minute or two.  With no
+modifications, it takes perhaps 2 to 30 minutes to generate a report;
+however, the password cracking program can add lots of time to this,
+depending on the options.  There is also a SUID finder, which can also take
+a long time (hours) to run, since it does a "find" on "/".  There's a new
+option that tells it not to mail a report if the results are the same as
+the last report, so you can just stuff it into cron and wait until a report
+comes around.  Of course, if someone breaks in, changes cron, and you just
+rely on COPS, then you're f*cked anyway.  Use it as a tool, not as a crutch.
+
+   Ok, changes... there are a couple of totally new modules here.  One is
+simply labled "misc.chk"; this checks for a potpourri of things -- right
+now it checks for unrestricted tftp, uuencode & decode problems (including
+the "decode" alias) writability of things in /etc/inetd.conf|/etc/services,
+and to see if rexd is enabled.  The second is a CRC generator, called,
+amazingly enough, "crc.chk" (Jon Zeef was kind enough to let me use his
+version).  It's similar to the SUID trouble finder, in that you run it once,
+create a database, then compare future runs against that standard.  It
+reports any changes that are found.  There are some problems with this -- 
+nothing is functionally wrong with the program, as far as I know, but there
+are a few operational hazards -- for more information, read the README file,
+and the man page.
+
+   Now the rest... I'll try to put the more important things at the top,
+but perceptions vary, of course.  Here are the major changes I can remember:
+
+-- a newer, faster, better, more powerful version of kuang, in perl, is
+   included.
+
+-- an anonymous ftp setup checker (ftp.chk -a)
+
+-- the SUID finding program now also flags any world writable SUID files and
+   SUID shell scripts.
+
+-- you can optionally check only passwords that have changed since the last
+   time they were checked (pass_diff.chk.)
+
+-- optionally, cops will mail you a report only if things have changed since
+   last report.
+
+-- the password cruncher can chew on arbitrary password files now, plus some
+   bugs fixed.  Interesting how this program, the main one I didn't write/port,
+   generates more little bugs than all the others... the original program
+   worked fine (written by Craig Leres and Jef Poskanzer), but the more
+   features that were added by different people over the years, the more
+   things broke.  I should have just included my perl version instead.
+
+-- checks made for world writable files now looks at the parent directory
+   structure of a path, instead of just the file.
+
+-- New, optional directory structure (for multiple machine/binary sites) for
+   the entire system.  Reports are now saved in a file with the name
+   "year_month_day", and by default, are saved in a directory with the
+   same name as the host.  Looks something like:
+
+   $SECURE/cops
+               | -- docs
+               | -- src
+               |--- archtype1 binaries (sun, or whatever)
+               |             |
+               |             | - results for sun workstation 1
+               |             | - results for sun workstation 2
+               |       
+               |--- archtype2 binaries(dec)
+               |             |
+               |             | - results for dec workstation 1
+               |             | - results for dec workstation 2
+               |            
+               |--- archtype3 binaries(vax)
+                             |
+                             | - results for vax 1
+                             | - results for vax 2
+
+   You run "cops archtype", and it would cd into the binary directory,
+   use those binaries, and put any results in a subdirectory of the
+   appropriate host name.  Results would be stored with a date as the title,
+   not some stupid number.  Alternately, you can just run "cops", and it will
+   take your hostname as a directory to store the results.  More in the
+   README file, under "How to Configure/Install COPS".
+
+-- user.chk checks .logout and .rhosts files (was .rhost) now, too, as well
+   as reporting if any .netrc files are readable.
+
+-- file.chk and dir.chk have been replaced by is_able.chk, which performs
+   the same function, with hopefully more flexibility and ease of use.
+
+-- scripts now start with a ":" on line 1 instead of #!/bin/sh, since it
+   didn't work on some stupid machines.
+
+
+   The easiest thing to do is unpack everything, scan the README file,
+change whatever it tells you, run "reconfig", if you have a sysV based machine,
+or are just suspicious of your system, then blast off.  Finally, to steal an
+ending from the README file of a year ago...
+
+  "So good luck, and I hope you find COPS useful as we plunge into UNIX
+of the 1990's.
+
+   dan farmer
+   January 31, 1989"
+
+
+ -- dan
+   jan 31, 1990
+

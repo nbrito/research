@@ -1,0 +1,92 @@
+
+  Code credits are where code credits are due.  If I miss anyone, please
+forgive (and notify) me!
+
+Gene Spafford -- overall design help and good guy.
+
+Robert Baldwin and Steve Romig -- the original kuang package/design, and
+the perl rewrite, respectively.
+
+Craig Leres, Jef Poskanzer, Seth Alford, Roger Southwick, Steve Dum,
+and Rick Lindsley all get credit for the password guessing program.
+
+Prentiss Riddle -- the suid checker and lots of new bits and suggestions
+to go into the rest of the cops package.
+
+Mark Mendel and Jon Zeef -- the crc generator.
+
+Muffy Barkocy -- cleaned up and helped rewrite lots of my ill designed
+documentation.
+
+Alec Muffett -- letting me use the fcrypt stuff he wrote (get his full
+Crack package, folks!)
+
+Shabbir Safdar and Phil Moyer -- writing chkacct and the help/text files
+for the same, respectively.
+
+Chip Rosenthal and Bill Davidsen for all the uucp stuff, which I've
+stuffed temporarily in the extra_src directory, until I can integrate
+it with the rest of the stuff.
+
+The GNU folks, for making the ultimate interactive shell (bash) --
+probably saves me a good 10% of keystrokes over other shells, as
+well as saving (and probably wasting, since I could read more) lots of
+time by making a more efficient news reader.
+
+  Round IV (this release) -- lots of people again -- the perl crew, of
+course; Ethan Lish with the Xenix stuff.  Wolfgang Denk and Jerry Carlin
+did massive work to wipe out more SysV problems.  Bud Bowman with the
+pass.mail thingee, Ole H. Nielsen with the C2 stuff, Wietse Venema for
+help debugging the bug stuff, the uucp_quick.chk thing, and other useful
+comments, lots of others, etc.
+
+  In round III (second patch), Muffy Barkocy and Michelle Crabb both gave me
+good ideas to use.  Pete Shipley fixed up some code (is_able) and generally
+helped my motivation to get things out the door.  Gandalph suggested ftp.chk,
+Jay Batson made me fix root.chk, Shelley Shostak fixed and added features
+to pass.chk, and Brian Moore gave me the shell script checking --> SUID
+concept.  Jim W Lai pointed out some other pass.chk things (what a buggy
+program :-)).  Rob Kolstad told me about some bugs in the ftp checker, and
+gently pointed out that some stuff wasn't using the YP passwd files when
+they should be, and Jim Ellis helped get this to work on a Cray.  There
+are probably more that I've forgotten (sorry, if so!) Thanks, people...
+
+  In round II (the first patch), Mark Plumbly fixed rc.chk so it would
+work like I said it would, as well as pointing out a few problems with
+the password guesser.
+
+  And of course lots of credit goes to my great Beta-release sweatshop team;
+especially Adri Verhoef for tightening up lots of my crummy code (cops,
+group.chk, root.chk, is_writable, dev.chk, dir.chk & file.chk among others),
+Steve Romig for good ideas _and_ letting me use a system V machine to test
+on (how many people do you know that would let you test a security
+system on their system with no strings attached!) Jason Levitt, Jim
+Kimble, Jim Rowan, Stefan Vorkoetter, Judy Scheltema, Pete Troxell (all
+the Sun C2 stuff....), Dennis Conley, and of course John Sechrest.
+Tony Petrost pointed out some of my incorrect assumptions and helped
+fix cron.chk.  Kudos also to Bruce Spence for giving me some good
+implementation ideas at LISA III.
+
+  If strings is not available to you, a version is available on uunet;
+also a nifty install program written by Kevin Braunsdorf that can be used
+as a super directory/file mode checker/security device might be available
+soon in comp.unix.sources (these programs large sizes preculudes their
+inclusion in COPS, but I recommend looking into them.)  Both can be gotten
+via anonymous ftp.  Strings is in comp.unix.sources directory, install,
+should be in j.cc.purdue.edu, methinks.
+  Everything else not explicitely mentioned in the COPS.report.ms paper
+or here was written by me.  Not mentioned execpt in the source code are
+some small changes made by myself to make everything fit in as a cohesive
+whole; I tried to make comments in the source code if I changed it (never
+to drastic in any case.)
+
+  For a good story on the subject, you might want to read _The Cuckoo's
+Egg_, by Clifford Stoll.  This is a true tale of a sysadmin's fight 
+against beaurocracy and a system cracker.  Good stuff.
+
+  For a a good read on Unix security in general, look at Dave Curry's now
+infamous "white paper", via anon-ftp, SPAM.ITSTD.SRI.COM (128.18.4.3) as
+the file "pub/security-doc.tar.Z.  But don't believe him when he says Yellow
+Pages is secure.  It's not.  Not much is, these days... good luck, tho!
+
+ -- dan

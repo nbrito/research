@@ -1,0 +1,23 @@
+
+  Here's a rumored way (courtesy of Mac Allen jma21624@usav01.glaxo.com) of
+fixing problems with SGI machines and perl... you might give this a shot
+if you're having troubles -- the mysteries of perl, and all that.
+
+ -- dan
+
+=================================================
+Subject: Kuang Un-Hang
+
+I just figured out one way of fixing the kuang hang:
+
+#!/usr/bin/perl
+$x= `./kuang.pl`;
+print $x;
+
+I originally did this as a way of running shell scripts I wrote to extend
+COPS with custom stuff, like sulog.chk, login.chk, etc.  The original
+kuang perl script is in kuang.pl now, and it writes to the report when
+run from cops.cf.
+
+- Mac Allen jma21624@usav01.glaxo.com
+

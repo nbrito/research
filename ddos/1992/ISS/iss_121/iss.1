@@ -1,0 +1,247 @@
+.\" "%W% %G%"
+.TH ISS 1
+.SH NAME
+iss \- Internet Security Scanner
+.SH SYNOPSIS
+.B iss
+[ -msrdyvpqefo ] #1 #2 
+.SH DESCRIPTION
+.I ISS
+Internet Security Scanner (
+.I ISS
+) is one of the first multi-level security
+scanners available to the public.  It was designed to be flexible and easily
+portable to many unix platforms and do its job in a reasonable amount of
+time.  It provides information to the administrator that will fix obvious
+security misconfigurations. 
+.PP
+.I ISS
+does a multi-level scan of security, not just searching for one
+weakness in the system.  To provide this to the public or at least to the
+security conscious crowd may cause people to think that it is too dangerous
+for the public, but many of the (cr/h)ackers are already aware of these
+security holes and know how to exploit them. 
+.PP
+These security holes are not deep in some OS routines, but standard
+misconfigurations that many domains on Internet tend to show.  Many of these
+holes are warned about in CERT and CIAC advisories.  This is the first
+release of 
+.I ISS 
+and there is still much room for improvement. 
+.PP
+.I ISS
+is a project that I started as I became interested in security.  As I
+heard about (cr/h)ackers breaking into NASA and universities around the
+world, I wanted to find out the deep secrets of security and how these people
+were able to gain access to expensive machines that I would think were
+secure.  I searched Internet for relative information, such as Phrack and
+CERT advisories. 
+.PP
+Most information was vague and did not explain how intruders were able to
+gain access to most systems.  At most the information told administrators to
+make password security tighter and to apply the vendor's security patches. 
+They lacked real information on how an intruder would look at a site to try
+to gain access.  Having talked with security experts and reading CERT
+advisories, I started trying to look for various security holes within my
+domain.
+.PP
+To my surprise, I noticed that many of machines were adequately secured,
+but within a domain there remained enough machines with obvious holes that
+anyone wanted into any machine could attack the weak 'trusted' machine and
+from there could gain access to the rest of the domain. From this project, I
+have not learned any new deep secret to cracking systems, but with the right
+tools that most domains on Internet are insecure.  These holes will not be a
+surprise to any advanced intruder, but with this tool administrators will be
+able to quickly search for obvious holes and prepare to fix them.
+.PP
+
+.SH OPTIONS
+.TP
+.B \-d
+Ignores Checking Default Logins such as sync.
+.TP
+.B \-m
+Ignores checking for mail port.
+.TP
+.B \-s
+xx number of seconds max to wait.
+.TP
+.B \-r
+Ignores Checking for RPC calls.
+.TP
+.B \-y
+Try to get pw via Ypx.
+.TP
+.B \-v
+Ignores finding Mail Aliases for decode, guest, bbs, lp.
+.TP
+.B \-p
+Scans one Host for all open TCP ports (disables all other options).
+.TP
+.B \-q
+Turns off Quick Scan so it finds hosts even with no name.
+.TP
+.B \-e
+Only logs directories that can be mounted by everyone.
+.TP
+.B \-f
+Ignores Checking FTP port for logging in as anonymous.
+.TP
+.B \-o
+Changes logfile to something besides ISS.log. 
+.PP
+#1 and #2 are the beginning and end of the domain address to scan.
+.PP
+.I ISS
+will scan a domain sequentially looking for connections.  When it finds
+a host it will try to connect to various ports.  For starters, it tries the
+telnet port. When it connects to the telnet port, it logs any information
+that the host displays.  
+.PP
+With the -d option, 
+.I ISS
+ignores trying default accounts.  By default,
+.I ISS
+will then try to log in as 'sync' which is a common account name for
+SunOS and other Unixes.  It in itself is not a big hole other than giving
+more information about type of OS, version number of OS, and  displaying the
+MOTD.   But 'sync' with no password can become a security hole as someone
+with a regular account on that host can divert the 'sync' privileges and
+ultimately become root.  The 'sync' account should be passworded or disabled.
+.PP
+With the -m option, 
+.I ISS
+ignores the mail port. By default, 
+.I ISS
+tries the
+mail port. Connecting to this provides information regarding the hostname,
+type of OS it is, and even the version number of sendmail. 
+.PP
+With the -v option, 
+.I ISS
+wont check for mail aliases. By default, it will
+check for various users and aliases.  The obvious aliases to search for is
+decode and uudecode.  With these aliases, you are able to send mail to
+decode@hostname with a file that has been uuencoded to overwrite a systems
+file, such as .rhosts.  Some of the users it looks for is 'bbs','guest','lp',
+and the well known debug and wiz backdoors within sendmail.  'bbs','guest',
+and 'lp' are known to have weak passwords or no passwords at all.
+.PP
+With the -f option, 
+.I ISS
+wont check the FTP port. By default, it will
+connect to the ftp port and check to see if a person can log into anonymous. 
+Many systems such as Macs let anyone log in and look around other users'
+private information.  If it succeeds logging in as anonymous, it will then
+attempt to create a directory.  If it does that successfully, the main
+directory of the FTP site is writeable and open to attack.  Many anonymous
+ftp sites have security holes.  Such weaknesses is being able to write to the
+main directory of the ftp directory, thus an intruder could write a .rhost
+file and log in as ftp.  Plus, the anonymous ftp site may contain the actual
+host's password file and not just a dummy password file. 
+.PP
+With the -r option, 
+.I ISS
+ignores checking for rpc. By default, 
+.I ISS
+will look
+for holes that most systems are more prone to have open.  It uses rpc
+information to find security weaknesses.  It will do a 'rpcinfo -p hostname'.
+With this information gained, it finds which hosts are running NIS, rexd,
+bootparam, whose on the host, selection_svc, and NFS. 
+.PP
+If a system shows YPServ, it is likely that it has not been patched yet and
+with the proper domainname, ypserv will provide the password file to any
+remote host asking for it.  To fix this, apply the proper ypserv patch from
+your vendor.  
+.I ISS
+will attempt to guess the domainname and that will provide
+information as to which machine is the NIS server is.   The domainname should
+be changed if it can easily be guessed so that it will slow people from
+grabbing the password file.  Another attempt to fix this problem is
+to make sure that if the password file does get out, none of the
+passwords can easily be cracked.  Crack (by Alec Muffett alecm@sun.com) does
+a fine job of finding weak passwords. Also shadowing the password file will
+help correct this weakness.
+.PP
+With the -y option and a program called Ypx (by Rob Nautu
+rob@wzv.win.tue.nl), 
+.I ISS
+will try to grab the password file from ypserv.
+.PP
+If a system shows Select_svr, selection_svr is running on the machine and
+there are known holes that let anyone remotely grab the password file.
+Selection_svr should be disabled.
+.PP
+When Rexd is running on a remote system, anyone with a small C program can
+emulate the 'on' command spoofing any user on the remote machine, thus
+gaining access to the password file and adding .rhosts files. Rexd should be
+disabled.
+.PP
+If a machine is running Bootparam, it is likely a server to diskless
+clients.  One problem with bootparam is that if it is running and someone
+can guess which machines the client and servers are, they are able to get
+the domainname from bootparam, which goes back to the YPServ problem.   
+.PP
+The -e option will only log exports that everyone can mount.  To
+usually find out which machines are its clients, by default, log all the
+exportable directories.  'showmount -e hostname' shows the exports on a
+remote host.  If the exported directories look like:
+.RS
+.nf
+
+	/usr 		   (everyone)
+	/export/placebo    placebo
+	/export/spiff      spiff
+.fi
+.RE
+.PP
+Anyone can mount /usr and possible replace files and do other damage.
+Placebo and spiff appear to be clients to this server.
+.PP
+.I ISS
+also does a 'rusers -l hostname' searching for users on the system.
+That provides how busy is the machine and possible login entries to try.
+.PP
+.I ISS
+with option -p will support scanning all the ports on a certain host,
+thus looking for possible access entries, such as gophers, muds, and other
+applications ran by local users.  This has not been implemented yet.
+.PP
+.I ISS
+will quickly scan the domain. It does not try to connect to every
+address, but rather scans through doing a name lookup for each address.  And
+if that address has a name, it will then do a more thorough lookup of
+information on that host. With the -q option, it will try to connect to hosts
+even without names.  
+.PP
+To sum it up, 
+.I ISS
+will scan a domain grabbing essential information for
+administrators to easily sort through and give him a chance to secure the
+open machines on his network.
+
+.SH ACKNOWLEDGEMENTS
+
+I would like to thank the following people for ideas, suggestions, and help:
+Scott Miles, Dan Farmer, Wietse Venema, Alec Muffett, Scott Yelich, Darren
+Reed, and Tim Newsham.
+
+.SH ENHANCEMENTS
+.PP
+Please send suggestions to
+.RS
+.nf
+                cklaus@hotsun.nersc.gov
+                         or
+                coup@gnu.ai.mit.edu.
+.fi
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (c) Christopher Klaus, 1992, 1993.
+(cklaus@hotsun.nersc.gov or coup@gnu.ai.mit.edu)
+
+.SH BUGS
+.PP
+May not be ready to compile on machines beside SunOs.

@@ -1,0 +1,47 @@
+#!/bin/sh  # need to mention perl here to avoid recursion
+#
+#  Usage: chk_strings filename
+#
+#  This will check pathnames inside executable files for writability,
+# The big string "@ignores" is a list of files that are ignored by
+# this; you can set it to whatever you want -- default is:
+# '^/tmp/?' and '^/(var|usr)/tmp/?'
+# 
+#  No program root EVER runs should be show up here.
+#
+# NOTE:
+#   If you know where perl is and your system groks #!, put its
+# pathname at the top to make this a tad faster.
+#
+# the following magic is from the perl man page
+# and should work to get us to run with perl 
+# even if invoked as an sh or csh or foosh script.
+# notice we don't use full path cause we don't
+# know where the user has perl on their system.
+#
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}' 
+& eval 'exec perl -S $0 $argv:q'
+    if $running_under_some_stupid_shell_instead_of_perl;
+
+package main;
+
+$| = 1;
+
+require 'getopts.pl';
+require 'chk_strings.pl';
+
+die "Usage: $0 [-rd] file ...\n" unless &Getopts('rd') && @ARGV;
+
+package chk_strings;
+
+$debug = $'opt_d;
+$recurse = $'opt_r;
+@ignores = ( '^/tmp/?', '^/(var|usr)/tmp/?' )
+    unless defined @ignores;
+
+#%paths = ();  # faster than local
+
+for (@'ARGV) { 
+    (warn("$0: $_: $!\n"), next) unless -e;
+    &'chk_strings($_); 
+} 

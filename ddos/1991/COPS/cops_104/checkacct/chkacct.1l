@@ -1,0 +1,147 @@
+.TH CHKACCT 1L LOCAL
+.SH NAME
+chkacct \- Check and fix simple security problems in your account 
+.SH SYNOPSIS
+.B chkacct
+[
+.B -ehinqrv
+]
+[
+.B -f
+.I starting directory
+]
+[
+.B -m
+.I home directory
+]
+[
+.B -s
+.I username
+]
+.br
+.SH DESCRIPTION
+.PP
+.I chkacct
+(short for check account) is a program which checks your account for
+unsafe file permissions.
+.I chkacct
+descends through your account
+examining the permissions on each file.  If the permissions on the file
+are unsafe then the user is presented with a proposed fix in the form of
+a 
+.ux
+command and an accompanying explanation as to the effect of that command.
+The user is then given the choice of ignoring the potential
+problem, fixing it, or viewing a more in-depth informational file about
+similar security problems.
+.PP
+\fIchkacct\fP examines your account in three phases.  The first phase checks
+the permissions of all \*(lqdot\*(rq files (files such as
+.I .login, .rhosts, .cshrc, .profile
+etc. etc)  Working under the assumption that
+all \*(lqdot\*(rq files contain sensitive information, \fIchkacct\fP warns the
+user about \*(lqdot\*(rq files which should not be either readable or writable.
+\fIchkacct\fP also flags any \*(lqdot\*(rq files residing in the user's home directory,
+but owned by someone other than the user running \fIchkacct\fP.
+.PP
+The second phase examines all files owned by the user running \fIchkacct\fP
+(including directories) for writability, setuid (set user id),
+or setgid (set group id) permissions.
+.PP
+The third phase of \fIchkacct\fP is a \fIperl\fP(1u) script which attempts to
+parse apart the user's \fI.rhosts\fR file, if it exists.  If it exists and
+is found to be unsafe, \fIchkacct\fP offers to move it to another name so it
+will not allow any password-less logins.
+.PP
+Lastly, \fIchkacct\fP offers to display an article about
+.ux
+account security.  The article is written for novice users.
+.SH OPTIONS
+.PP
+Options are parsed in the order the user specifies them on the command
+line.  If you specify options with conflicting effects, the last option
+will take precedence.
+.TP
+.B \-e
+Expert (non-interactive) mode -- do not ask the user any questions.
+.TP
+.BI \-f\ startdir
+Specify the directory in which to begin the general file search to be
+.I startdir
+.TP
+.B \-h
+Print a help message explaining each option.
+.TP
+.B \-i
+Interactive mode -- ask the user about an action for every questionable file.
+This is the default.
+.TP
+.BI \-m\ homedir
+Use
+.I homedir
+as the home directory rather than the default, ${HOME}
+.TP
+.B \-n
+Do not actually perform any changes to file names or permissions.
+.TP
+.B \-q
+Perform actions as silently as possible.  \fIchkacct\fP will only print anything
+if the user needs to be queried about a security problem.  This is not the
+default.
+.TP
+.B \-r
+Do not check the file \fI${HOME}/.rhosts\fR.
+.TP
+.BI \-s\ username
+Run \fIchkacct\fP as if your were user
+.I username
+instead of your current userid.  This option will also set ${HOME} to be
+the home directory of
+.I username.
+.TP
+.B \-v
+Perform actions verbosely, giving as much guidance to the user as possible.
+This is the default action.
+.SH EXAMPLES
+.PP
+chkacct -f /
+.IP
+If you call \fIchkacct\fP with these options, a thorough search of the
+file system for files owned by you will be performed.
+.PP
+chkacct -q -f /
+.IP
+If you call \fIchkacct\fP with these options, \fIchkacct\fP will look everywhere
+for files owned by you.  It will not print anything if it does not find any
+security problems.
+.PP
+chkacct -en
+.IP
+If you call \fIchkacct\fP with these options, \fIchkacct\fP will not prompt
+you for any input, but will display (without fixing) every problem it
+encounters.  This might be useful for mailing to yourself.
+.DE
+.SH BUGS
+.PP
+\fIchkacct\fP is written in Bourne shell (without functions)
+because it is intended
+to be run in a heterogenous computing environment under many different
+flavors of Unix.  The result of this is that \fIchkacct\fP is limited by those
+tools and their options which appear as standard tools.
+.SH FILES
+.PP
+/usr/local/bin/chkacct
+.br
+/usr/local/lib/chkacct/* for informational files displayed by \fIchkacct\fP
+.SH AUTHORS
+.PP
+The writing of \fIchkacct\fP was made much easier by Kevin S. Braunsdorf's
+(ksb@cc.purdue.edu) Bourne Shell implementation of the getopts package.
+Phillip R. Moyer (prm@ecn.purdue.edu) of the Purdue Engineering Computer
+Network provided the security article which made up the text of many of
+the informational files.
+.LP
+Shabbir J. Safdar, Purdue University UNIX Group
+.SH SEE ALSO
+.LP
+sh(1), perl(1u), find(1), test(1), ls(1), chmod(1), mv(1)

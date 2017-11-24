@@ -1,0 +1,27 @@
+.TH PASSWD.CHK 1 "January 7th, 1991"
+.UC 4
+.SH NAME
+passwd.chk  \- Checks password file(s) for inconsistencies.
+.SH SYNOPSIS
+.B passwd.chk
+.SH DESCRIPTION
+.I passwd.chk
+checks the password files -- /etc/passwd and yppasswd if yellow pages are being
+used -- for incorrect number of fields, duplicate ids, non-alphanumeric
+login names, nonnumeric user ids', users with uid = 0 and not root, blank lines,
+accounts with no passwords, invalid login directories, and non-numeric
+password id's.  If you run C2 sun security, or have uid's of greater than
+length 8 characters, you need to change "C2=TRUE" and "OVER_8=YES", on lines
+46 and 50, respectively.
+.SH FILES
+.Ps
+/etc/passwd
+passwd.chk uses the process id as a temporary file name for the ypchecking.
+.Pe
+.SH "SEE ALSO"
+.Ps
+passwd(5)
+.Pe
+Awk part based on _password_ from _The AWK Programming Language_, page 78.
+.SH BUGS
+It doesn't use the exact syntax of yellow pages to check for errors.

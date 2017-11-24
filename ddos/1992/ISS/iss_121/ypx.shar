@@ -1,0 +1,936 @@
+Submitted-by: rob@wzv.win.tue.nl (Rob J. Nauta)
+Posting-number: Volume 40, Issue 2
+Archive-name: ypx/part01
+Environment: UNIX
+
+YPX - A utility to transfer NIS maps beyond a local (broadcast) network.
+
+ypx is a utility to transfer a NIS map from any host running a ypserv
+daemon. ypx is similar to ypcat, with some additions. To be able to 
+transfer a map, a domainname must be specified.  There unfortunately 
+is no way to ask the remote host about its domainname, so it must be 
+known already or guessed to transfer a map successfully. If none 
+is specified, the hostname of the remote host is used as the domainname.
+ypx is able to guess at the remote domainname, by trying parts of 
+the hostname, if guessing is enabled with the -g option. If the -s 
+option is used, ypx will connect to the sendmail daemon, read the 
+hostname, and parse that too, to be used as additional guesses. 
+Finally, any additional strings on the commandline will be added to 
+the list of domainname guesses.
+
+Disclaimer
+----------
+Warning ! I am not responsible for the use, or the failure to use 
+this program. Use at your own risk. Some uses of this program may 
+break existing local laws. Like any tool, illegal actions are not 
+the responsibility of the writer of the program, but of the user 
+who runs it. If you take the time to read the source, you'll find 
+that the internals are very simple. Anyone could write such a program, 
+many have already done this.
+
+This version is basically unchanged since 1991. If you still find
+any bugs, please mail them to rob@wzv.win.tue.nl.
+
+Rob J. Nauta
+---------------------------------------------------------------------------
+#! /bin/sh
+# This is a shell archive.  Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file".  To overwrite existing
+# files, type "sh file -c".  You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g..  If this archive is complete, you
+# will see the following message at the end:
+#		"End of archive 1 (of 1)."
+# Contents:  MANIFEST Makefile README nhost.c nhost.h yp-check.c
+#   ypx-add.c ypx-add.h ypx-boot.c ypx-func.c ypx-main.c ypx-sm.c
+#   ypx.1
+# Wrapped by rob@wzv on Wed Oct  6 22:25:16 1993
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+if test -f MANIFEST -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"MANIFEST\"
+else
+echo shar: Extracting \"MANIFEST\" \(504 characters\)
+sed "s/^X//" >MANIFEST <<'END_OF_MANIFEST'
+X   File Name		Archive #	Description
+X-----------------------------------------------------------
+X MANIFEST                  1	This shipping list
+X Makefile                  1	
+X README                    1	
+X nhost.c                   1	
+X nhost.h                   1	
+X yp-check.c                1	
+X ypx-add.c                 1	
+X ypx-add.h                 1	
+X ypx-boot.c                1	
+X ypx-func.c                1	
+X ypx-main.c                1	
+X ypx-sm.c                  1	
+X ypx.1                     1	
+END_OF_MANIFEST
+if test 504 -ne `wc -c <MANIFEST`; then
+    echo shar: \"MANIFEST\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f Makefile -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"Makefile\"
+else
+echo shar: Extracting \"Makefile\" \(540 characters\)
+sed "s/^X//" >Makefile <<'END_OF_Makefile'
+X#
+X# Makefile voor de diverse testprogramma's in deze directory.
+X#
+XCFLAGS =	-g	# For debugging
+X#CFLAGS =	-O3		# For final version
+X
+Xall:	ypx doc yp.chk
+X
+Xclean:
+X	rm -f a.out core *.BAK *.o ypx yp.chk MANIFEST*
+X
+X# modules
+X
+Xypx:		ypx-main.o ypx-func.o ypx-add.o ypx-sm.o nhost.o
+X	cc ${CFLAGS} -o ypx ypx-main.o ypx-func.o ypx-add.o ypx-sm.o nhost.o
+X
+Xyp.chk:		yp-check.o ypx-sm.o nhost.o
+X	cc $(CFLAGS) -o yp.chk yp-check.o ypx-sm.o nhost.o
+X
+Xdoc:	ypx.1
+X	nroff -man ypx.1 >ypx.doc
+X
+Xshar:		clean
+X	umask 077
+X	makekit -m README Makefile *.c *.h ypx.1
+END_OF_Makefile
+if test 540 -ne `wc -c <Makefile`; then
+    echo shar: \"Makefile\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f README -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"README\"
+else
+echo shar: Extracting \"README\" \(2437 characters\)
+sed "s/^X//" >README <<'END_OF_README'
+X
+X
+XYPX - A utility to transfer NIS maps beyond a local network.
+X
+XIntroduction
+X------------
+Xypx is a utility which I wrote about a year ago, when I was studying
+Xthe Network Programming manual, as an experiment. Since older copies I
+Xsent to a couple of friends seem to be spreading fast, I've decided to
+Xpost it to alt.sources.
+X
+XDisclaimer
+X----------
+XWarning ! I am not responsible for the use, or the failure to use this
+Xprogram. Use at your own risk. Overenthousiastic use of this program
+Xmight break existing local laws. Like any tool, illegal actions are not
+Xthe responsibility of the writer of the program, but of the user who
+Xruns it. If you take the time to read the source, you'll find that the
+Xinternals are very simple. Anyone could write such a program, many have
+Xalready done this.
+X
+XInstalling and running ypx
+X--------------------------
+XUnpack the source (either a shar file or .zip file) in a directory, and
+Xtype 'make'. If make gives any warnings or errors, please send mail to
+Xthe adress below, so I can make the next release more portable. The
+Xmake step will produce the "ypx" binary, ready to run.
+X
+XDocumentation
+X-------------
+XA short document describes the command line options, it's called
+X"ypx.1".  This document is in the standard manual page format. The make
+Xstep will convert this file to an ASCII file called "ypx.doc". Install
+X"ypx.1" in a directory where man(1) can find it, optionally.
+X
+XThe future
+X----------
+XSince this is a first release, bugfixes and improvements will undoubtably
+Xfollow. Some ideas for improvements are:
+X- Find out how to transfer a map if the domainname is unknown.
+X- Avoid the portmapper by scanning a range of port numbers.
+X- Anything else I can think of.
+X
+XProgress is also made in effort to protect your system from NIS map
+Xtransfers by unauthorized individuals with unknown motives.
+X- SUN will soon publish a bugfix, which contains new binaries for
+Xypserv and other programs, to add access control.
+X- Wietse Venema, the world's #1 security expert, has released a
+Xversion of portmap.c with access control similar to his exellent
+Xtcpwrapper package. It is probably ftp'able from cert.sei.cmu.edu
+Xand ftp.win.tue.nl. His email adress is wietse@wzv.win.tue.nl.
+X
+XComments
+X--------
+XAny comments and suggestions are welcome. Send mail to:
+Xrob@wzv.win.tue.nl. I'll be happy to hear from you.
+X
+XReferences
+X----------
+XNetwork Programming manual from SunOS 4.1
+X/usr/include/rpcsvc/yp*
+X
+XRob J. Nauta
+X
+END_OF_README
+if test 2437 -ne `wc -c <README`; then
+    echo shar: \"README\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f nhost.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"nhost.c\"
+else
+echo shar: Extracting \"nhost.c\" \(2553 characters\)
+sed "s/^X//" >nhost.c <<'END_OF_nhost.c'
+X/* nhost.c 2.3 dd. aug 13 1992		(c) Copyright 1991,1992 Rob J. Nauta.
+X * This module contains the findhost(), getsock() and opensock() functions.
+X * findhost() returns the official name of a host, indicated by a name or
+X * number. findhost2() returns a struct hostent *, and is meant to replace
+X * findhost. getsock() returns a struct sockaddr_in *, with the relevant
+X * fields filled with the internet number of the host. opensock() opens a
+X * socket to a given port on a given host. */
+X#include <stdio.h>
+X#include <sys/types.h>
+X#include <sys/socket.h>
+X#include <netinet/in.h>
+X#include <netdb.h>
+X#ifndef lint
+Xstatic char idstr[] = "@(#)nhost.c 2.1 91/11/20 RJN\n\
+X		(c) Copyright 1991 Fidelio Software. All rights reserved.\n";
+X#endif
+X
+Xstruct hostent *
+Xfindhost2(host)			/* Find a real hostname for the argument */
+Xchar *host;
+X{
+X	struct hostent *hp;
+X	unsigned long num;
+X
+X	if ((hp = gethostbyname(host)) == NULL) {
+X		num = inet_addr(host);	/* Try the number */
+X		if ((hp = gethostbyaddr(&num, sizeof(num), 0)) == NULL)
+X			return (NULL);
+X	}
+X	return (hp);
+X}
+X
+Xchar *
+Xfindhost(host)
+Xchar *host;
+X{
+X	struct hostent *hp;
+X
+X	if (hp = findhost2(host))
+X		return (hp->h_name);
+X	fprintf(stderr, "can't get adress for %s\n", host);
+X	return (NULL);
+X}
+X
+Xstruct sockaddr_in *
+Xgetsock(arg)
+Xchar *arg;
+X{
+X	static struct sockaddr_in sin;
+X	static struct hostent *hp;
+X
+X	sin.sin_addr.s_addr = inet_addr(arg);
+X	if (sin.sin_addr.s_addr != -1) {
+X		/* arg is aaa.bbb.ccc.ddd, so fill sin with data */
+X		sin.sin_family = AF_INET;
+X		return (&sin);
+X	}
+X	/* argument is probably a hostname */
+X	hp = gethostbyname(arg);
+X	if (hp) {
+X		/* Hostname lookup was successfull */
+X		sin.sin_family = hp->h_addrtype;
+X#if defined(h_addr)		/* In 4.3, this is a #define */
+X		memcpy((caddr_t) & sin.sin_addr,
+X		       hp->h_addr_list[0], hp->h_length);
+X#else				/* defined(h_addr) */
+X		memcpy((caddr_t) & sin.sin_addr,
+X		       hp->h_addr, hp->h_length);
+X#endif				/* defined(h_addr) */
+X		sin.sin_family = AF_INET;
+X		return (&sin);
+X	}
+X	fprintf(stderr, "Can't find %s !\n", arg);
+X	return (NULL);		/* Nothing found */
+X}
+X
+X/* opensock - open a stream connection to a port on a host. Returns -1 on
+X * failure, with errno set. */
+Xopensock(hostname, portnum)
+Xchar *hostname;
+Xint portnum;
+X{
+X	struct sockaddr_in *sp;
+X	int s;
+X
+X	if ((sp = getsock(hostname)) == NULL)
+X		return (-1);	/* Unknown host */
+X
+X	sp->sin_port = htons((u_short) portnum);
+X	if ((s = socket(sp->sin_family, SOCK_STREAM, 0)) < 0)
+X		return (-1);
+X	if (connect(s, sp, sizeof(*sp)) < 0) {
+X		close(s);
+X		return (-1);
+X	}
+X	return (s);		/* Success */
+X}
+END_OF_nhost.c
+if test 2553 -ne `wc -c <nhost.c`; then
+    echo shar: \"nhost.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f nhost.h -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"nhost.h\"
+else
+echo shar: Extracting \"nhost.h\" \(122 characters\)
+sed "s/^X//" >nhost.h <<'END_OF_nhost.h'
+Xextern char *findhost();
+Xextern struct hostent *findhost2();
+Xextern struct sockaddr_in *getsock();
+Xextern int opensock();
+END_OF_nhost.h
+if test 122 -ne `wc -c <nhost.h`; then
+    echo shar: \"nhost.h\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f yp-check.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"yp-check.c\"
+else
+echo shar: Extracting \"yp-check.c\" \(2779 characters\)
+sed "s/^X//" >yp-check.c <<'END_OF_yp-check.c'
+X/* YP security checker. Meant as an addition to COPS. */
+X
+X#include <stdio.h>
+X#include <rpc/rpc.h>
+X#include <rpcsvc/yp_prot.h>
+X#include "nhost.h"
+X#ifndef lint
+Xstatic char *copyright = "@(#)yp-check.c 1.0 92/05/10 Rob J. Nauta\n";
+X#endif
+X
+Xchar *get_smname();
+Xchar *defaultdomain, *programname;
+X
+XCLIENT *
+Xrpc_yp_client(arg, thisport)
+Xchar *arg;
+Xint thisport;
+X{
+X	char myhost[100];
+X	struct sockaddr_in *server_addr;
+X	int sock = RPC_ANYSOCK, klad = 0;
+X	CLIENT *client;
+X
+X	if (gethostname(myhost, 100))	/* Get our own hostname */
+X		perror(programname);
+X	server_addr = getsock(arg);	/* Get adress info */
+X	if (server_addr == NULL)
+X		return (NULL);
+X	server_addr->sin_port = thisport;	/* Normally 0 (= portmapper) */
+X
+X	if ((client = clnttcp_create(server_addr, YPPROG, YPVERS,
+X				     &sock, 0, 0)) == NULL) {
+X		clnt_pcreateerror(programname);
+X		return (NULL);	/* Failure */
+X	}
+X	client->cl_auth = authunix_create(myhost, 0, 0, 1, &klad);
+X	return (client);	/* Success */
+X}
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	int c;
+X	int debug = 0, errflg = 0;
+X	int thisport = 0;
+X	char *hostname;
+X	char which[256];
+X	FILE *P;
+X	extern int optind;
+X	extern char *optarg;
+X	CLIENT *client;		/* Client pointer */
+X
+X	programname = argv[0];
+X	while ((c = getopt(argc, argv, "d?")) != EOF)
+X		switch (c) {
+X		    case 'd':	/* debug */
+X			debug++;
+X			break;
+X		    case '?':	/* help */
+X		    default:
+X			errflg++;
+X			break;
+X		}
+X	if (optind > argc)
+X		errflg++;
+X	if (errflg) {
+X		fprintf(stderr, "Usage:	%s [-d]  [domainname ...]\n",
+X			programname);
+X		exit(1);
+X	}
+X	yp_get_default_domain(&defaultdomain);
+X	if (debug)
+X		fprintf(stderr, "The default domainname is: %s\n",
+X			defaultdomain);
+X
+X	if ((P = popen("ypwhich", "r")) == NULL) {
+X		perror(argv[0]);
+X		exit(1);
+X	}
+X	fscanf(P, "%s", which);
+X	if (strcmp(which, "ypwhich:") == NULL) {
+X		/* Very ugly kludge, but this is to keep it simple */
+X		fprintf(stderr, "%s: Error running ypwhich.\n", argv[0]);
+X		exit(1);
+X	}
+X	if (debug)
+X		fprintf(stderr, "The current NIS server is: %s\n", which);
+X	client = rpc_yp_client(which, thisport);
+X	if (client == NULL)
+X		exit(2);	/* Host not found, or no ypserv */
+X	hostname = get_smname(which, debug);
+X	if (debug)
+X		fprintf(stderr, "Sendmail on that machine says its hostname is: %s\n", hostname);
+X
+X	/* Now test whether the domainname is too obvious */
+X	if (strstr(which, defaultdomain)) {
+X		printf("Warning!  The NIS domainname (%s)\n	  is part of the NIS server's hostname (%s) !\n", defaultdomain, which);
+X		return (0);
+X	}
+X	if (strstr(hostname, defaultdomain)) {
+X		printf("Warning!  The NIS domainname (%s)\n	  is part of the NIS server's hostname (%s) !\n", defaultdomain, hostname);
+X		return (0);
+X	}
+X	auth_destroy(client->cl_auth);	/* Free authorization struct */
+X	clnt_destroy(client);	/* Free client structure */
+X	return (0);
+X}
+END_OF_yp-check.c
+if test 2779 -ne `wc -c <yp-check.c`; then
+    echo shar: \"yp-check.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f ypx-add.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"ypx-add.c\"
+else
+echo shar: Extracting \"ypx-add.c\" \(558 characters\)
+sed "s/^X//" >ypx-add.c <<'END_OF_ypx-add.c'
+X#include <string.h>
+X#define extern
+X#include "ypx-add.h"
+X/*
+X * Define extern as "" to define the otherwise external table and tablec as
+X * local variables in this module.
+X */
+X
+X#ifndef lint
+Xstatic char *copyright = "@(#)ypx-add.c 1.1 91/11/20 Rob J. Nauta\n";
+X#endif
+X
+X/*
+X * Parses a hostname, and adds it to the table
+X */
+Xvoid
+Xparse(name)
+Xchar *name;
+X{
+X	char *a = name, *b;
+X	char buffer[128];
+X
+X	while (1) {
+X		add(a);
+X		b = strchr(a, '.');
+X		if (b) {
+X			strncpy(buffer, a, b - a);
+X			buffer[b - a] = '\0';
+X			add(buffer);
+X			a = (++b);
+X		} else
+X			return;
+X	}
+X}
+END_OF_ypx-add.c
+if test 558 -ne `wc -c <ypx-add.c`; then
+    echo shar: \"ypx-add.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f ypx-add.h -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"ypx-add.h\"
+else
+echo shar: Extracting \"ypx-add.h\" \(117 characters\)
+sed "s/^X//" >ypx-add.h <<'END_OF_ypx-add.h'
+X#define TABLESIZE 50
+Xextern char table[TABLESIZE][80];
+Xextern int tablec;
+X#define	add(a)	strcpy(table[tablec++], a);
+END_OF_ypx-add.h
+if test 117 -ne `wc -c <ypx-add.h`; then
+    echo shar: \"ypx-add.h\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f ypx-boot.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"ypx-boot.c\"
+else
+echo shar: Extracting \"ypx-boot.c\" \(1202 characters\)
+sed "s/^X//" >ypx-boot.c <<'END_OF_ypx-boot.c'
+X/*
+X * Functie ypx_boot(host). Roept de bootparams service aan op host 'host'.
+X * Resultaat is een char *. Als er iets mis gaat, return een (char *) 0.
+X */
+X#include <stdio.h>
+X#include <sys/errno.h>
+X#include <sys/types.h>
+X#include <sys/socket.h>
+X#include <rpc/rpc.h>
+X#include <rpcsvc/bootparam.h>
+X#include "nhost.h"
+X
+X#ifndef lint
+Xstatic char *copyright = "@(#)ypx_boot.c 1.1 92/08/22 Rob J. Nauta\n";
+X#endif
+X
+Xchar *programname;
+Xint option;
+X
+Xchar *
+Xbootname(host)
+Xchar *host;
+X{
+X	int stat,i;
+X	static struct bp_whoami_arg bp_arg, *bp_p;
+X	static struct bp_whoami_res bp_r, *bp_res=NULL;
+X
+X	bp_p=&bp_arg;
+X	bp_arg.client_address.address_type=1;
+X	bp_arg.client_address.bp_address.ip_addr.net=(char)131;
+X	bp_arg.client_address.bp_address.ip_addr.host=(char)155;
+X	bp_arg.client_address.bp_address.ip_addr.lh=(char)70;
+X	bp_arg.client_address.bp_address.ip_addr.impno=(char)17;
+X	bp_res=&bp_r;
+X	bp_r.client_name=malloc(1024);
+X	bp_r.domain_name=malloc(1024);
+X
+X	if (stat = callrpc(host, BOOTPARAMPROG, BOOTPARAMVERS,
+X			   BOOTPARAMPROC_WHOAMI, xdr_bp_whoami_arg, &bp_arg,
+X			   xdr_bp_whoami_res, bp_res)) {
+X		clnt_perrno(stat);
+X		return(NULL);
+X	}
+X	/* Print de gevonden gegevens uit */
+X	return(bp_res->domain_name);
+X}
+END_OF_ypx-boot.c
+if test 1202 -ne `wc -c <ypx-boot.c`; then
+    echo shar: \"ypx-boot.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f ypx-func.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"ypx-func.c\"
+else
+echo shar: Extracting \"ypx-func.c\" \(2809 characters\)
+sed "s/^X//" >ypx-func.c <<'END_OF_ypx-func.c'
+X#include <stdio.h>
+X#include <sys/time.h>
+X#include <rpc/rpc.h>
+X#include <rpcsvc/yp_prot.h>
+X#include "nhost.h"
+X#include "ypx-add.h"
+X
+X#ifndef lint
+Xstatic char *copyright = "@(#)ypx-func.c 2.2 92/05/08 Rob J. Nauta\n";
+X#endif
+Xstatic struct timeval TIMEOUT = {25, 0};	/* total timeout */
+Xextern char *programname, *ypdomain;
+X
+XCLIENT *
+Xrpc_yp_client(arg,thisport)
+Xchar *arg;
+Xint thisport;
+X{
+X	char myhost[100];
+X	struct sockaddr_in *server_addr;
+X	int sock = RPC_ANYSOCK, klad = 0;
+X	CLIENT *client;
+X
+X	if (gethostname(myhost, 100))	/* Get our own hostname */
+X		perror(programname);
+X	server_addr = getsock(arg);	/* Get adress info */
+X	if (server_addr == NULL)
+X		return (NULL);
+X	server_addr->sin_port = thisport;	/* Normally 0 (== portmapper)*/
+X
+X	/*
+X	 * We use tcp, because receiving thousands of udp packets would slow
+X	 * down things considerably.
+X	 */
+X	if ((client = clnttcp_create(server_addr, YPPROG, YPVERS,
+X				     &sock, 0, 0)) == NULL) {
+X		clnt_pcreateerror(programname);
+X		return (NULL);	/* Failure */
+X	}
+X	client->cl_auth = authunix_create(myhost, 0, 0, 1, &klad);
+X	return (client);	/* Success */
+X}
+X
+Xstatic 
+Xgetmap(client, map, domain, outputfile)
+XCLIENT *client;
+Xchar *map, *domain;
+XFILE *outputfile;
+X{
+X	struct ypreq_nokey no;	/* To start lookup */
+X	struct ypreq_key key;	/* To continue lookup */
+X	enum clnt_stat re;
+X	static struct ypresp_key_val resp;	/* Results of lookup */
+X	char buffer[1024];
+X
+X	resp.keydat.dptr = malloc(1024);
+X	resp.valdat.dptr = malloc(1024);
+X	no.domain = domain;	/* Startup values */
+X	no.map = map;
+X	/* Get the first entry */
+X	re = clnt_call(client, YPPROC_FIRST, xdr_ypreq_nokey, &no,
+X		       xdr_ypresp_key_val, &resp, TIMEOUT);
+X	if (re != RPC_SUCCESS) {
+X		clnt_perrno(re);
+X		return (2);
+X	}
+X	if (resp.status != 1)
+X		return (1);	/* Success, but no map, domainname wrong */
+X	while (resp.status == 1) {
+X		strncpy(buffer, resp.valdat.dptr, resp.valdat.dsize);
+X		buffer[resp.valdat.dsize] = (char) 0;
+X		fprintf(outputfile, "%s\n", buffer);
+X
+X		key.domain = domain;
+X		key.map = map;
+X		key.keydat.dptr = resp.keydat.dptr;
+X		key.keydat.dsize = resp.keydat.dsize;
+X
+X		/* Get next entry, using the previous one */
+X		re = clnt_call(client, YPPROC_NEXT, xdr_ypreq_key, &key,
+X			       xdr_ypresp_key_val, &resp, TIMEOUT);
+X		if (re != RPC_SUCCESS) {
+X			clnt_perrno(re);
+X			return (2);
+X		}
+X	}
+X	return (0);
+X}
+X
+X/*
+X * trymap - Tries the list of domainnames in table[] with getmap().
+X */
+Xtrymap(client, mapname, debug, outputfile)
+XCLIENT *client;
+Xchar *mapname;
+Xint debug;
+XFILE *outputfile;
+X{
+X	int teller = 0, res;
+X	while (teller < tablec) {
+X		if (debug)
+X			fprintf(stderr, "Trying domain %s\n", table[teller]);
+X		if ((res = getmap(client, mapname, table[teller], outputfile)
+X		     ) == 0) {
+X			ypdomain = table[teller];
+X			return (0);	/* success */
+X		}
+X		teller++;
+X	}
+X	return (res);		/* failure */
+X}
+END_OF_ypx-func.c
+if test 2809 -ne `wc -c <ypx-func.c`; then
+    echo shar: \"ypx-func.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f ypx-main.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"ypx-main.c\"
+else
+echo shar: Extracting \"ypx-main.c\" \(1974 characters\)
+sed "s/^X//" >ypx-main.c <<'END_OF_ypx-main.c'
+X/* ypx 2.1 (c) Copyright 1991,1992 by Rob J. Nauta. All rights reserved. */
+X#include <stdio.h>
+X#include <rpc/rpc.h>
+X#include "nhost.h"
+X#include "ypx-add.h"
+X#ifndef lint
+Xstatic char *copyright = "@(#)ypx-main.c 2.2 92/05/09 Rob J. Nauta\n";
+X#endif
+X
+Xextern CLIENT *rpc_yp_client();
+Xchar *ypdomain, *programname;
+X
+Xmain(argc, argv)
+Xint argc;
+Xchar *argv[];
+X{
+X	int c;
+X	int debug = 0, errflg = 0, guessing = 0, toafile = 0, sendmail = 0;
+X	int thisport = 0;
+X	char *mapname = "passwd.byname";
+X	FILE *outputfile;
+X	extern int optind;
+X	extern char *optarg;
+X	CLIENT *client;		/* Client pointer */
+X
+X	programname = argv[0];
+X	outputfile = stdout;
+X	tablec = 0;
+X	while ((c = getopt(argc, argv, "dgm:o:p:s")) != EOF)
+X		switch (c) {
+X		    case 'd':	/* debug */
+X			debug++;
+X			break;
+X		    case 'g':	/* guessing */
+X			guessing++;
+X			break;
+X		    case 'm':	/* mapname */
+X			mapname = optarg;
+X			break;
+X		    case 'o':	/* redirect output */
+X			outputfile = fopen(optarg, "w");
+X			toafile++;
+X			break;
+X		    case 'p':	/* go directly to port thisport */
+X			thisport = atoi(optarg);
+X			break;
+X		    case 's':	/* try sendmail */
+X			sendmail++;
+X			break;
+X		    case '?':	/* help */
+X		    default:
+X			errflg++;
+X			break;
+X		}
+X	if (optind >= argc)
+X		errflg++;
+X	if (errflg) {
+X		fprintf(stderr, "Usage:	%s [-dgs] [-m mapname] [-o outputfile] [-p portnumber]\n	hostname [domainname ...]\n",
+X			programname);
+X		exit(1);
+X	}
+X	client = rpc_yp_client(argv[optind], thisport);
+X	if (client == NULL)
+X		exit(2);	/* Host not found, or no ypserv */
+X	if (guessing)
+X		parse(argv[optind]);	/* build name table */
+X	if (sendmail)		/* Add sendmail hostname */
+X		parse(get_smname(argv[optind], debug));
+X	while (optind < argc)
+X		add(argv[optind++]);	/* just add arg to table */
+X
+X	if ((trymap(client, mapname, debug, outputfile) == 0) && debug)
+X		fprintf(stderr, "YP map transfer successfull.\n");
+X	auth_destroy(client->cl_auth);	/* Free authorization struct */
+X	clnt_destroy(client);	/* Free client structure */
+X	return (0);
+X}
+END_OF_ypx-main.c
+if test 1974 -ne `wc -c <ypx-main.c`; then
+    echo shar: \"ypx-main.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f ypx-sm.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"ypx-sm.c\"
+else
+echo shar: Extracting \"ypx-sm.c\" \(783 characters\)
+sed "s/^X//" >ypx-sm.c <<'END_OF_ypx-sm.c'
+X#include <stdio.h>
+X#include <string.h>
+X#ifndef lint
+Xstatic char *copyright = "@(#)ypx-sm.c 1.0 91/11/20 Rob J. Nauta\n";
+X#endif
+X
+X/*
+X * Retrieves the full hostname from sendmail on the remote host.
+X */
+Xchar *
+Xget_smname(name, debug)
+Xchar *name;
+Xint debug;
+X{
+X	int s;
+X	static char result[80];
+X	char buffer[256], a[20], *p;
+X
+X	if (debug)
+X		fprintf(stderr, "Opening connection to sendmail ... ");
+X	if ((s = opensock(name, 25)) < 0) {
+X		if (debug)
+X			fprintf(stderr, "failed.\n");
+X		return (NULL);
+X	}
+X	read(s, buffer, 256);	/* Read one line */
+X	close(s);
+X	if (p = strchr(buffer, '\r'))
+X		*p = '\0';	/* Remove trailing garbage */
+X	if (debug)
+X		fprintf(stderr, "ok.\n%s\n", buffer);
+X	sscanf(buffer, "%s %s", a, result);	/* Read "220" and hostname */
+X	return (result);	/* Return hostname */
+X}
+END_OF_ypx-sm.c
+if test 783 -ne `wc -c <ypx-sm.c`; then
+    echo shar: \"ypx-sm.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f ypx.1 -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"ypx.1\"
+else
+echo shar: Extracting \"ypx.1\" \(2435 characters\)
+sed "s/^X//" >ypx.1 <<'END_OF_ypx.1'
+X.\" (c) Copyright 1991 by Rob J. Nauta. All rights reserved.
+X.\" j
+X.TH YPX 1 "13 Nov 1991"
+X.SH NAME
+Xypx \- transfer a NIS map beyond the local (broadcast) network
+X.SH SYNOPSIS
+X.B ypx
+X[
+X.B \-dgs
+X] [
+X.BI \-m "\ mapname"
+X] [
+X.BI \-o "\ outputfile"
+X]
+X.I hostname
+X[
+X.I domainname ...
+X]
+X.SH DESCRIPTION
+XNormal NIS operation depends on the ability to send broadcast
+Xmessages over the local ethernet.
+XIt is possible to point a
+X.B ypbind
+Xdaemon to a
+X.B ypserv
+Xdaemon on a non-local system, however, this is not recommended.
+X.LP
+X.B ypx
+Xis a utility to transfer a NIS map from any host running a
+X.B ypserv
+Xdaemon.
+X.B ypx
+Xis similar to
+X.BR ypcat ,
+Xwith some additions.
+XTo be able to transfer a map, a
+X.I domainname
+Xmust be specified.
+XThere unfortunately is no way to ask the remote host about
+Xits domainname, so it must be known already or guessed to
+Xtransfer a map successfully.
+XIf none is specified, the hostname of the remote
+Xhost is used as the domainname.
+X.B ypx
+Xis able to guess at the remote domainname, by trying parts of
+Xthe hostname, if guessing is enabled with the
+X.B \-g
+Xoption. If the 
+X.B \-s
+Xoption is used,
+X.B ypx
+Xwill connect to the
+X.B sendmail
+Xdaemon, read the hostname, and parse that too, to be used
+Xas additional guesses.
+XFinally, any additional strings on the commandline will be
+Xadded to the list of domainname guesses.
+X.SH OPTIONS
+X.TP
+X.B \-d
+XDebug mode, gives progress information on stderr.
+X.TP
+X.B \-g
+XEnable domainname guessing.
+X.TP
+X.BI \-m "\ mapname"
+XSpecify the name of the NIS map to be transferred. The default is
+X.BR passwd.byname .
+X.TP
+X.BI \-o "\ outputfile"
+XSend output file to
+X.IR outputfile .
+XIf the transfer was unsuccessfull, the (zero length)
+X.I outputfile
+Xwill be removed.
+X.TP
+X.BI \-p "\ portnumber"
+XNormally the call is placed to the portmapper of the remote host, which
+Xwill tell us the portnumber
+X.IR ypserv (8)
+Xis using. If a portnumber is specified, the RPC call is placed
+Xdirectly to
+X.IR ypserv (8).
+X.TP
+X.B \-s
+XRetrieve the full hostname from sendmail, parse it, and add it to the
+Xlist of guesses.
+X.I
+X.\".SH FILES
+X.SH "SEE ALSO"
+X.BR domainname (1),
+X.BR sendmail (8),
+X.BR ypcat (1),
+X.BR ypserv (8).
+X.LP
+X.I System and Network Administration
+X.SH DIAGNOSTICS
+X.TP
+X.BI "Can't find " hostname !
+XThe hostname is invalid, or the host was not found.
+X.TP
+X.B "ypx: RPC: Program not registered"
+XThe remote host doesn't have a
+X.B ypserv
+Xdaemon running.
+X.\".SH BUGS
+X.SH AUTHOR
+X.TP
+XRob J. Nauta:
+X.I rob@wzv.win.tue.nl
+END_OF_ypx.1
+if test 2435 -ne `wc -c <ypx.1`; then
+    echo shar: \"ypx.1\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+echo shar: End of archive 1 \(of 1\).
+cp /dev/null ark1isdone
+MISSING=""
+for I in 1 ; do
+    if test ! -f ark${I}isdone ; then
+	MISSING="${MISSING} ${I}"
+    fi
+done
+if test "${MISSING}" = "" ; then
+    echo You have unpacked all 1 archives.
+    rm -f ark[1-9]isdone
+else
+    echo You still need to unpack the following archives:
+    echo "        " ${MISSING}
+fi
+##  End of shell archive.
+exit 0

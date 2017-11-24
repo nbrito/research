@@ -1,0 +1,3 @@
+which will prevent anyone from writing to your "dot" file.  You should
+then check the contents of this file to make sure no one has altered it
+in any way.

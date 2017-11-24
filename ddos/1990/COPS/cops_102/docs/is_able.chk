@@ -1,0 +1,36 @@
+.TH IS_ABLE.CHK 1 "Jan 4, 1991"
+.UC 4
+.SH NAME
+is_able.chk \- Check for write/read\-ability of files listed a configuration file.
+.SH SYNOPSIS
+.B is_able.chk
+.SH DESCRIPTION
+.I is_able.chk
+checks all files listed in the file
+.I is_able.lst
+to see if files are either write/read-able by group or by
+all, or if they are setuid/setgid, or a combination of these.
+.PP
+.I is_able.lst
+is merely a list of files (or regular expressions representing a file
+or files), one per line, that are checked by
+.I is_able.
+Any line starting with a "#" is ignored, and any file checked for
+writability also checks the parent directories (if a complete path is
+given) for writeability.
+.SH EXAMPLE
+.EX 0
+#   Lines are of the format:
+#	/path/to/file
+/etc/*
+/.profile
+.EE
+.SH FILES
+is_able.lst
+.SH Bugs
+When using wildcards and checking a directory with a lot of files, overflow
+of the shell variables can occur, causing incorrect arguments to be passed
+to the driving program,
+.I is_able
+.SH See Also
+is_able(1)

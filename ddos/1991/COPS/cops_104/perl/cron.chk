@@ -1,0 +1,75 @@
+#!/bin/sh -- need to mention perl here to avoid recursion
+'true' || eval 'exec perl -S $0 $argv:q';
+eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
+& eval 'exec /usr/local/bin/perl -S $0 $argv:q'
+        if 0;
+
+#  Usage: cron.chk.pl [-rd]
+#
+#  This checks pathnames and files inside the cron files /usr/lib/crontab
+# for writability.
+#
+#  Mechanism:  The commands inside the file /usr/lib/crontab are executed
+# by root.  This perl script uses chk_strings.pl for chking for writable
+# files/dirs.
+#
+#  cron.chk.pl will try to find a file in /usr/lib/crontab first (bsd),
+# and then if it isn't there, it will look in the any alternate
+# possible locations next -- right now, /usr/spool/cron/crontab -- to
+# see if a directory exists, and, if it does, it checks all the cron
+# files in turn.
+#
+#  WARNING!
+#
+#  Spurious messages can occur; a more stringent method (if perhaps less
+# careful of a check) would be to test just the 6th field, instead of
+# all the fields after the fifth.  Also throwing away /tmp, etc. could
+# be a mistake.
+#
+
+package main;
+
+require 'getopts.pl';
+require 'glob.pl';
+require 'chk_strings.pl';
+require 'pathconf.pl';
+
+# should also add args to override default crontab locations
+die "Usage: $0 [-rd]\n" unless &Getopts('rd') && !@ARGV;
+
+$chk_strings'debug = $opt_d;
+$chk_strings'recurse = $opt_r;
+
+package cron_chk;
+
+#  Possible location of crontab file:
+$cron = "/usr/lib/crontab";
+#  alternate reality locations of crontab file:
+@alt_cron = ("/usr/spool/cron/crontabs");
+
+if ( ! -s $cron) {
+    for (@alt_cron) {
+	# are there ever multiple crontab directories?
+	(@crons = &'glob("$_/*")), last if -d;
+    }
+    die "No crontabs?\n" if ! @crons;
+}
+@crons = ($cron) unless @crons;
+
+# ignore /tmp /dev/null and tty stuff
+# &'chk_strings ignores all of above
+# STILL NEED to ignore stuff after `>'  ??
+#   when we add @ignore stuff to &'chk_strings
+# @ignore stuff is in &'chk_strings now, do we want to ignore filenames
+#   being redirected into .. might as well leave them, let the user decide.
+
+# finally, do the checking -- maybe for one, maybe for lots of cron-ites:
+for (@crons) {
+    if (! -e) {
+	warn "$0: $_: $!\n";
+	next;
+    }
+    &'chk_strings($_);
+}
+
+1;

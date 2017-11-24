@@ -1,0 +1,26 @@
+
+Files with the setuid ("set userid") or the setgid ("set group id") bit
+set confer special permissions upon the user that runs them.  If user "pat"
+runs a program owned by user "terry" that has the setuid bit on, then user
+"pat" can become user "terry" for the duration of that program.  User "pat"
+can access and write, erase, and alter all the files owned by "terry" during
+the duration of that program.  The example below shows the output of the
+command "ls -Faslg rogue", where this file has the setuid bit turned on.
+
+   0 -rws------  1 pat   staff           0 Nov 11 22:51 rogue*
+
+This works the same way for programs with the setgid bit on.  The group
+that owns them will be conferred upon anyone who runs the program.  Here
+is an example output of "ls -Faslg rogue" for a program with the setgid bit
+on.
+
+   0 -rwx--S---  1 pat   staff           0 Nov 11 22:51 rogue*
+
+You can use the command "ls -Faslg" to check and see if you have any setuid
+or setgid files in your account.  Unless you have a specific reason for having 
+them this way, you should consider turning off the setuid or setgid bit.
+Chkacct will do this for you if you simply press RETURN/NEWLINE at the
+prompt.
+
+[Excerpted from "Guide to Account Security" -- Purdue Engineering Computer 
+ Network (ECN) "No Name Newsletter" September 1991]

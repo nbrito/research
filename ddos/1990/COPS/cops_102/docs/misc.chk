@@ -1,0 +1,20 @@
+.TH MISC.CHK 1 "Jan 4, 1991"
+.UC 4
+.SH NAME
+misc.chk  \- Checks contents of root owned startup files as well as
+a variety of miscellaneous potential dangers.
+.SH SYNOPSIS
+.B misc.chk
+.SH DESCRIPTION
+.I misc.chk
+This shell script checks a variety of miscellaneous potential
+security problems that really don't belong anywhere else.  Currently,
+it looks for to see if tftp & rexecd are enabled, checks if the
+uudecode alias is in the mail alias file and not commented out, and
+if uudecode is either SUID, or can produce SUID files.
+.SH FILES
+.EX 0
+/etc/motd
+/etc/inetd.conf
+/usr/lib/aliases
+.EE

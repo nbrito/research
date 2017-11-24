@@ -1,0 +1,122 @@
+.TH COPS 1 "Jan 4, 1991"
+.UC 4
+.SH NAME
+cops \- Checks security of system for potential danger areas.
+.SH SYNOPSIS
+.B cops
+[
+\-a architecture
+]
+[
+\-b bit_bucket
+]
+[
+\-s secure_dir
+]
+[
+\-m user
+]
+[
+\-xvV
+]
+.SH DESCRIPTION
+.I cops
+runs a set of programs that each check a different aspect of security
+on a Unix system.  If any potential security holes do exist, the results
+are either mailed or saved to a report file.
+.PP
+The following programs are currently executed by
+.I cops
+\-\- see the appropriate man page or other documentation for 
+more information on each of the following:
+.Ps
+root.chk    dev.chk       group.chk
+home.chk    rc.chk        passwd.chk
+pass.chk    user.chk      cron.chk
+misc.chk    is_able.chk   crc.chk
+bug.chk
+.Pe
+In addition, it runs the U-kuang expert system, which runs these
+additional programs:
+.Ps
+init_kuang  kuang         addto
+clearfiles  filewriters   members
+.Pe
+.PP
+.I cops
+uses three internal variables that may be changed to determine where
+who gets any reports generated, if it is to mailed or saved to a file.
+Thes variables may be set by command line flags or by actually changing
+the variables in the code.  $SECURE_USERS is used to determine who gets
+mailed any results, and is set when the \-m flag is used.  $SECURE is
+the directory that
+.I cops
+is in, and is set by the \-s flag.  Finally, if the variable $MMAIL is
+set to be NO (or the \-m flag is used), then
+.I cops
+will save the report in a subdirectory with the same name as the host
+it is being run on, in a file called
+.I year_month_date
+(where this stands for the actual values/date, not that string.)
+Otherwise,
+.I cops
+will mail the report to the whomever is listed in $SECURE_USERS.
+.PP
+If the variables $ONLY_DIFF and $MMAIL are set to be "YES", then cops
+will examine the last report saved to a file, and compare it with the
+current one.  If any differences do exist, then it will be mailed; else,
+the report will be discarded.
+.PP
+If you suspect that something is amiss, or if you're just curious or 
+a gluttons for punishment, you can set the variable $BIT_BUCKET to be a
+file (or use the -b flag), to see all the error messages and such.
+Some of the programs in cops print out an error message if a file isn't
+found (for instance, if you put a file to be checked in the
+.I is_able.lst
+configuration file, and it doesn't exist, it will not complain to the
+final report, only here; by default, this is our friend /dev/null.
+.SH OPTIONS
+.TP
+.B \-a directory
+Specifies the architecure subdirectory you want to run in; you
+must run "make install" to install the appropriate binaries there.
+.TP
+.B \-b file
+Specifies the "bit bucket", where all the error messages (stderr) go to.
+You can use "tty" to go to your terminal.
+.TP
+.B \-s secure_dir
+Tells cops where the secure directory is; this is used by
+cops itself when it is run with the -a flag; it will rerun itself
+with the -a flag's argument as an argument to this.
+.TP
+.B \-m user
+Mail the output to the user specified.
+.TP
+.B \-x
+Prints the current version number of COPS.
+.TP
+.B \-\[vV\]
+Verbose flags.  Lowercase "v" prints the program currently
+running to the results file, and capital "V" will print the program
+to the screen.
+.SH FILES
+.EX 0
+root.chk    dev.chk      group.chk
+home.chk    rc.chk       passwd.chk
+pass.chk    user.chk     cron.chk
+misc.chk    init_kuang   kuang
+addto       clearfiles   filewriters
+members     crc.chk
+.EE
+.SH "SEE ALSO"
+.EX 0
+root.chk(1)    dev.chk(1)      file.chk(1)
+group.chk(1)   home.chk(1)     rc.chk(1)
+passwd.chk(1)  pass.chk(1)     user.chk(1)
+cron.chk(1)    misc.chk(1)     kuang(1)
+bug.chk(1)     CRC.README      KUANG.README
+.EE
+.SH BUGS
+COPS will get confused if you use a command line arg that
+expects an argument and you don't give it one.

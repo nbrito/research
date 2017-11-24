@@ -1,0 +1,204 @@
+:
+# /* Copyright 1985 Robert W. Baldwin */
+# /* Copyright 1986 Robert W. Baldwin */
+#
+# Jan 1990, Ported to bourne shell from Csh.  Dan Farmer
+#
+#   Took out some comments, combined four of Bob's shell
+# scripts into one (the target script remains separate for
+# easy editing of targets.)  More or less a straight line
+# for line translation; a rewrite that goes for speed will
+# come later.  Maybe just rewrite it in C.  Yeah, that's it....
+
+###############################################
+# Kuang: Rule based computer security checker.
+###############################################
+
+# commands used....
+SH=/bin/sh
+MV=/bin/mv
+TEST=/bin/test
+ECHO=/bin/echo
+AWK=/bin/awk
+RM=/bin/rm
+
+# Initialization.
+$SH ./init_kuang
+
+# Main loop
+#
+$ECHO Starting main loop                        #>/dev/tty
+while $TEST -f uids.n -o -f gids.n -o -f files.n
+    do
+    if $TEST -f uids.n ; then
+        $MV uids.n uids.x
+
+# Process a list of uids from stdin.
+# Usage: douids username comments
+    $ECHO Called douids                        #>/dev/tty
+    i=1
+    while $TEST "1"
+        do
+        nextuid=`$AWK '{if (NR=="'$i'") print $0}' uids.x`
+        i=`expr $i + 1`
+
+        if $TEST -z "$nextuid"  ; then
+            break;
+	    fi
+
+            user=`$ECHO $nextuid | $AWK '{print $1}'`
+
+        $ECHO "   " User $user                    #>/dev/tty
+
+# Rules mapping uids to files.
+#
+        next=`$ECHO $nextuid | $AWK '{for (i=2;i<=NF;i++) printf("%s ", $i)}'`
+        ./addto files /etc/passwd replace grant $user $next
+        ./addto files /usr/lib/aliases replace trojan $user $next
+
+#   hsh = home sweet home = home directory of $user
+        hsh=`./tilde $user`
+
+        if $TEST -f $hsh/.rhosts ;  then
+            ./addto files $hsh/.rhosts write grant $user $next
+        fi
+
+        if $TEST -f $hsh/.login ;  then
+            ./addto files $hsh/.login replace trojan $user $next
+        fi
+
+        if $TEST -f $hsh/.cshrc ;  then
+            ./addto files $hsh/.cshrc replace trojan $user $next
+        fi
+
+        if $TEST -f $hsh/.profile ;  then
+            ./addto files $hsh/.profile replace trojan $user $next
+        fi
+
+        if $TEST "$user" = "root" ;  then
+	    if $TEST -f /usr/lib/crontab ; then
+               ./addto files /usr/lib/crontab replace create supershell $next
+	    else
+               ./addto files /usr/spool/cron/crontabs replace create supershell $next
+	    fi
+            ./addto files /etc/rc replace trojan $user $next
+            ./addto files /etc/rc.local replace trojan $user $next
+        fi
+
+        if $TEST "$user" != "root" ;  then
+            ./addto files /etc/hosts.equiv replace allow rlogin $next
+        fi
+
+        if $TEST "$user" != "root" -a -f /etc/hosts.equiv -a -s /etc/hosts.equiv 
+            then
+            ./addto files /etc/hosts replace fake HostAddress $next
+        fi
+
+    done
+fi
+
+    if $TEST -f gids.n ; then
+       $MV gids.n gids.x
+
+    $ECHO Called dogids                        #>/dev/tty
+    i=1
+    while $TEST "1"
+        do
+        nextgid=`$AWK '{if (NR=="'$i'") print $0}' gids.x`
+        i=`expr $i + 1`
+
+        if $TEST -z "$nextgid" ; then
+            break;
+	    fi
+
+        group=`$ECHO $nextgid | $AWK '{print $1}'`
+        $ECHO "   " Group $group                    #>/dev/tty
+
+# Rules mapping gids to uids.
+#
+        next=`$ECHO $nextgid | $AWK '{for (i=2;i<=NF;i++) printf("%s ", $i)}'`
+        use=`./members $group`
+        for user in $use
+            do
+            ./addto uids $user grant $group $next
+            done
+
+# Rules mapping gids to files.
+#
+        ./addto files /etc/group replace grant $group $next
+        done
+    fi
+
+    if $TEST -f files.n ; then
+       $MV files.n files.x
+
+# A list of file names is read from successive lines of stdin.
+# Each file is examined for ways to access it.
+# The input format is:
+#    <filename> <whitespace> <mode> <comments>
+# The <mode> is either "write" or "replace".
+#
+    $ECHO Called dofiles.                        #>/dev/tty
+    i=1
+    while $TEST "1"
+        do
+        nextfile=`$AWK '{if (NR=='"$i"') print $0}' files.x`
+        i=`expr $i + 1`
+        if $TEST -z "$nextfile" ; then
+            break;
+	    fi
+
+        file=`$ECHO $nextfile | $AWK '{print $1}'`
+        mode=`$ECHO $nextfile | $AWK '{print $2}'`
+
+        $ECHO "    File $file, mode $mode"            #>/dev/tty
+
+# Rules converting filename goals into UserName or GroupName goals.
+#
+        next=`$ECHO $nextfile | $AWK '{for (i=3;i<=NF;i++) printf("%s ", $i)}'`
+
+        writers=`./filewriters $file`
+        numwriters=`$ECHO $writers | $AWK '{print NF}'`
+        if $TEST "$numwriters" = "3" ; then
+            owner=`$ECHO $writers | $AWK '{print $1}'`
+            group=`$ECHO $writers | $AWK '{print $2}'`
+            other=`$ECHO $writers | $AWK '{print $3}'`
+
+            $ECHO "        Writers are $owner $group $other"    #>/dev/tty
+                ./addto uids $owner $mode $file $next
+            if $TEST "$group" != "NONE" ; then
+                ./addto gids $group $mode $file $next
+            fi
+            if $TEST "$other" != "NONE" ; then
+                ./addto uids $other $mode $file $next
+            fi
+        else
+            $ECHO "        $file does not exist"        #>/dev/tty
+            continue
+        fi
+
+# Rules converting filename goals into other filename goals.
+#
+        if $TEST "$mode" != "replace" ; then
+            continue
+        fi
+
+    parent=`$ECHO $file | $AWK -F/ '{if (NF == 2) {
+		printf("/%s", $1)}
+		else if (NF>2) {for (i=2;i<NF;i++) printf("/%s", $i)} 
+		else printf("")'}`
+
+    basename=`$ECHO $file | $AWK -F/ '{print $NF}'`
+
+    $ECHO -n "       " Parent directory is $parent        #>/dev/tty
+    $ECHO ", " basename is $basename                #>/dev/tty
+    if $TEST -n "$parent" ; then
+       ./addto files $parent write replace $basename $next
+        fi
+    done
+
+    fi
+done
+
+# destroy the evidence.... Need "Success" file for report, though.
+$RM files.? gids.? uids.?

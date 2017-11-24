@@ -1,0 +1,105 @@
+
+All information on the computer is stored in files.  A file is just
+what it sounds like, a container for data.  A directory is a special
+file that contains other files or directories.  You can list which
+files are in a directory using the "ls" command. For example, here's
+what "ls" says about the directory where I'm located:
+
+RFC1147.ps    acct.sec    imp.tech     new.security
+orange-book   privacy     pu.environ   ritalin
+s.serv        s.serv.tr   style        wwarticle
+zap
+
+You can use "ls" to find out additional information about files by
+using the "-l" option.  For example, if I wanted more information about
+the file acct.sec in the list above, I would type Here is what happens
+when I do that:
+
+-rw-r--r--  1 pat  8058 Aug 19 11:22 acct.sec
+
+   - The first field shown as, "-rw-r--r--", is the file
+     type and permission bits.  More information about permission codes
+     is given below.
+
+   - The second field, "1", is the number of links to the
+     file.  In this case, the file has only one name.  Other links can
+     be made with the "ln" command.
+
+   - The third field, "pat", is the file's owner.  The login
+     pat owns this file.
+
+   - The fourth field, "8058", is the size of the file in
+     number of characters.
+
+   - The fifth field, "Aug 19 11:22", is the time the file
+     was last modified.
+
+   - The last field is the name of the file.
+
+PERMISSION CODES
+----------------
+The first character in the type/permission field is the file type.  If
+the file is a directory, the first character will be a "d".  If it is a
+regular file, the first character will be "-".
+
+The next nine characters are access permission flags.  The leftmost
+three are owner permissions, the middle three are group permissions,
+and the rightmost three are world permissions.  The letter "r" grants
+read permission, the letter "w" grants write permission, and the letter
+"x" grants execute permission.
+
+In the above example, the permissions for the owner, "pat", are "rw-".
+That means the owner "prm" can read and write the file, but not execute
+it.  The permissions for the file's group are "r--", as they are for
+the world.  If a file has modes "rw-rw----" and is owned by group
+other, everyone on the computer can write to the file!  You can see
+group ownership on a file by using the "g" option with the "l" option
+to "ls".
+
+For example, when I type "ls -l" I get the following:
+
+-rw-r--r--  1 pat  other  8058 Aug 19 11:22 acct.sec
+
+The "other" is the group owner of the file.
+
+You can use the "chmod" command to change file permissions.  The
+character "+" means add permission and the character "-" means deny
+permission.  For example, if I wanted to let people in group "other"
+write on my file, I would type Whereas if I want to deny other people
+permission to look at this file, I could type and the read permission
+on the file would be revoked.
+
+There is a shorthand way of representing file modes.  Each permission
+category (owner, group, and world) is given a number which represents
+the bits set in the permission field. Here is a table that explains
+this numbering system:
+
+             _________________________________
+            |           Owner   Group   World|
+             _________________________________
+            | Read       400     40       4  |
+            | Write      200     20       2  |
+            | Execute    100     10       1  |
+              None         0      0       0
+            |________________________________+
+
+To use this table, merely add up the permissions you want.  For
+example, a file that is mode 644 has owner read and write permission
+(400 + 200), group read permission (40), and world read permission
+(4).
+
+You can use this shorthand with "chmod" as well.  Just use the number
+instead of the symbolic representation.  If you want to change the mode
+of your .login from 755 to 644, you can type
+
+	/bin/chmod 0644 ~/.login
+
+Your home directory should be mode 700, 711, or 755.  You should not
+allow others write permission to your directory!  That would give them
+permission to create or destroy files at will.
+
+Important files should be mode 644 or 600.  Only rarely is it important
+to make a file mode 666, which is world- writable.
+
+[Excerpted from "Guide to Account Security" -- Purdue Engineering Computer 
+ Network (ECN) "No Name Newsletter" September 1991]
