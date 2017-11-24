@@ -1379,7 +1379,7 @@ B<ESF.pl> - B<SQL Fingerprint NG> powered by B<ENG++ Technology>
 
 =head1 VERSION
 
-This document describes the B<Version 2> of B<SQL Fingerprint NG> (C<B<YouSh0t The Sheriff + GNU General Public License>>), which applies the most reliable and accurate technique, based on its sophisticated algorithm, to identify B<Microsoft SQL Server> versions.
+This document describes the B<Version 2> of B<SQL Fingerprint NG> (C<B<You Sh0t The Sheriff + GNU General Public License>>), which applies the most reliable and accurate technique, based on its sophisticated algorithm, to identify B<Microsoft SQL Server> versions.
 
 If you are interested on the B<Version 4> of B<SQL Fingerprint NG> (C<B<TECHNOLOGY PREVIEW>>), which applies sophisticated algorithm to also identify vulnerabilities, please, contact the L<AUTHOR|/"AUTHOR">.
 

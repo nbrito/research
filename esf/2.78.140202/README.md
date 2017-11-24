@@ -7,7 +7,7 @@ NAME
        ESF.pl - SQL Fingerprint NG powered by ENG++ Technology
 
 VERSION
-       This document describes the Version 2 of SQL Fingerprint NG ("YouSh0t
+       This document describes the Version 2 of SQL Fingerprint NG ("You Sh0t
        The Sheriff + GNU General Public License"), which applies the most
        reliable and accurate technique, based on its sophisticated algorithm,
        to identify Microsoft SQL Server versions.
