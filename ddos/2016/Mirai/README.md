@@ -6,7 +6,7 @@
 
 ## Krebs on Security
 * [Source Code for IoT Botnet ‘Mirai’ Released](https://krebsonsecurity.com/2016/10/source-code-for-iot-botnet-mirai-released/)
-* [Who is Anna-Senpai, the Mirai Worm Author?](https://krebsonsecurity.com/2017/01/who-is-anna-senpai-the-mirai-worm-author/comment-page-5/#comments)
+* [Who is Anna-Senpai, the Mirai Worm Author?](https://krebsonsecurity.com/2017/01/who-is-anna-senpai-the-mirai-worm-author)
 
 ## Source Code
 * [Mirai-Source-Code](https://github.com/jgamblin/Mirai-Source-Code)
