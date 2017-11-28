@@ -55,7 +55,14 @@ mov	edi, eax	; moving eax to edi
 			; eax = return()
 			; edi = SOCKET accept()
 ```
-No matter what someone tries to convincing you, this is not [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering)... This is just a “translation”.
+No matter what someone tries to convincing you, this is not [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering)... This is just a "_**translation**_".
+
+## Inception
+Every time a new vulnerability comes out, we should be ready to understand it, in order to perform: exploitation, detection, prevention and mitigation. Sometimes, none or just a few information regarding a new vulnerability  is publicly available... And sometimes, these information regarding a new vulnerability are wrong or, to be polite, uncompleted.
+
+[Reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches available to deeply understand a new vulnerability, and, sometimes, to ["_**rediscover**_"](Rediscover the new vulnerability means that you did not actually discover a new vulnerability, but you can, and are able to, figure out valuable information about it.) the new vulnerability.
+
+The challenge
 
 ## Root Cause
 ###  ```CRecordInstance::TransferToDestination```
