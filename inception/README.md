@@ -128,10 +128,10 @@ For our example, the following answers have been found:
 * White Box (Static Analysis), Black Box (Dymanic Analysis) and Grey/Gray Box (Both Static and Dymanic Analisys).
 
 # DREAM LEVEL 2
-Stay tuned for the upcoming description.
+**Stay tuned for the upcoming description.**
 
 # DREAM LEVEL 3
-Stay tuned for the upcoming description.
+**Stay tuned for the upcoming description.**
 
 ## Mapping
 ### Black Box (Dynamic) Approach
@@ -460,7 +460,7 @@ int CRecordInstance::TransferToDestination () {
 By the way, it is pretty similar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
 
 # KICK or LIMBO
-Stay tuned for the upcoming description.
+**Stay tuned for the upcoming description.**
 
 # BONUS
 ## [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
