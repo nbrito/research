@@ -134,7 +134,7 @@ Stay tuned for the upcoming description.
 Stay tuned for the upcoming description.
 
 ## Mapping
-### Black Boxing
+### Black Box Approach
 ```
 0:018> bc *
 0:018> bp 7ea8226f ".printf \"********************************************************************************\\n\"; g"
@@ -331,8 +331,7 @@ mshtml!CXferThunk::PvInitVar+0x5:
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
 
 ## Understanding
-### White Boxing
-1. Assembly Code (Commented)
+### White Box Approach
 ```
 TransferToDestination@CRecordInstance PROC NEAR USES EAX ECX EBX EDI ESI EBP ESP
 start:
@@ -426,7 +425,9 @@ ret					;; guess what? ;)
 stop:
 TransferToDestination@CRecordInstance ENDP
 ```
-2. C Code (Reverse Engineered)
+### Reverse Engineered
+The following C code represents the above assembly code, and it is based on the understaning of both Black Box and White Box approaches. By the way, it is pretty simillar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
+
 ```
 int CRecordInstance::TransferToDestination () {
 	int ebp_minus_4h, eax;
@@ -462,9 +463,9 @@ _Use-after-free vulnerability in ```mshtml.dll``` in Microsoft Internet Explorer
 ### Current
 _Use-after-free vulnerability in the ```CRecordInstance::TransferToDestination``` function in ```mshtml.dll``` in Microsoft Internet Explorer 5.01, 6, 6 SP1, and 7 allows remote attackers to execute arbitrary code via DSO bindings involving (1) an XML Island, (2) XML DSOs, or (3) Tabular Data Control (TDC) in a crafted HTML or XML document, as demonstrated by nested ```SPAN``` or ```MARQUEE``` elements, and exploited in the wild in December 2008._
 ### Suggested
-_Internet Explorer 5.01, 6, 7, 8 Beta-1 and Beta-2 use-after-free condition within ```MSHTML.DLL```, due to ```CRecordInstance::TransferToDestination()``` while checking for ```CXfer``` array size, allows remote code execution via crafted HTML document using (**multiple**) nested HTML Bindable Elements referring to predefined Data Source Object (XML Island, XML DSOs or Tabular Data Control)._
+_Internet Explorer 5.01, 6, 7, 8 Beta-1 and Beta-2 use-after-free condition within ```MSHTML.DLL```, due to ```CRecordInstance::TransferToDestination()``` while checking for ```CXfer``` array size, allows remote code execution via crafted HTML document using (**multiple**) nested [HTML Bindable Elements](https://msdn.microsoft.com/en-us/library/ms531385(VS.85).aspx) referring to predefined Data Source Object (XML Island, XML DSOs or Tabular Data Control)._
 
-By "_using (**multiple**) nested HTML Bindable Elements_" I meant that the ```DIV```, ```LABEL```, ```FIELDSET+LEGEND```, ```MARQUEE``` and ```SPAN``` HTML Elements can also be used to reproduce the vulnerability, and they do not even need to be the same, they can be mixed, for example:
+By "_using (**multiple**) nested [HTML Bindable Elements](https://msdn.microsoft.com/en-us/library/ms531385(VS.85).aspx) _" I meant that the ```DIV```, ```LABEL```, ```FIELDSET+LEGEND```, ```MARQUEE``` and ```SPAN``` HTML Elements can also be used to reproduce the vulnerability, and they do not even need to be the same, they can be mixed, for example:
 ```
 <HTML>
 <SCRIPT LANGUAGE="JavaScript">
