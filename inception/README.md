@@ -47,6 +47,7 @@ Many talks have been done in Brazil, regarding reverse engineer, as well as too 
 * None addressing real world vulnerabilities.
 
 Almost all ot these talks leave both “apprentices" and security professionals in a “black hole”, with tons of misinformation. I call this deception.
+
 The "apprentices" demand much more than simple ```hello world``` bugs, because once you have created the bug, you can exploit it easily. Take the following example:
 
 ```
