@@ -64,7 +64,7 @@ Many talks have been done in the last years, as well as too many useless informa
 
 Almost all ot these talks leave both [apprentices](https://en.wikipedia.org/wiki/Newbie) and [security professionals](https://en.wikipedia.org/wiki/List_of_computer_security_certifications) in a [black hole](https://en.wikipedia.org/wiki/Black_hole), with tons of misinformation. [IMHO](https://en.wiktionary.org/wiki/IMHO), this is deception.
 
-The [apprentices](https://en.wikipedia.org/wiki/Newbie) demand much more than simple [```hello world```](https://en.wiktionary.org/wiki/Hello_World) bugs, because once you have [created the bugged](http://phrack.org/issues/49/14.html), you can exploit it easily. Take the following example:
+The [apprentices](https://en.wikipedia.org/wiki/Newbie) demand much more than simple [```hello world```](https://en.wiktionary.org/wiki/Hello_World) bugs, because, once you have [created the bug](http://phrack.org/issues/49/14.html), you can exploit it easily. Take the following example:
 ```
 ; accept(SOCKET, struct sockaddr FAR*, int FAR*)
 push	ebx		; ebx = int FAR*
