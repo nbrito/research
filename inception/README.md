@@ -426,7 +426,7 @@ ret					;; guess what? ;)
 stop:
 TransferToDestination@CRecordInstance ENDP
 ```
-### C Code (Reverse Engineered)
+2. C Code (Reverse Engineered)
 ```
 int CRecordInstance::TransferToDestination () {
 	int ebp_minus_4h, eax;
