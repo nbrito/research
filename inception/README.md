@@ -41,6 +41,14 @@ It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to 
 The **black magic** is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
 ## Motivation
+Many talks have been done in Brazil, regarding reverse engineer, as well as too much useless information:
+* Mostly related to purpose-built frameworks, tools and libraries.
+* Some others addressing how to translate to a readable format.
+* None addressing real world vulnerabilities.
+
+Almost all ot these talks leave both “apprentices" and security professionals in a “black hole”, with tons of misinformation. I call this deception.
+The "apprentices" demand much more than simple ```hello world``` bugs, because once you have created the bug, you can exploit it easily. Take the following example:
+
 ```
 ; accept(SOCKET, struct sockaddr FAR*, int FAR*)
 push	ebx		; ebx = int FAR*
@@ -51,6 +59,7 @@ mov	edi, eax	; moving eax to edi
 			; eax = return()
 			; edi = SOCKET accept()
 ```
+No matter what someone tries to convincing you, this is not reverse engineering... This is just a “translation”.
 
 ## Root Cause
 ###  ```CRecordInstance::TransferToDestination```
