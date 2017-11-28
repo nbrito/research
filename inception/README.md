@@ -24,11 +24,7 @@ _"Sometimes, the best way to advance is in reverse"_. ([Reversing: Secrest of Re
 
 Every time any new vulnerability comes out we should be ready to understand it, in order to perform its exploitation or even to build defenses. [Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches.
 
-Many talks have been done in the last years, as well as too many useless information has been given by security community:
-* Some talks have addressed particular frameworks, specific tools and a few libraries.
-* No practical demonstration and/or tips and tricks regarding vulnerabilities, leaving the **black magic** hidden to the audience.
-
-This [talk](https://github.com/nbrito/talks/blob/master/2016/ibm-systems/nbrito-inception.pdf) shares some tips and trick learned during real vulnerability reversing process, such as:
+Many talks have been done in the last years, as well as too many useless information has been given by security community. This [talk](https://github.com/nbrito/talks/blob/master/2016/ibm-systems/nbrito-inception.pdf) shares some tips and trick learned during real vulnerability [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) process, such as:
 * Gathering information about the vulnerability.
 * Understand the weakness type.
 * Preparing the vulnerable ecosystem.
@@ -41,14 +37,14 @@ It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to 
 The **black magic** is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
 ## Motivation
-Many talks have been done in Brazil, regarding reverse engineer, as well as too much useless information:
+Many talks have been done in the last years, as well as too many useless information has been given by security community:
 * Mostly related to purpose-built frameworks, tools and libraries.
 * Some others addressing how to translate to a readable format.
 * None addressing real world vulnerabilities.
 
-Almost all ot these talks leave both “apprentices" and security professionals in a “black hole”, with tons of misinformation. I call this deception.
+Almost all ot these talks leave both [apprentices](https://en.wikipedia.org/wiki/Newbie) and [security professionals](https://en.wikipedia.org/wiki/List_of_computer_security_certifications) in a [black hole](https://en.wikipedia.org/wiki/Black_hole), with tons of misinformation. [IMHO](https://en.wiktionary.org/wiki/IMHO), this is deception.
 
-The "apprentices" demand much more than simple ```hello world``` bugs, because once you have created the bug, you can exploit it easily. Take the following example:
+The [apprentices](https://en.wikipedia.org/wiki/Newbie) demand much more than simple [```hello world```](https://en.wiktionary.org/wiki/Hello_World) bugs, because once you have created the bug, you can exploit it easily. Take the following example:
 
 ```
 ; accept(SOCKET, struct sockaddr FAR*, int FAR*)
@@ -60,6 +56,7 @@ mov	edi, eax	; moving eax to edi
 			; eax = return()
 			; edi = SOCKET accept()
 ```
+
 No matter what someone tries to convincing you, this is not reverse engineering... This is just a “translation”.
 
 ## Root Cause
