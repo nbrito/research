@@ -498,7 +498,7 @@ _Use-after-free vulnerability in the ```CRecordInstance::TransferToDestination``
 ### Suggested
 _Internet Explorer 5.01, 6, 7, 8 Beta-1 and Beta-2 use-after-free condition within ```MSHTML.DLL```, due to ```CRecordInstance::TransferToDestination()``` while checking for ```CXfer``` array size, allows remote code execution via crafted HTML document using (**multiple**) nested [HTML Bindable Elements](https://msdn.microsoft.com/en-us/library/ms531385(VS.85).aspx) referring to predefined Data Source Object (XML Island, XML DSOs or Tabular Data Control)._
 
-By "_using (**multiple**) nested [HTML Bindable Elements](https://msdn.microsoft.com/en-us/library/ms531385(VS.85).aspx) _" I meant that the ```DIV```, ```LABEL```, ```FIELDSET+LEGEND```, ```MARQUEE``` and ```SPAN``` HTML Elements can also be used to reproduce the vulnerability, and they do not even need to be the same, they can be mixed, for example:
+By "_using (**multiple**) nested [HTML Bindable Elements](https://msdn.microsoft.com/en-us/library/ms531385(VS.85).aspx)_" I meant that the ```DIV```, ```LABEL```, ```FIELDSET+LEGEND```, ```MARQUEE``` and ```SPAN``` HTML Elements can also be used to reproduce the vulnerability, and they do not even need to be the same, they can be mixed, for example:
 ```
 <HTML>
 <SCRIPT LANGUAGE="JavaScript">
