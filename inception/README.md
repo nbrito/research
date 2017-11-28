@@ -133,47 +133,23 @@ Stay tuned for the upcoming description.
 # DREAM LEVEL 3
 Stay tuned for the upcoming description.
 
-###  ```CRecordInstance::TransferToDestination```
+## Mapping
+### Black Boxing
 ```
-int CRecordInstance::TransferToDestination () {
-int ebp_minus_4h, eax;
-int esi, ebx = 0;
-
-esi = (sizeof(edi) >> 2) - 1;
-
-ebp_minus_4h = ebx;
-
-do{
-if(edi[ebx] == 0) continue;
-
-eax = edi[ebx]->TransferFromSrc();
-
-if((ebp_minus_4h == 0) && (eax != 0))
-ebp_minus_4h = eax;
-
-ebx++;
-}while(ebx <= esi);
-
-return(ebp_minus_4h);
-}
-````
-
-### ```HEAP_ENTRY```
-```
-0:013> bc *
-0:013> bp 7ea8226f ".printf \"********************************************************************************\\n\"; g"
-0:013> bp 7ea8227a ".printf \"[TransferToDestination] Setting \'Array Object\': \'Array Elements\' @ EDI -> %08x[%d] = { \", edi, (poi(edi+08) >> 2); .for (r $t0 = 0 ; @$t0 <= (poi(edi+08) >> 2) - 1 ; r $t0 = @$t0 + 1) { .printf \" %08x, \", poi(poi(edi+0C)+(@$t0*4)); }; .printf \"}.\\n\"; g"
-0:013> bp 7ea8227d ".printf \"[TransferToDestination] Setting \'Array.Size()\': %d (@ %08x).\\n\", esi, edi+8; g"
-0:013> bp 7ea8227f ".printf \"[TransferToDestination] Setting \'Counter\': %d.\\n\", ebx; g"
-0:013> bp 7ea82282 ".printf \"[TransferToDestination] Setting \'Array.Size()\': %d @ ESI.\\n\", esi; g"
-0:013> bp 7ea82283 ".printf \"[TransferToDestination] Setting \'Array Index\': %d @ ESI.\\n\", esi; g"
-0:013> bp 7ea82288 ".printf \"[TransferToDestination]\"; .if (ebx == 0) { .printf \" Starting \"; } .else { .printf \" Restarting \"; }; .printf \"\'Loop\': \'Counter\' is %d and \'Array Index\' is %d (@ ESI).\\n\", ebx, esi; g"
-0:013> bp 7ea8228b ".printf \"[TransferToDestination] Setting \'Array[%d]\': \'Array Element\' @ %08x.\\n\", ebx, poi(eax+ebx*4); g"
-0:013> bp 7ea8228f ".printf \"[TransferToDestination] Checking \'Array[%d]\': is \'Array Element\' @ %08x NULL?\\n\", ebx, poi(eax+ebx*4); g"
-0:013> bp 7ea82294 ".printf \"[TransferToDestination] Calling \'Array[%d]\'->TransferFromSrc: \'Array Element\' @ %08x.\\n\", ebx, poi(eax+ebx*4); g"
-0:013> bp 7ea822a7 ".printf \"[TransferToDestination] Incrementing \'Counter\': %d.\\n[TransferToDestination] Comparing \'Counter\' and \'Array Index\': \'Counter\' is %d and \'Array Index\' is %d (@ ESI).\\n\", ebx, ebx, esi; .if ((esi > (poi(edi+08) >> 2) - 1) & (ebx <= esi)) { .printf \"[TransferToDestination] Warning \'Array Index\': should be %d (@ %08x) instead of %d (@ESI).\\n\", (poi(edi+8) >> 2) - 1, edi+8, esi; g; } .else { g; }"
-0:013> bp 7ea822b2 ".printf \"********************************************************************************\\n\"; g"
-0:013> g
+0:018> bc *
+0:018> bp 7ea8226f ".printf \"********************************************************************************\\n\"; g"
+0:018> bp 7ea8227a ".printf \"[TransferToDestination] Setting \'Array Object\': \'Array Elements\' @ EDI -> %08x[%d] = { \", edi, (poi(edi+08) >> 2); .for (r $t0 = 0 ; @$t0 <= (poi(edi+08) >> 2) - 1 ; r $t0 = @$t0 + 1) { .printf \" %08x, \", poi(poi(edi+0C)+(@$t0*4)); }; .printf \"}.\\n\"; g"
+0:018> bp 7ea8227d ".printf \"[TransferToDestination] Setting \'Array.Size()\': %d (@ %08x).\\n\", esi, edi+8; g"
+0:018> bp 7ea8227f ".printf \"[TransferToDestination] Setting \'Counter\': %d.\\n\", ebx; g"
+0:018> bp 7ea82282 ".printf \"[TransferToDestination] Setting \'Array.Size()\': %d @ ESI.\\n\", esi; g"
+0:018> bp 7ea82283 ".printf \"[TransferToDestination] Setting \'Array Index\': %d @ ESI.\\n\", esi; g"
+0:018> bp 7ea82288 ".printf \"[TransferToDestination]\"; .if (ebx == 0) { .printf \" Starting \"; } .else { .printf \" Restarting \"; }; .printf \"\'Loop\': \'Counter\' is %d and \'Array Index\' is %d (@ ESI).\\n\", ebx, esi; g"
+0:018> bp 7ea8228b ".printf \"[TransferToDestination] Setting \'Array[%d]\': \'Array Element\' @ %08x.\\n\", ebx, poi(eax+ebx*4); g"
+0:018> bp 7ea8228f ".printf \"[TransferToDestination] Checking \'Array[%d]\': is \'Array Element\' @ %08x NULL?\\n\", ebx, poi(eax+ebx*4); g"
+0:018> bp 7ea82294 ".printf \"[TransferToDestination] Calling \'Array[%d]\'->TransferFromSrc: \'Array Element\' @ %08x.\\n\", ebx, poi(eax+ebx*4); g"
+0:018> bp 7ea822a7 ".printf \"[TransferToDestination] Incrementing \'Counter\': %d.\\n[TransferToDestination] Comparing \'Counter\' and \'Array Index\': \'Counter\' is %d and \'Array Index\' is %d (@ ESI).\\n\", ebx, ebx, esi; .if ((esi > (poi(edi+08) >> 2) - 1) & (ebx <= esi)) { .printf \"[TransferToDestination] Warning \'Array Index\': should be %d (@ %08x) instead of %d (@ESI).\\n\", (poi(edi+8) >> 2) - 1, edi+8, esi; g; } .else { g; }"
+0:018> bp 7ea822b2 ".printf \"********************************************************************************\\n\"; g"
+0:018> g
 ModLoad: 76200000 76277000   C:\WINDOWS\system32\mshtmled.dll
 ModLoad: 72d20000 72d29000   C:\WINDOWS\system32\wdmaud.drv
 ModLoad: 72d20000 72d29000   C:\WINDOWS\system32\wdmaud.drv
@@ -350,54 +326,129 @@ eip=7ea814a1 esp=06d8fc8c ebp=06d8fc8c iopl=0         nv up ei pl zr na pe nc
 cs=001b  ss=0023  ds=0023  es=0023  fs=003b  gs=0000             efl=00010246
 mshtml!CXferThunk::PvInitVar+0x5:
 7ea814a1 ff7118          push    dword ptr [ecx+18h]  ds:0023:000c0018=????????
-0:018> !address 064d3140
-06430000 : 06430000 - 000c6000
-Type     00020000 MEM_PRIVATE
-Protect  00000004 PAGE_READWRITE
-State    00001000 MEM_COMMIT
-Usage    RegionUsageHeap
-Handle   00140000
-0:018> !heap -p -a 064d3140
-address 064d3140 found in
-_HEAP @ 140000
-HEAP_ENTRY Size Prev Flags    UserPtr UserSize - state
-064d3110 000c 0000  [07]   064d3118    00048 - (busy)
-mshtml!CImgCtx::`vftable'
-Trace: 680d
-7c96cf9a ntdll!RtlDebugAllocateHeap+0x000000e1
-7c949564 ntdll!RtlAllocateHeapSlowly+0x00000044
-7c918f01 ntdll!RtlAllocateHeap+0x00000e64
-7e8db4e0 mshtml!_MemAllocClear+0x00000023
-7e86fda7 mshtml!CImgInfo::NewDwnCtx+0x0000000c
-7e8591ce mshtml!NewDwnCtx+0x00000028
-7e859680 mshtml!CDoc::NewDwnCtx2+0x0000014e
-7e8593b0 mshtml!CDoc::NewDwnCtx+0x00000057
-7e85bb7d mshtml!CImgHelper::FetchAndSetImgCtx+0x0000005b
-7e85bb18 mshtml!CImgHelper::SetImgSrc+0x00000023
-7e886855 mshtml!CImgHelper::EnterTree+0x00000127
-7e8867a3 mshtml!CImgHelper::Notify+0x000001b6
-7e8cf890 mshtml!CImgElement::Notify+0x0000002c
-7e8ab94a mshtml!CSpliceTreeEngine::InsertSplice+0x00000a09
-7e8a99e7 mshtml!CMarkup::SpliceTreeInternal+0x000000ac
-7e8aa8ba mshtml!CDoc::CutCopyMove+0x000000d8
-7e8aac2b mshtml!CDoc::Move+0x00000018
-7e8ad44d mshtml!HandleHTMLInjection+0x00000187
-7e8ad2d9 mshtml!HandleHTMLInjection+0x00000050
-7e8aae80 mshtml!CElement::Inject+0x000002ee
-7ea66c1f mshtml!CDBindMethodsText::BoundValueToElement+0x00000022
-7ea81d85 mshtml!CXfer::TransferFromSrc+0x000000c5
-7ea82299 mshtml!CRecordInstance::TransferToDestination+0x0000002a
-7ea82870 mshtml!CRecordInstance::SetHRow+0x00000045
-7ea82fb8 mshtml!CCurrentRecordInstance::OnRowPositionChange+0x0000005d
-7317f285 oledb32!CRowPosition::FireRowPositionChange+0x00000096
-7317f81d oledb32!CRowPosition::SetRowPosition+0x00000117
-7ea831f5 mshtml!CCurrentRecordInstance::InitCurrentRow+0x0000007b
-7ea83373 mshtml!CCurrentRecordInstance::InitPosition+0x00000013
-7e9e17bc mshtml!CDataBindTask::DecideToRun+0x0000012d
-7ea800f2 mshtml!CDataBindTask::OnRun+0x000000ea
-7e967f2b mshtml!CTask::TaskmanRunTask+0x0000003e
+0:018>
 ```
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
+
+## Understanding
+### White Boxing
+```
+TransferToDestination@CRecordInstance PROC NEAR USES EAX ECX EBX EDI ESI EBP ESP
+start:
+mov		edi, edi			;; make sure 'edi' will be saved
+push	ebp					;; save the value of 'ebp'
+mov		ebp, esp			;; 'ebp' points to the top of the stack
+push	ecx					;; save the value of 'ecx'
+push	ebx					;; save the value of 'ebx'
+push	esi					;; save the value of 'esi'
+push	edi					;; save the value of 'edi'
+mov		edi, ecx			;; 'ecx' is 'Array' pointer
+						;;  - pointer is moved to 'edi'
+mov		esi, [edi+08h]			;; '[edi+08h]' is the 'Array' size
+						;;  - size is moved to 'esi'
+xor		ebx, ebx			;; 'ebx' is the 'Counter' for 'do_while' 'Loop'
+						;;  - xoring 'ebx' the value will be 0
+shr		esi, 02h			;; 'esi' is shifted right 2 bits
+						;;  - a good explanation is:
+						;;   - 16      = 0Ch = 0000 0000 0001 0000 = 16
+						;;   - 16 >> 2 = 04h = 0000 0000 0000 0100 = 4
+						;;  - this operation is very similar to:
+						;;   - int _arX[x] = { 1, 2, 3, 4, ..., x };
+						;;   - int _szX = sizeof(_arX)/sizeof(*_arX);
+						;;   - or 'Array.Size()'
+						;;   - or 'std::array::size' method
+dec		esi				;; IF 'esi' decremented < 0
+						;;  - this operation is very similar to:
+						;;   - int _arX[x] = { 1, 2, 3, 4, ..., x };
+						;;   - int _szX = (sizeof(_arX)/sizeof(*_arX));
+                                    		;;   - _szX -= 1;
+						;;   - or 'Array.Size() - 1'
+						;;  - 'esi' is the 'Array Index'
+mov		dword ptr [ebp-04h], ebx	;; 'ebx' as the '[ebp-04h]'
+js		return				;; THEN 'return'
+						;; ELSE
+do_while:					;; 'do_while'
+									;;  - there is more to do
+mov		eax, [edi+0Ch]			;; '[edi+0Ch]' is the 'Array Elements' pointer
+						;;  - pointer is moved to 'eax'
+cmp		dword ptr [eax+ebx*04h], 0	;; IF 'Array Element' == 0
+						;;  - a good explanation is:
+						;;	 - each 'Loop' increments 'Counter'
+						;;    - #1: 'ebx' is 0 and 'eax' is 12345678h
+						;;     - 'Array Element' is (12345678h+(0*4))
+						;;     - or 1234567Ch
+						;;    - #2: 'ebx' is 1 and 'eax' is 12345678h
+						;;     - 'Array Element' is (12345678h+(1*4))
+						;;     - or 12345680h
+je		continue			;; THEN 'continue'
+						;; ELSE
+mov		ecx, [eax+ebx*04h]		;; '[eax+ebx*04h]' is the 'Array Element' pointer
+						;;  - pointer is moved to 'ecx'
+call	TransferFromSrc@CXfer			;; call 'CXfer::TransferFromSrc()'
+test	eax, eax				;; IF 'eax' == 0
+						;;  - 'eax' modified by 'CXfer::TransferFromSrc()'
+je		continue			;; THEN 'continue'
+						;; ELSE
+cmp		dword ptr [ebp-04h], 0		;; IF '[ebp-04h]' != 0
+						;;  - '[ebp-04h]' already has 0
+						;;  - 'mov dword ptr [ebp-04h], ebx'
+						;;  - a good explanation is:
+						;;	 - each 'Loop' increments 'Counter'
+						;;    - #1: '[ebp-04h]' is 0
+						;;     - THEN 'continue'
+						;;    - #2: '[ebp-04h]' is 1
+						;;     - ELSE 'mov dword ptr [ebp-04h], eax'
+						;;   - 0 seens to be OK and anything else NOT OK
+jne		continue			;; THEN 'continue'
+						;; ELSE
+mov		dword ptr [ebp-04h], eax	;; 'eax' as the '[ebp-04h]'
+continue:					;; 'continue'
+						;;  - whether there is nothing or more to do
+inc		ebx				;; increment the 'Counter'
+cmp		ebx, esi			;; IF 'Counter' <= 'Array Index'
+						;;  - a good explanation for MS08-078 is:
+						;;   - since the 'Array' has been freed
+						;;   - the 'Array Elements' have been destroyed
+						;;   - the '[edi+08h]' has been updated
+						;;   - but 'Array Index' (esi) hasn't been
+jle		do_while			;; THEN 'do_while'
+						;; ELSE
+return:						;; 'return'
+						;;  - there is nothing to do
+mov		eax, dword ptr [ebp-04h]	;; 'eax' points to the '[ebp-04h]'
+pop		edi				;; 'edi' is 'Array' pointer
+pop		esi				;; 'esi' is 'Array Index'
+pop		ebx				;; 'ebx' is 'Counter' or 'Array Elements'
+leave						;; destroy current stack frame
+						;;  - restore the previous frame
+ret						;; guess what? ;)
+stop:
+TransferToDestination@CRecordInstance ENDP
+```
+### Reverse Engineer
+```
+int CRecordInstance::TransferToDestination () {
+	int ebp_minus_4h, eax;
+	int esi, ebx = 0;
+
+	esi = (sizeof(edi) >> 2) - 1;
+
+	ebp_minus_4h = ebx;
+
+	do{
+		if(edi[ebx] == 0) continue;
+
+		eax = edi[ebx]->TransferFromSrc();
+
+		if((ebp_minus_4h == 0) && (eax != 0))
+			ebp_minus_4h = eax;
+
+		ebx++;
+	}while(ebx <= esi);
+
+	return(ebp_minus_4h);
+}
+````
 
 # KICK or LIMBO
 Stay tuned for the upcoming description.
