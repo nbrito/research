@@ -36,7 +36,7 @@ It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to 
 
 The "_**black magic**_" is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
-## Motivation
+# Motivation
 Many talks have been done in the last years, as well as too many useless information has been given by security community:
 * Mostly related to purpose-built frameworks, tools and libraries.
 * Some others addressing how to translate to a readable format.
@@ -57,7 +57,7 @@ mov	edi, eax	; moving eax to edi
 ```
 No matter what someone tries to convincing you, this is not [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering)... This is just a "_**translation**_".
 
-## Inception
+# Inception
 Every time a new vulnerability comes out, we should be ready to understand it, in order to perform: exploitation, detection, prevention and mitigation. Sometimes, none or just a few information regarding a new vulnerability  is publicly available... And sometimes, these information regarding a new vulnerability are wrong or, to be polite, uncompleted.
 
 [Reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches available to deeply understand a new vulnerability, and, sometimes, to "_**rediscover**_" the new vulnerability.
@@ -75,12 +75,12 @@ Information is a keyword to move forward in a reverse engineer, and a couple of 
 
 [Apprentices](https://en.wikipedia.org/wiki/Newbie) must know how to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), instead of how to use a purpose-built framework, tool or library. To address this demand, the [Inception](https://github.com/nbrito/talks/blob/master/2016/ibm-systems/nbrito-inception.pdf) defines four **dream levels** to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering):
 1. [**DREAM LEVEL 1**](https://github.com/nbrito/research/tree/master/inception#dream-level-1): prepare the vulnerable ecosystem.
-2. **DREAM LEVEL 2**: gather valuable information of vulnerability.
-3. **DREAM LEVEL 3**: analyze the vulnerability.
-4. **KICK or LIMBO**: exploiting the vulnerability.
+2. [**DREAM LEVEL 2**](https://github.com/nbrito/research/tree/master/inception#dream-level-2): gather valuable information of vulnerability.
+3. [**DREAM LEVEL 3**](https://github.com/nbrito/research/tree/master/inception#dream-level-3): analyze the vulnerability.
+4. [**KICK or LIMBO**](https://github.com/nbrito/research/tree/master/inception#kick-or-limbo): exploiting the vulnerability.
 
-## DREAM LEVEL 1
-### Checklist
+# DREAM LEVEL 1
+## Checklist
 Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), the following questions must be answered:
 1. Has a vulnerability been chosen?
 * There is nothing to do without a vulnerability.
@@ -94,7 +94,7 @@ Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_eng
 5. Which analysis method should be applied?
 * Choose and understand the analysis method that will be applied.
 
-### Inception Example
+## Inception Example
 For our example, the following answers have been found:
 1. Has a vulnerability been chosen?
 * [MS08-078](https://docs.microsoft.com/en-us/security-updates/SecurityBulletins/2008/ms08-078) ([CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844)).
@@ -107,39 +107,34 @@ For our example, the following answers have been found:
 5. Which analysis method should be applied?
 * White Box, Black Box and Grey/Gray Box.
 
-## DREAM LEVEL 2
+# DREAM LEVEL 2
 Stay tuned for the upcoming description.
 
-## DREAM LEVEL 3
+# DREAM LEVEL 3
 Stay tuned for the upcoming description.
 
-## KICK or LIMBO
-Stay tuned for the upcoming description.
-
-
-## Root Cause
 ###  ```CRecordInstance::TransferToDestination```
 ```
 int CRecordInstance::TransferToDestination () {
-    int ebp_minus_4h, eax;
-    int esi, ebx = 0;
-    
-    esi = (sizeof(edi) >> 2) - 1;
+int ebp_minus_4h, eax;
+int esi, ebx = 0;
 
-    ebp_minus_4h = ebx;
-    
-    do{
-        if(edi[ebx] == 0) continue;
+esi = (sizeof(edi) >> 2) - 1;
 
-        eax = edi[ebx]->TransferFromSrc();
+ebp_minus_4h = ebx;
 
-        if((ebp_minus_4h == 0) && (eax != 0))
-            ebp_minus_4h = eax;
+do{
+if(edi[ebx] == 0) continue;
 
-        ebx++;
-    }while(ebx <= esi);
+eax = edi[ebx]->TransferFromSrc();
 
-    return(ebp_minus_4h);
+if((ebp_minus_4h == 0) && (eax != 0))
+ebp_minus_4h = eax;
+
+ebx++;
+}while(ebx <= esi);
+
+return(ebp_minus_4h);
 }
 ````
 
@@ -336,54 +331,58 @@ cs=001b  ss=0023  ds=0023  es=0023  fs=003b  gs=0000             efl=00010246
 mshtml!CXferThunk::PvInitVar+0x5:
 7ea814a1 ff7118          push    dword ptr [ecx+18h]  ds:0023:000c0018=????????
 0:018> !address 064d3140
-	06430000 : 06430000 - 000c6000
-					Type     00020000 MEM_PRIVATE
-					Protect  00000004 PAGE_READWRITE
-					State    00001000 MEM_COMMIT
-					Usage    RegionUsageHeap
-					Handle   00140000
+06430000 : 06430000 - 000c6000
+Type     00020000 MEM_PRIVATE
+Protect  00000004 PAGE_READWRITE
+State    00001000 MEM_COMMIT
+Usage    RegionUsageHeap
+Handle   00140000
 0:018> !heap -p -a 064d3140
-	address 064d3140 found in
-	_HEAP @ 140000
-	  HEAP_ENTRY Size Prev Flags    UserPtr UserSize - state
-		064d3110 000c 0000  [07]   064d3118    00048 - (busy)
-		  mshtml!CImgCtx::`vftable'
-		Trace: 680d
-		7c96cf9a ntdll!RtlDebugAllocateHeap+0x000000e1
-		7c949564 ntdll!RtlAllocateHeapSlowly+0x00000044
-		7c918f01 ntdll!RtlAllocateHeap+0x00000e64
-		7e8db4e0 mshtml!_MemAllocClear+0x00000023
-		7e86fda7 mshtml!CImgInfo::NewDwnCtx+0x0000000c
-		7e8591ce mshtml!NewDwnCtx+0x00000028
-		7e859680 mshtml!CDoc::NewDwnCtx2+0x0000014e
-		7e8593b0 mshtml!CDoc::NewDwnCtx+0x00000057
-		7e85bb7d mshtml!CImgHelper::FetchAndSetImgCtx+0x0000005b
-		7e85bb18 mshtml!CImgHelper::SetImgSrc+0x00000023
-		7e886855 mshtml!CImgHelper::EnterTree+0x00000127
-		7e8867a3 mshtml!CImgHelper::Notify+0x000001b6
-		7e8cf890 mshtml!CImgElement::Notify+0x0000002c
-		7e8ab94a mshtml!CSpliceTreeEngine::InsertSplice+0x00000a09
-		7e8a99e7 mshtml!CMarkup::SpliceTreeInternal+0x000000ac
-		7e8aa8ba mshtml!CDoc::CutCopyMove+0x000000d8
-		7e8aac2b mshtml!CDoc::Move+0x00000018
-		7e8ad44d mshtml!HandleHTMLInjection+0x00000187
-		7e8ad2d9 mshtml!HandleHTMLInjection+0x00000050
-		7e8aae80 mshtml!CElement::Inject+0x000002ee
-		7ea66c1f mshtml!CDBindMethodsText::BoundValueToElement+0x00000022
-		7ea81d85 mshtml!CXfer::TransferFromSrc+0x000000c5
-		7ea82299 mshtml!CRecordInstance::TransferToDestination+0x0000002a
-		7ea82870 mshtml!CRecordInstance::SetHRow+0x00000045
-		7ea82fb8 mshtml!CCurrentRecordInstance::OnRowPositionChange+0x0000005d
-		7317f285 oledb32!CRowPosition::FireRowPositionChange+0x00000096
-		7317f81d oledb32!CRowPosition::SetRowPosition+0x00000117
-		7ea831f5 mshtml!CCurrentRecordInstance::InitCurrentRow+0x0000007b
-		7ea83373 mshtml!CCurrentRecordInstance::InitPosition+0x00000013
-		7e9e17bc mshtml!CDataBindTask::DecideToRun+0x0000012d
-		7ea800f2 mshtml!CDataBindTask::OnRun+0x000000ea
-		7e967f2b mshtml!CTask::TaskmanRunTask+0x0000003e
+address 064d3140 found in
+_HEAP @ 140000
+HEAP_ENTRY Size Prev Flags    UserPtr UserSize - state
+064d3110 000c 0000  [07]   064d3118    00048 - (busy)
+mshtml!CImgCtx::`vftable'
+Trace: 680d
+7c96cf9a ntdll!RtlDebugAllocateHeap+0x000000e1
+7c949564 ntdll!RtlAllocateHeapSlowly+0x00000044
+7c918f01 ntdll!RtlAllocateHeap+0x00000e64
+7e8db4e0 mshtml!_MemAllocClear+0x00000023
+7e86fda7 mshtml!CImgInfo::NewDwnCtx+0x0000000c
+7e8591ce mshtml!NewDwnCtx+0x00000028
+7e859680 mshtml!CDoc::NewDwnCtx2+0x0000014e
+7e8593b0 mshtml!CDoc::NewDwnCtx+0x00000057
+7e85bb7d mshtml!CImgHelper::FetchAndSetImgCtx+0x0000005b
+7e85bb18 mshtml!CImgHelper::SetImgSrc+0x00000023
+7e886855 mshtml!CImgHelper::EnterTree+0x00000127
+7e8867a3 mshtml!CImgHelper::Notify+0x000001b6
+7e8cf890 mshtml!CImgElement::Notify+0x0000002c
+7e8ab94a mshtml!CSpliceTreeEngine::InsertSplice+0x00000a09
+7e8a99e7 mshtml!CMarkup::SpliceTreeInternal+0x000000ac
+7e8aa8ba mshtml!CDoc::CutCopyMove+0x000000d8
+7e8aac2b mshtml!CDoc::Move+0x00000018
+7e8ad44d mshtml!HandleHTMLInjection+0x00000187
+7e8ad2d9 mshtml!HandleHTMLInjection+0x00000050
+7e8aae80 mshtml!CElement::Inject+0x000002ee
+7ea66c1f mshtml!CDBindMethodsText::BoundValueToElement+0x00000022
+7ea81d85 mshtml!CXfer::TransferFromSrc+0x000000c5
+7ea82299 mshtml!CRecordInstance::TransferToDestination+0x0000002a
+7ea82870 mshtml!CRecordInstance::SetHRow+0x00000045
+7ea82fb8 mshtml!CCurrentRecordInstance::OnRowPositionChange+0x0000005d
+7317f285 oledb32!CRowPosition::FireRowPositionChange+0x00000096
+7317f81d oledb32!CRowPosition::SetRowPosition+0x00000117
+7ea831f5 mshtml!CCurrentRecordInstance::InitCurrentRow+0x0000007b
+7ea83373 mshtml!CCurrentRecordInstance::InitPosition+0x00000013
+7e9e17bc mshtml!CDataBindTask::DecideToRun+0x0000012d
+7ea800f2 mshtml!CDataBindTask::OnRun+0x000000ea
+7e967f2b mshtml!CTask::TaskmanRunTask+0x0000003e
 ```
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
 
+# KICK or LIMBO
+Stay tuned for the upcoming description.
+
+# BONUS
 ## [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
 After three years, the [CVE Board](http://cve.mitre.org/community/board/index.html) has decided to change the description for [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) based on this research. As a direct result, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) is much more accurate than before. Check by yourself...
 ### Previous
