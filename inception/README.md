@@ -46,10 +46,10 @@ The **black magic** is finally unveiled, showing how to use tools (public availa
 push	ebx		; ebx = int FAR*
 push	esp		; esp = struct sockaddr FAR*
 push	edi		; edi = SOCKET
-call	_accept	; accept(edi, esp, ebx)
-mov	edi, eax   ; moving eax to edi
-               ; eax = return()
-               ; edi = SOCKET accept()
+call	_accept		; accept(edi, esp, ebx)
+mov	edi, eax	; moving eax to edi
+			; eax = return()
+			; edi = SOCKET accept()
 ```
 
 ## Root Cause
