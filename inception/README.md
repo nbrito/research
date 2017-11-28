@@ -80,8 +80,8 @@ Information is a keyword to move forward in a reverse engineer, and a couple of 
 4. **KICK or LIMBO**: exploiting the vulnerability.
 
 ## DREAM LEVEL 1
+### Checklist
 Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), the following questions must be answered:
-
 1. Has a vulnerability been chosen?
 * There is nothing to do without a vulnerability.
 2. Are there valuable information about the vulnerability?
@@ -94,6 +94,7 @@ Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_eng
 5. Which analysis method should be applied?
 * Choose and understand the analysis method that will be applied.
 
+### Inception Example
 For our example, the following answers have been found:
 1. Has a vulnerability been chosen?
 * [MS08-078](https://docs.microsoft.com/en-us/security-updates/SecurityBulletins/2008/ms08-078) ([CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844)).
