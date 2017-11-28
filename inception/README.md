@@ -40,6 +40,18 @@ It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to 
 
 The **black magic** is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
+## Motivation
+```
+; accept(SOCKET, struct sockaddr FAR*, int FAR*)
+push	ebx		; ebx = int FAR*
+push	esp		; esp = struct sockaddr FAR*
+push	edi		; edi = SOCKET
+call	_accept	; accept(edi, esp, ebx)
+mov	edi, eax   ; moving eax to edi
+               ; eax = return()
+               ; edi = SOCKET accept()
+```
+
 ## Root Cause
 ###  ```CRecordInstance::TransferToDestination```
 ```
