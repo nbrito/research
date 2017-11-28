@@ -19,6 +19,7 @@
  **************************************************************************/
 ```
 # Inception
+## H2HC Eighth Edition Talk Description
 _"Sometimes, the best way to advance is in reverse"_. ([Reversing: Secrest of Reverse Engineering](https://en.wikipedia.org/wiki/Reversing:_Secrets_of_Reverse_Engineering))
 
 Every time any new vulnerability comes out we should be ready to understand it, in order to perform its exploitation or even to build defenses. [Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches.
@@ -312,8 +313,10 @@ After three years, the [CVE Board](http://cve.mitre.org/community/board/index.ht
 _Use-after-free vulnerability in ```mshtml.dll``` in Microsoft Internet Explorer 5.01, 6, and 7 on Windows XP SP2 and SP3, Server 2003 SP1 and SP2, Vista Gold and SP1, and Server 2008 allows remote attackers to execute arbitrary code via a crafted XML document containing nested ```SPAN``` elements, as exploited in the wild in December 2008._
 ### Current
 _Use-after-free vulnerability in the ```CRecordInstance::TransferToDestination``` function in ```mshtml.dll``` in Microsoft Internet Explorer 5.01, 6, 6 SP1, and 7 allows remote attackers to execute arbitrary code via DSO bindings involving (1) an XML Island, (2) XML DSOs, or (3) Tabular Data Control (TDC) in a crafted HTML or XML document, as demonstrated by nested ```SPAN``` or ```MARQUEE``` elements, and exploited in the wild in December 2008._
-### Lacking Further Information
-Even with this update, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) description still lacks further information, because nested ```DIV```, ```LABEL```, ```LEGEND```, ```MARQUEE``` and ```SPAN``` elements can also be used to reproduce the vulnerability, and they do not even need to be the same, they can be mixed. Example:
+### Suggested
+_Internet Explorer 5.01, 6, 7, 8 Beta-1 and Beta-2 use-after-free condition within MSHTML.DLL, due to ```CRecordInstance::TransferToDestination()``` while checking for ```CXfer``` array size, allows remote code execution via crafted HTML document using (**multiple**) nested HTML Bindable Elements referring to predefined Data Source Object (XML Island, XML DSOs or Tabular Data Control)._
+
+By "_using (**multiple**) nested HTML Bindable Elements_" I meant that the ```DIV```, ```LABEL```, ```FIELDSET+LEGEND```, ```MARQUEE``` and ```SPAN``` HTML Elements can also be used to reproduce the vulnerability, and they do not even need to be the same, they can be mixed, for example:
 ```
 <HTML>
 <SCRIPT LANGUAGE="JavaScript">
@@ -338,15 +341,19 @@ function Inception (){
 </BODY>
 </HTML>
 ```
+Researchers know how hard is to change vulnerabilities description, and I really apreciate the changes...
+
+Here is the [CVE Change Logs](https://cassandra.cerias.purdue.edu/CVE_changes/), and here is the [CVE Change Log](https://cassandra.cerias.purdue.edu/CVE_changes/CVE.2011.12.html) for modified [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) entry ([December 21, 2011](https://cassandra.cerias.purdue.edu/CVE_changes/CVE.2011.12.html)).
+
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/pop/html/ips-bypass-test-bed).
 
 ## Credits
-[Nelson Brito](https://fnstenv.blogspot.com) (a.k.a. repository's owner)
+[Nelson Brito](mailto:nbrito@sekure.org)
 
 ## Disclaimer
-Codes are available for research purposes only, and the repository's owner vehemently denies the malicious use, as well as the illegal purpose use, of any information, code and/or tool contained in this repository.
+Codes are available for research purposes only, and I vehemently deny the malicious use, as well as the illegal purpose use, of any information, code and/or tool contained on this repository.
 
-If you think there is any information, code and/or tool that should not be here, please, contact the repository's owner.
+If you think there is any information, code and/or tool that should not be here, please, [let me know](mailto:nbrito@sekure.org).
 
 ## Warning
 This repository does not provide you with any legal rights to any intellectual property in any information, code and/or tool, also, be aware that the use of some information, code and/or tool may be forbidden in some countries, and there may be rules and laws prohibiting any unauthorized user from use the information, code and/or tool, being these actions considered illegal.
