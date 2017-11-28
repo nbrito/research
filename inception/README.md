@@ -74,29 +74,47 @@ Information is a keyword to move forward in a reverse engineer, and a couple of 
 * Drops can fill an ocean.
 
 [Apprentices](https://en.wikipedia.org/wiki/Newbie) must know how to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), instead of how to use a purpose-built framework, tool or library. To address this demand, the [Inception](https://github.com/nbrito/talks/blob/master/2016/ibm-systems/nbrito-inception.pdf) defines four **dream levels** to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering):
-1. **DREAM LEVEL 1**: prepare the vulnerable ecosystem.
+1. [**DREAM LEVEL 1**](https://github.com/nbrito/research/tree/master/inception#dream-level-1): prepare the vulnerable ecosystem.
 2. **DREAM LEVEL 2**: gather valuable information of vulnerability.
 3. **DREAM LEVEL 3**: analyze the vulnerability.
 4. **KICK or LIMBO**: exploiting the vulnerability.
 
 ## DREAM LEVEL 1
-Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), the following checklist migh be considered:
+Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), the following questions must be answered:
 
-### Has a vulnerability been chosen?
-There is nothing to do without a vulnerability.
-
-### Are there valuable information about the vulnerability?
-Gather valuable information to understand the weakness type regarding the vulnerability, as well as any feature and/or technology surrounding to trigger the vulnerability.
-
-### Is the vulnerable ecosystem affordable?
-Avoid exotic vulnerable ecosystem, because it must be configured as a test-bed and its deep knowledge are “```sine qua non```”.
-
-### Are there public tools available to perform a reverse engineer?
-A good set of public tools will define the success of the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering).
+1. Has a vulnerability been chosen?
+* There is nothing to do without a vulnerability.
+2. Are there valuable information about the vulnerability?
+* Gather valuable information to understand the weakness type regarding the vulnerability, as well as any feature and/or technology surrounding to trigger the vulnerability.
+3. Is the vulnerable ecosystem affordable?
+* Avoid exotic vulnerable ecosystem, because it must be configured as a test-bed and its deep knowledge are “```sine qua non```”.
+4. Are there public tools available to perform a reverse engineer?
+* A good set of public tools will define the success of the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering).
 * Development skills are always necessary, otherwise the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering) will fail.
+5. Which analysis method should be applied?
+* Choose and understand the analysis method that will be applied.
 
-### Which analysis method should be applied?
-Choose and understand the analysis method that will be applied.
+For our example, the following answers have been found:
+1. Has a vulnerability been chosen?
+* [MS08-078](https://docs.microsoft.com/en-us/security-updates/SecurityBulletins/2008/ms08-078) ([CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844)).
+2. Are there valuable information about the vulnerability?
+* Keywords: "XML Island”, “Data Binding”, “use-after-free”, “```MSHTML.dll```”, “XML document”, “```<SPAN>```”, “nested”.
+3. Is the vulnerable ecosystem affordable?
+* Microsoft Internet Explorer 7 and Microsoft Windows XP SP3.
+4. Are there public tools available to perform a reverse engineer?
+* [Debugging Tools for Windows](https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/), [Windows Symbol Package for Windows XP SP3](https://developer.microsoft.com/en-us/windows/hardware/download-symbols) and [IDA Pro 5.0 Freeware Version](https://www.hex-rays.com/products/ida/support/download_freeware.shtml).
+5. Which analysis method should be applied?
+* White Box, Black Box and Grey/Gray Box.
+
+## DREAM LEVEL 2
+Stay tuned for the upcoming description.
+
+## DREAM LEVEL 3
+Stay tuned for the upcoming description.
+
+## KICK or LIMBO
+Stay tuned for the upcoming description.
+
 
 ## Root Cause
 ###  ```CRecordInstance::TransferToDestination```
