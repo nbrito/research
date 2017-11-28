@@ -428,6 +428,25 @@ TransferToDestination@CRecordInstance ENDP
 ### Reverse Engineered
 The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
 ```
+/* Microsoft Internet Explorer 7 MSHTML.DLL (UNPATCHED)
+ * 'CRecordInstance::TransferToDestination'
+ */
+#define TranferFromSrc          "CXfer::TransferFromSrc(void)"
+
+/* Register(s):
+ *      - Receive:
+ *          - 'ecx' -> 'Array' pointer
+ *      - Return:
+ *          - 'eax' -> 'CXfer::TransferFromSrc(void)'
+ *          - '[ebp-04h]' -> 'CRecordInstance::TransferToDestination(void)'
+ *              - '0' seens to be OK and anything else NOT OK
+ *              - S_OK = 0x00000000 = Operation successful
+ *                  - https://en.wikipedia.org/wiki/HRESULT
+ *                  - https://msdn.microsoft.com/en-us/library/cc231196.aspx
+ *          - 'edi' -> 'Array' pointer
+ *          - 'esi' -> 'Array Index'
+ *          - 'ebx' -> 'Counter' or 'Array Elements'
+ */
 int CRecordInstance::TransferToDestination () {
 	int ebp_minus_4h, eax;
 	int esi, ebx = 0;
@@ -450,7 +469,7 @@ int CRecordInstance::TransferToDestination () {
 	return(ebp_minus_4h);
 }
 ````
-By the way, it is pretty simillar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
+By the way, it is pretty similar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
 
 # KICK or LIMBO
 Stay tuned for the upcoming description.
