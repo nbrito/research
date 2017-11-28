@@ -332,6 +332,7 @@ For further information, please, refer to this [link](https://github.com/nbrito/
 
 ## Understanding
 ### White Boxing
+1. Assembly Code (Commented)
 ```
 TransferToDestination@CRecordInstance PROC NEAR USES EAX ECX EBX EDI ESI EBP ESP
 start:
@@ -425,7 +426,7 @@ ret						;; guess what? ;)
 stop:
 TransferToDestination@CRecordInstance ENDP
 ```
-### Reverse Engineer
+### C Code (Reverse Engineered)
 ```
 int CRecordInstance::TransferToDestination () {
 	int ebp_minus_4h, eax;
