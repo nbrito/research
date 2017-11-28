@@ -426,7 +426,7 @@ stop:
 TransferToDestination@CRecordInstance ENDP
 ```
 ### Reverse Engineered
-The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-approach) approaches.
+The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
 ```
 int CRecordInstance::TransferToDestination () {
 	int ebp_minus_4h, eax;
