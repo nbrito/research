@@ -32,9 +32,9 @@ Many talks have been done in the last years, as well as too many useless informa
 * [Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) the vulnerability.
 * Etc...
 
-It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to achieve the **state-of-art** building exploitation and defenses, using your own exploitation skills.
+It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to achieve the "_**state-of-art**_" building exploitation and defenses, using your own exploitation skills.
 
-The **black magic** is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
+The "_**black magic**_" is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
 ## Motivation
 Many talks have been done in the last years, as well as too many useless information has been given by security community:
@@ -60,9 +60,43 @@ No matter what someone tries to convincing you, this is not [reverse engineer](h
 ## Inception
 Every time a new vulnerability comes out, we should be ready to understand it, in order to perform: exploitation, detection, prevention and mitigation. Sometimes, none or just a few information regarding a new vulnerability  is publicly available... And sometimes, these information regarding a new vulnerability are wrong or, to be polite, uncompleted.
 
-[Reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches available to deeply understand a new vulnerability, and, sometimes, to ["_**rediscover**_"](Rediscover the new vulnerability means that you did not actually discover a new vulnerability, but you can, and are able to, figure out valuable information about it.) the new vulnerability.
+[Reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches available to deeply understand a new vulnerability, and, sometimes, to "_**rediscover**_" the new vulnerability.
+* Rediscover the new vulnerability means that you did not actually discover a new vulnerability, but you can, and are able to, figure out valuable information about it.
 
-The challenge
+Some vulnerabilities do not have proof-of-concept codes released, consequentially, no valuable information, due to:
+* Widely used software.
+* Critical infra-structure.
+* Patch/Fix is unavailable (0-day).
+* [Non-disclosure agreement (NDA)](https://en.wiktionary.org/wiki/non-disclosure_agreement).
+* Vulnerability is for sale (good sense and/or bad sense).
+
+Information is a keyword to move forward in a reverse engineer, and a couple of good information are as good as all the information you need... Remember:
+* Drops can fill an ocean.
+
+[Apprentices](https://en.wikipedia.org/wiki/Newbie) must know how to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), instead of how to use a purpose-built framework, tool or library. To address this demand, the [Inception](https://github.com/nbrito/talks/blob/master/2016/ibm-systems/nbrito-inception.pdf) defines four **dream levels** to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering):
+1. **DREAM LEVEL 1**: prepare the vulnerable ecosystem.
+2. **DREAM LEVEL 2**: gather valuable information of vulnerability.
+3. **DREAM LEVEL 3**: analyze the vulnerability.
+4. **KICK or LIMBO**: exploiting the vulnerability.
+
+## DREAM LEVEL 1
+Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), the following checklist migh be considered:
+
+### Has a vulnerability been chosen?
+There is nothing to do without a vulnerability.
+
+### Are there valuable information about the vulnerability?
+Gather valuable information to understand the weakness type regarding the vulnerability, as well as any feature and/or technology surrounding to trigger the vulnerability.
+
+### Is the vulnerable ecosystem affordable?
+Avoid exotic vulnerable ecosystem, because it must be configured as a test-bed and its deep knowledge are “```sine qua non```”.
+
+### Are there public tools available to perform a reverse engineer?
+A good set of public tools will define the success of the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering).
+* Development skills are always necessary, otherwise the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering) will fail.
+
+### Which analysis method should be applied?
+Choose and understand the analysis method that will be applied.
 
 ## Root Cause
 ###  ```CRecordInstance::TransferToDestination```
