@@ -332,7 +332,28 @@ For further information, please, refer to this [link](https://github.com/nbrito/
 
 ## Understanding
 ### White Box (Static) Approach
+The following assembly code represents the [```MASM32```](http://www.masm32.com) implementation of the above dynamic analysis, and it is based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
 ```
+IFNDEF		__TRANFERTODESTINATION_ASM__
+		__TRANFERTODESTINATION_ASM__	equ	<1>
+
+.686
+
+.MODEL	FLAT, STDCALL
+OPTION		CASEMAP:NONE
+INCLUDE		\MASM32\INCLUDE\WINDOWS.INC
+INCLUDE		\MASM32\INCLUDE\USER32.INC
+INCLUDE		\MASM32\INCLUDE\KERNEL32.INC
+INCLUDELIB	\MASM32\LIB\USER32.LIB
+INCLUDELIB	\MASM32\LIB\KERNEL32.LIB
+
+.DATA	?
+
+.DATA
+TransferFromSrc		db	"CXfer::TransferFromSrc()", 0
+TransferToDestination	db 	"CRecordInstance::TransferToDestination()", 0
+
+.CODE
 TransferToDestination@CRecordInstance PROC NEAR USES EAX ECX EBX EDI ESI EBP ESP
 start:
 mov	edi, edi			;; make sure 'edi' will be saved
@@ -424,6 +445,11 @@ leave					;; destroy current stack frame
 ret					;; guess what? ;)
 stop:
 TransferToDestination@CRecordInstance ENDP
+align	8
+ELSE
+	echo Sorry! Duplicate assembly component file TransferToDestination.asm!
+ENDIF
+END
 ```
 ### Reverse Engineer
 The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
