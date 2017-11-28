@@ -19,7 +19,7 @@
  **************************************************************************/
 ```
 # Origins: Inception
-## [H2HC](https://www.h2hc.com.br/) Eighth Edition Talk Description
+## Inception: Tips and tricks I've learned reversing vulnerabilities!
 _"Sometimes, the best way to advance is in reverse"_. ([Reversing: Secrest of Reverse Engineering](https://en.wikipedia.org/wiki/Reversing:_Secrets_of_Reverse_Engineering))
 
 Every time any new vulnerability comes out we should be ready to understand it, in order to perform its exploitation or even to build defenses. [Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches.
