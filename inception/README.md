@@ -125,7 +125,7 @@ For our example, the following answers have been found:
 4. Are there public tools available to perform a reverse engineer?
 * [Debugging Tools for Windows](https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/), [Windows Symbol Package for Windows XP SP3](https://developer.microsoft.com/en-us/windows/hardware/download-symbols) and [IDA Pro 5.0 Freeware Version](https://www.hex-rays.com/products/ida/support/download_freeware.shtml).
 5. Which analysis method should be applied?
-* White Box, Black Box and Grey/Gray Box.
+* White Box (Static Analysis), Black Box (Dymanic Analysis) and Grey/Gray Box (Both Static and Dymanic Analisys).
 
 # DREAM LEVEL 2
 Stay tuned for the upcoming description.
@@ -134,7 +134,7 @@ Stay tuned for the upcoming description.
 Stay tuned for the upcoming description.
 
 ## Mapping
-### Black Box Approach
+### Black Box (Dynamic) Approach
 ```
 0:018> bc *
 0:018> bp 7ea8226f ".printf \"********************************************************************************\\n\"; g"
@@ -331,7 +331,7 @@ mshtml!CXferThunk::PvInitVar+0x5:
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
 
 ## Understanding
-### White Box Approach
+### White Box (Static) Approach
 ```
 TransferToDestination@CRecordInstance PROC NEAR USES EAX ECX EBX EDI ESI EBP ESP
 start:
@@ -426,8 +426,7 @@ stop:
 TransferToDestination@CRecordInstance ENDP
 ```
 ### Reverse Engineered
-The following C code represents the above assembly code, and it is based on the understaning of both Black Box and White Box approaches. By the way, it is pretty simillar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
-
+The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-approach) approaches.
 ```
 int CRecordInstance::TransferToDestination () {
 	int ebp_minus_4h, eax;
@@ -451,6 +450,7 @@ int CRecordInstance::TransferToDestination () {
 	return(ebp_minus_4h);
 }
 ````
+By the way, it is pretty simillar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
 
 # KICK or LIMBO
 Stay tuned for the upcoming description.
