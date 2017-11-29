@@ -162,7 +162,7 @@ For further information, please, watch this [video](https://vimeo.com/242753168)
 Stay tuned for the upcoming description.
 
 #### White Box (Static) Approach
-The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understanding of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
+The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understanding of both [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) and [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approaches.
 ```
 IFNDEF		__TRANFERTODESTINATION_ASM__
 		__TRANFERTODESTINATION_ASM__	equ	<1>
@@ -282,7 +282,7 @@ ENDIF
 END
 ```
 #### Reverse Engineering
-The following C code represents the above assembly code, and it is based on the understanding of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
+The following C code represents the above assembly code, and it is based on the understanding of both [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) and [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approaches.
 ```
 #ifndef __TRANFERTODESTINATION_CXX__
 #define __TRANFERTODESTINATION_CXX__ 1
