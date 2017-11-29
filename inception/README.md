@@ -19,7 +19,8 @@
  **************************************************************************/
 ```
 # Origins: Inception
-## Inception: Tips and tricks I've learned reversing vulnerabilities!
+## [Hackers to Hackers Conference](https://www.h2hc.com.br/) Eighth Edition
+### Inception: Tips and tricks I've learned reversing vulnerabilities!
 _"Sometimes, the best way to advance is in reverse"_. ([Reversing: Secrest of Reverse Engineering](https://en.wikipedia.org/wiki/Reversing:_Secrets_of_Reverse_Engineering))
 
 Every time any new vulnerability comes out we should be ready to understand it, in order to perform its exploitation or even to build defenses. [Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches.
@@ -37,6 +38,8 @@ It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to 
 The "_**black magic**_" is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
 ## Conferences
+### 2011
+#### test
 1. [Hackers to Hackers Conference](https://www.h2hc.com.br/) Eighth Edition (October 29 to 30, 2011):
 * ["Inception: Tips and tricks I've learned reversing vulnerabilities!"](https://github.com/nbrito/talks/tree/master/2011/h2hc)
 2. [Garoa Hacker Clube](http://garoa.net.br/wiki/Página_principal) Turing Clube Especial (December 14, 2011):
