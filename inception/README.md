@@ -48,17 +48,21 @@ _"What is the most resilient parasite? Bacteria? A virus? An intestinal worm? An
 * ["Inception: Tips and tricks I've learned reversing vulnerabilities!"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (October 29 to 30, 2011)
 #### [Garoa Hacker Clube](http://garoa.net.br/wiki/Página_principal) Turing Clube Especial
 * ["Inception: Tips and tricks I've learned reversing vulnerabilities!"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (December 14, 2011)
+
 ### 2012
 #### [Conferência O Outro Lado Edição 3 / Security BSides São Paulo](https://www.garoa.net.br/wiki/O_Outro_Lado_BSidesSP_ed_3)
 * ["Reverse Engineering: Everything you wanted to know about reverse engineering, but were too embarrassed to ask!"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (May 6, 2012)
 #### [VII Workshop de Segurança da Informação / SegInfo](http://www.evento.seginfo.com.br/)
 * ["Reverse Engineering Client-side Bugs in the APT Age"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (August 31, 2012 to September 1, 2012)
+
 ### 2013
 #### [BHack Conference](http://www.bhack.com.br/)
 * ["REVERSING: A client-side vulnerability under the microscope!"](https://github.com/nbrito/talks/tree/master/2013/bhack) (June 22/23, 2013)
+
 ### 2015
 #### [The Developer's Conference 2015](http://www.thedevelopersconference.com.br/tdc/2015/saopaulo/trilha-seguranca)
 * ["Engenharia Reversa: Um Estudo de Caso"](https://github.com/nbrito/talks/tree/master/2013/bhack) (July 24, 2015)
+
 ### 2016
 #### [Quinta Academia SSI @ ITAÚ](https://www.itau.com.br/)
 * ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack)  (April 26, 2016)
@@ -144,8 +148,6 @@ For our example, taking the [apprentices](https://en.wikipedia.org/wiki/Newbie) 
 Stay tuned for the upcoming description.
 
 ## DREAM LEVEL 3
-Stay tuned for the upcoming description.
-
 ### Triggering
 Stay tuned for the upcoming description.
 
@@ -510,8 +512,6 @@ mshtml!CXferThunk::PvInitVar+0x5:
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing) and watch this [video](https://vimeo.com/242753270).
 
 ## KICK or LIMBO
-Stay tuned for the upcoming description.
-
 ### Exploiting
 Stay tuned for the upcoming description.
 
@@ -522,7 +522,7 @@ For further information, please, refer to this [link](https://github.com/nbrito/
 ### Microsoft Workarounds
 Stay tuned for the upcoming description.
 
-FFor further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/workarounds), this other [link](https://github.com/nbrito/research/tree/master/inception/exploitation/bonus), and watch this [video](https://vimeo.com/242753439).
+For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/workarounds), this other [link](https://github.com/nbrito/research/tree/master/inception/exploitation/bonus), and watch this [video](https://vimeo.com/242753439).
 
 ### [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
 After three years, the [CVE Board](http://cve.mitre.org/community/board/index.html) has decided to change the description for [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) based on this research. As a direct result, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) is much more accurate than before. Check by yourself...
