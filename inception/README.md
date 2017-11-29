@@ -39,25 +39,28 @@ The "_**black magic**_" is finally unveiled, showing how to use tools (public av
 
 ## Conferences
 ### 2011
-#### test
-1. [Hackers to Hackers Conference](https://www.h2hc.com.br/) Eighth Edition (October 29 to 30, 2011):
-* ["Inception: Tips and tricks I've learned reversing vulnerabilities!"](https://github.com/nbrito/talks/tree/master/2011/h2hc)
-2. [Garoa Hacker Clube](http://garoa.net.br/wiki/Página_principal) Turing Clube Especial (December 14, 2011):
-* ["Inception: Tips and tricks I've learned reversing vulnerabilities!"](https://github.com/nbrito/talks/tree/master/2011/h2hc)
-3. [Conferência O Outro Lado Edição 3 / Security BSides São Paulo](https://www.garoa.net.br/wiki/O_Outro_Lado_BSidesSP_ed_3) (May 6, 2012):
-* ["Reverse Engineering: Everything you wanted to know about reverse engineering, but were too embarrassed to ask!"](https://github.com/nbrito/talks/tree/master/2011/h2hc)
-4.  [VII Workshop de Segurança da Informação / SegInfo](http://www.evento.seginfo.com.br/) (August 31, 2012 to September 1, 2012):
-* ["Reverse Engineering Client-side Bugs in the APT Age"](https://github.com/nbrito/talks/tree/master/2011/h2hc)
-5. [BHack Conference 2013](http://www.bhack.com.br/) (June 22/23, 2013):
-* ["REVERSING: A client-side vulnerability under the microscope!"](https://github.com/nbrito/talks/tree/master/2013/bhack)
-6. [The Developer's Conference 2015](http://www.thedevelopersconference.com.br/tdc/2015/saopaulo/trilha-seguranca) (July 24, 2015):
-* ["Engenharia Reversa: Um Estudo de Caso"](https://github.com/nbrito/talks/tree/master/2013/bhack)
-7. [Quinta Academia SSI @ ITAÚ](https://www.itau.com.br/) (April 26, 2016):
-* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack)
-8. [ROADSEC-RJ](http://roadsec.com.br/riodejaneiro2016/) (October 1, 2016):
-* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack)
-9. [IBM Systems Technical University](https://www-03.ibm.com/services/learning/ites.wss/zz-en?pageType=page&c=X515387T93550G53) (October 18 to 20, 2016):
-* ["Inception: A reverse-engineer horror history"](https://github.com/nbrito/talks/tree/master/2016/ibm-systems)
+#### [Hackers to Hackers Conference](https://www.h2hc.com.br/) Eighth Edition
+* ["Inception: Tips and tricks I've learned reversing vulnerabilities!"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (October 29 to 30, 2011)
+#### [Garoa Hacker Clube](http://garoa.net.br/wiki/Página_principal) Turing Clube Especial
+* ["Inception: Tips and tricks I've learned reversing vulnerabilities!"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (December 14, 2011)
+### 2012
+#### [Conferência O Outro Lado Edição 3 / Security BSides São Paulo](https://www.garoa.net.br/wiki/O_Outro_Lado_BSidesSP_ed_3)
+* ["Reverse Engineering: Everything you wanted to know about reverse engineering, but were too embarrassed to ask!"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (May 6, 2012)
+#### [VII Workshop de Segurança da Informação / SegInfo](http://www.evento.seginfo.com.br/)
+* ["Reverse Engineering Client-side Bugs in the APT Age"](https://github.com/nbrito/talks/tree/master/2011/h2hc) (August 31, 2012 to September 1, 2012)
+### 2013
+#### [BHack Conference](http://www.bhack.com.br/)
+* ["REVERSING: A client-side vulnerability under the microscope!"](https://github.com/nbrito/talks/tree/master/2013/bhack) (June 22/23, 2013)
+### 2015
+#### [The Developer's Conference 2015](http://www.thedevelopersconference.com.br/tdc/2015/saopaulo/trilha-seguranca)
+* ["Engenharia Reversa: Um Estudo de Caso"](https://github.com/nbrito/talks/tree/master/2013/bhack) (July 24, 2015)
+### 2016
+#### [Quinta Academia SSI @ ITAÚ](https://www.itau.com.br/)
+* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack)  (April 26, 2016)
+#### [ROADSEC-RJ](http://roadsec.com.br/riodejaneiro2016/)
+* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack)  (October 1, 2016)
+#### [IBM Systems Technical University](https://www-03.ibm.com/services/learning/ites.wss/zz-en?pageType=page&c=X515387T93550G53)
+* ["Inception: A reverse-engineer horror history"](https://github.com/nbrito/talks/tree/master/2016/ibm-systems)  (October 18 to 20, 2016)
 
 # Motivation
 Many talks have been done in the last years, as well as too many useless information has been given by security community:
