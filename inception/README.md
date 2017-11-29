@@ -282,7 +282,7 @@ ENDIF
 END
 ```
 #### Reverse Engineering
-The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
+The following C code represents the above assembly code, and it is based on the understanding of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
 ```
 #ifndef __TRANFERTODESTINATION_CXX__
 #define __TRANFERTODESTINATION_CXX__ 1
