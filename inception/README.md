@@ -62,7 +62,8 @@ The "_**black magic**_" is finally unveiled, showing how to use tools (public av
 #### [IBM Systems Technical University](https://www-03.ibm.com/services/learning/ites.wss/zz-en?pageType=page&c=X515387T93550G53)
 * ["Inception: A reverse-engineer horror history"](https://github.com/nbrito/talks/tree/master/2016/ibm-systems)  (October 18 to 20, 2016)
 
-# Motivation
+# Chapter I
+## Motivation
 Many talks have been done in the last years, as well as too many useless information has been given by security community:
 * Mostly related to purpose-built frameworks, tools and libraries.
 * Some others addressing how to translate to a readable format.
@@ -81,13 +82,13 @@ mov	edi, eax	; moving eax to edi
 			; eax = return()
 			; edi = SOCKET accept()
 ```
-No matter what someone tries to convincing you, this is not [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering)... This is just a "_**translation**_".
+No matter what someone tries to convincing you, this is not [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering)... This is just a "_**translation**_".
 
-# Inception
+## Inception
 Every time a new vulnerability comes out, we should be ready to understand it, in order to perform: exploitation, detection, prevention and mitigation. Sometimes, none or just a few information regarding a new vulnerability  is publicly available... And sometimes, these information regarding a new vulnerability are wrong or, to be polite, uncompleted.
 
-[Reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches available to deeply understand a new vulnerability, and, sometimes, to "_**rediscover**_" the new vulnerability.
-* Rediscover the new vulnerability means that you did not actually discover a new vulnerability, but you can, and are able to, figure out valuable information about it.
+[Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is one of the most powerful approaches available to deeply understand a new vulnerability, and, sometimes, to _**rediscover**_ the new vulnerability.
+* "_**Rediscover** the new vulnerability_" means that you did not actually discover a new vulnerability, but you can, and are able to, figure out valuable information about it.
 
 Some vulnerabilities do not have proof-of-concept codes released, consequentially, no valuable information, due to:
 * Widely used software.
@@ -99,15 +100,16 @@ Some vulnerabilities do not have proof-of-concept codes released, consequentiall
 Information is a keyword to move forward in a reverse engineer, and a couple of good information are as good as all the information you need... Remember:
 * Drops can fill an ocean.
 
-[Apprentices](https://en.wikipedia.org/wiki/Newbie) must know how to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), instead of how to use a purpose-built framework, tool or library. To address this demand, the [Inception](https://github.com/nbrito/talks/blob/master/2016/ibm-systems/nbrito-inception.pdf) defines four **dream levels** to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering):
+[Apprentices](https://en.wikipedia.org/wiki/Newbie) must know how to perform [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), instead of how to use a purpose-built framework, tool or library. To address this demand, the [Inception](https://github.com/nbrito/talks/blob/master/2016/ibm-systems/nbrito-inception.pdf) defines four **dream levels** to perform [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering):
 1. [**DREAM LEVEL 1**](https://github.com/nbrito/research/tree/master/inception#dream-level-1): prepare the vulnerable ecosystem.
 2. [**DREAM LEVEL 2**](https://github.com/nbrito/research/tree/master/inception#dream-level-2): gather valuable information of vulnerability.
 3. [**DREAM LEVEL 3**](https://github.com/nbrito/research/tree/master/inception#dream-level-3): analyze the vulnerability.
 4. [**KICK or LIMBO**](https://github.com/nbrito/research/tree/master/inception#kick-or-limbo): exploiting the vulnerability.
 
-# DREAM LEVEL 1
-## Checklist
-Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_engineering), the following questions must be answered:
+# Chapter II
+## DREAM LEVEL 1
+### Checklist
+Before starting the [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering), the following questions must be answered:
 1. Has a vulnerability been chosen?
 * There is nothing to do without a vulnerability.
 2. Are there valuable information about the vulnerability?
@@ -120,8 +122,8 @@ Before starting the [reverse engineer](https://en.wikipedia.org/wiki/Reverse_eng
 5. Which analysis method should be applied?
 * Choose and understand the analysis method that will be applied.
 
-## Inception Example
-For our example, the following answers have been found:
+### Inception
+For our example, taking the [apprentices](https://en.wikipedia.org/wiki/Newbie) through the wonders of  [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering), the following answers have been found:
 1. Has a vulnerability been chosen?
 * [MS08-078](https://docs.microsoft.com/en-us/security-updates/SecurityBulletins/2008/ms08-078) ([CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844)).
 2. Are there valuable information about the vulnerability?
@@ -133,14 +135,14 @@ For our example, the following answers have been found:
 5. Which analysis method should be applied?
 * White Box (Static Analysis), Black Box (Dymanic Analysis) and Grey/Gray Box (Both Static and Dymanic Analisys).
 
-# DREAM LEVEL 2
+## DREAM LEVEL 2
 **Stay tuned for the upcoming description.**
 
-# DREAM LEVEL 3
+## DREAM LEVEL 3
 **Stay tuned for the upcoming description.**
 
-## Mapping
-### Black Box (Dynamic) Approach
+### Mapping
+#### Black Box (Dynamic) Approach
 ```
 0:018> bc *
 0:018> bp 7ea8226f ".printf \"********************************************************************************\\n\"; g"
@@ -336,8 +338,8 @@ mshtml!CXferThunk::PvInitVar+0x5:
 ```
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
 
-## Understanding
-### White Box (Static) Approach
+### Understanding
+#### White Box (Static) Approach
 The following assembly code represents the [```MASM32```](http://www.masm32.com) implementation of the above dynamic analysis, and it is based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
 ```
 IFNDEF		__TRANFERTODESTINATION_ASM__
@@ -457,7 +459,7 @@ ELSE
 ENDIF
 END
 ```
-### Reverse Engineer
+#### Reverse Engineering
 The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
 ```
 #ifndef __TRANFERTODESTINATION_CXX__
@@ -491,17 +493,21 @@ int CRecordInstance::TransferToDestination () {
 ````
 By the way, it is pretty similar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
 
-# KICK or LIMBO
+## KICK or LIMBO
 **Stay tuned for the upcoming description.**
 
-# BONUS
-## [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
+# Chapter III
+## BONUS
+### [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
 After three years, the [CVE Board](http://cve.mitre.org/community/board/index.html) has decided to change the description for [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) based on this research. As a direct result, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) is much more accurate than before. Check by yourself...
-### Previous
+
+#### Previous
 _Use-after-free vulnerability in ```mshtml.dll``` in Microsoft Internet Explorer 5.01, 6, and 7 on Windows XP SP2 and SP3, Server 2003 SP1 and SP2, Vista Gold and SP1, and Server 2008 allows remote attackers to execute arbitrary code via a crafted XML document containing nested ```SPAN``` elements, as exploited in the wild in December 2008._
-### Current
+
+#### Current
 _Use-after-free vulnerability in the ```CRecordInstance::TransferToDestination``` function in ```mshtml.dll``` in Microsoft Internet Explorer 5.01, 6, 6 SP1, and 7 allows remote attackers to execute arbitrary code via DSO bindings involving (1) an XML Island, (2) XML DSOs, or (3) Tabular Data Control (TDC) in a crafted HTML or XML document, as demonstrated by nested ```SPAN``` or ```MARQUEE``` elements, and exploited in the wild in December 2008._
-### Suggested
+
+#### Suggested
 _Internet Explorer 5.01, 6, 7, 8 Beta-1 and Beta-2 use-after-free condition within ```MSHTML.DLL```, due to ```CRecordInstance::TransferToDestination()``` while checking for ```CXfer``` array size, allows remote code execution via crafted HTML document using (**multiple**) nested [HTML Bindable Elements](https://msdn.microsoft.com/en-us/library/ms531385(VS.85).aspx) referring to predefined Data Source Object (XML Island, XML DSOs or Tabular Data Control)._
 
 By "_using (**multiple**) nested [HTML Bindable Elements](https://msdn.microsoft.com/en-us/library/ms531385(VS.85).aspx)_" I meant that the ```DIV```, ```LABEL```, ```FIELDSET+LEGEND```, ```MARQUEE``` and ```SPAN``` HTML Elements can also be used to reproduce the vulnerability, and they do not even need to be the same, they can be mixed, for example:
