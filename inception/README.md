@@ -136,10 +136,10 @@ For our example, taking the [apprentices](https://en.wikipedia.org/wiki/Newbie) 
 * White Box (Static Analysis), Black Box (Dymanic Analysis) and Grey/Gray Box (Both Static and Dymanic Analisys).
 
 ## DREAM LEVEL 2
-**Stay tuned for the upcoming description.**
+Stay tuned for the upcoming description.
 
 ## DREAM LEVEL 3
-**Stay tuned for the upcoming description.**
+Stay tuned for the upcoming description.
 
 ### Mapping
 #### Black Box (Dynamic) Approach
@@ -340,7 +340,7 @@ For further information, please, refer to this [link](https://github.com/nbrito/
 
 ### Understanding
 #### White Box (Static) Approach
-The following assembly code represents the [```MASM32```](http://www.masm32.com) implementation of the above dynamic analysis, and it is based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
+The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
 ```
 IFNDEF		__TRANFERTODESTINATION_ASM__
 		__TRANFERTODESTINATION_ASM__	equ	<1>
@@ -494,7 +494,7 @@ int CRecordInstance::TransferToDestination () {
 By the way, it is pretty similar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
 
 ## KICK or LIMBO
-**Stay tuned for the upcoming description.**
+Stay tuned for the upcoming description.
 
 # Chapter III
 ## BONUS
