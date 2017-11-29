@@ -522,7 +522,7 @@ For further information, please, refer to this [link](https://github.com/nbrito/
 ### Microsoft Workarounds
 Stay tuned for the upcoming description.
 
-For further information, please, watch this [video](https://vimeo.com/242753439).
+FFor further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/workarounds), this other [link](https://github.com/nbrito/research/tree/master/inception/exploitation/bonus), and watch this [video](https://vimeo.com/242753439).
 
 ### [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
 After three years, the [CVE Board](http://cve.mitre.org/community/board/index.html) has decided to change the description for [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) based on this research. As a direct result, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) is much more accurate than before. Check by yourself...
