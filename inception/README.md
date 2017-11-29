@@ -57,7 +57,7 @@ _"What is the most resilient parasite? Bacteria? A virus? An intestinal worm? An
 
 ### 2013
 #### [BHack Conference](http://www.bhack.com.br/)
-* ["REVERSING: A client-side vulnerability under the microscope!"](https://github.com/nbrito/talks/tree/master/2013/bhack) (June 22/23, 2013)
+* ["REVERSING: A client-side vulnerability under the microscope!"](https://github.com/nbrito/talks/tree/master/2013/bhack) (June 22 to 23, 2013)
 
 ### 2015
 #### [The Developer's Conference 2015](http://www.thedevelopersconference.com.br/tdc/2015/saopaulo/trilha-seguranca)
