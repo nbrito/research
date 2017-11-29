@@ -37,6 +37,11 @@ It shows, using very detailed [demonstration](https://vimeo.com/nbrito), how to 
 
 The "_**black magic**_" is finally unveiled, showing how to use tools (public available) to understand and apply [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) to a vulnerability.
 
+## Why "Inception"?
+_"What is the most resilient parasite? Bacteria? A virus? An intestinal worm? An idea. Resilient... highly contagious. Once an idea has taken hold of the brain it's almost impossible to eradicate. An idea that is fully formed - fully understood - that sticks; right in there somewhere."_ (Cobb - [Inception](http://www.imdb.com/title/tt1375666/) - 2010)
+
+[Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is an extremely complex and boring task... It requires a very specific approach for each new task, but, from macro perspective, there are some common sense when performing a [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering). This [talk](https://github.com/nbrito/talks/tree/master/2016/ibm-systems) (latest version) shares my own strategy, as well as some tips and tricks I've learned reversing vulnerabilities... It tries to make this idea the _"most resilient parasite"_ to the [apprentices'](https://en.wikipedia.org/wiki/Newbie) brain.
+
 ## Conferences
 ### 2011
 #### [Hackers to Hackers Conference](https://www.h2hc.com.br/) Eighth Edition
@@ -82,7 +87,7 @@ mov	edi, eax	; moving eax to edi
 			; eax = return()
 			; edi = SOCKET accept()
 ```
-No matter what someone tries to convincing you, this is not [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering)... This is just a "_**translation**_".
+* _No matter what someone tries to convincing you, this is not [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering)... This is just a **translation**._
 
 ## Inception
 Every time a new vulnerability comes out, we should be ready to understand it, in order to perform: exploitation, detection, prevention and mitigation. Sometimes, none or just a few information regarding a new vulnerability  is publicly available... And sometimes, these information regarding a new vulnerability are wrong or, to be polite, uncompleted.
@@ -141,7 +146,175 @@ Stay tuned for the upcoming description.
 ## DREAM LEVEL 3
 Stay tuned for the upcoming description.
 
+### Triggering
+Stay tuned for the upcoming description.
+
+For further information, please, watch this [video](https://vimeo.com/242752950).
+
 ### Mapping
+Stay tuned for the upcoming description.
+
+For further information, please, watch this [video](https://vimeo.com/242753168).
+
+### Understanding
+Stay tuned for the upcoming description.
+
+For further information, please, watch this [video](https://vimeo.com/242753270).
+
+#### White Box (Static) Approach
+The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
+```
+IFNDEF		__TRANFERTODESTINATION_ASM__
+		__TRANFERTODESTINATION_ASM__	equ	<1>
+
+.686
+
+.MODEL	FLAT, STDCALL
+OPTION		CASEMAP:NONE
+INCLUDE		\MASM32\INCLUDE\WINDOWS.INC
+INCLUDE		\MASM32\INCLUDE\USER32.INC
+INCLUDE		\MASM32\INCLUDE\KERNEL32.INC
+INCLUDELIB	\MASM32\LIB\USER32.LIB
+INCLUDELIB	\MASM32\LIB\KERNEL32.LIB
+
+.DATA	?
+
+.DATA
+TransferFromSrc		db	"CXfer::TransferFromSrc()", 0
+TransferToDestination	db 	"CRecordInstance::TransferToDestination()", 0
+
+.CODE
+TransferToDestination@CRecordInstance PROC NEAR USES EAX ECX EBX EDI ESI EBP ESP
+start:
+mov	edi, edi			;; make sure 'edi' will be saved
+push	ebp				;; save the value of 'ebp'
+mov	ebp, esp			;; 'ebp' points to the top of the stack
+push	ecx				;; save the value of 'ecx'
+push	ebx				;; save the value of 'ebx'
+push	esi				;; save the value of 'esi'
+push	edi				;; save the value of 'edi'
+mov	edi, ecx			;; 'ecx' is 'Array' pointer
+					;;  - pointer is moved to 'edi'
+mov	esi, [edi+08h]			;; '[edi+08h]' is the 'Array' size
+					;;  - size is moved to 'esi'
+xor	ebx, ebx			;; 'ebx' is the 'Counter' for 'do_while' 'Loop'
+					;;  - xoring 'ebx' the value will be 0
+shr	esi, 02h			;; 'esi' is shifted right 2 bits
+					;;  - a good explanation is:
+					;;   - 16      = 0Ch = 0000 0000 0001 0000 = 16
+					;;   - 16 >> 2 = 04h = 0000 0000 0000 0100 = 4
+					;;  - this operation is very similar to:
+					;;   - int _arX[x] = { 1, 2, 3, 4, ..., x };
+					;;   - int _szX = sizeof(_arX)/sizeof(*_arX);
+					;;   - or 'Array.Size()'
+					;;   - or 'std::array::size' method
+dec	esi				;; IF 'esi' decremented < 0
+					;;  - this operation is very similar to:
+					;;   - int _arX[x] = { 1, 2, 3, 4, ..., x };
+					;;   - int _szX = (sizeof(_arX)/sizeof(*_arX));
+                                    	;;   - _szX -= 1;
+					;;   - or 'Array.Size() - 1'
+					;;  - 'esi' is the 'Array Index'
+mov	dword ptr [ebp-04h], ebx	;; 'ebx' as the '[ebp-04h]'
+js	return				;; THEN 'return'
+					;; ELSE
+do_while:				;; 'do_while'
+					;;  - there is more to do
+mov	eax, [edi+0Ch]			;; '[edi+0Ch]' is the 'Array Elements' pointer
+					;;  - pointer is moved to 'eax'
+cmp	dword ptr [eax+ebx*04h], 0	;; IF 'Array Element' == 0
+					;;  - a good explanation is:
+					;;	 - each 'Loop' increments 'Counter'
+					;;    - #1: 'ebx' is 0 and 'eax' is 12345678h
+					;;     - 'Array Element' is (12345678h+(0*4))
+					;;     - or 1234567Ch
+					;;    - #2: 'ebx' is 1 and 'eax' is 12345678h
+					;;     - 'Array Element' is (12345678h+(1*4))
+					;;     - or 12345680h
+je	continue			;; THEN 'continue'
+					;; ELSE
+mov	ecx, [eax+ebx*04h]		;; '[eax+ebx*04h]' is the 'Array Element' pointer
+					;;  - pointer is moved to 'ecx'
+call	TransferFromSrc@CXfer		;; call 'CXfer::TransferFromSrc()'
+test	eax, eax			;; IF 'eax' == 0
+					;;  - 'eax' modified by 'CXfer::TransferFromSrc()'
+je	continue			;; THEN 'continue'
+					;; ELSE
+cmp	dword ptr [ebp-04h], 0		;; IF '[ebp-04h]' != 0
+					;;  - '[ebp-04h]' already has 0
+					;;  - 'mov dword ptr [ebp-04h], ebx'
+					;;  - a good explanation is:
+					;;	 - each 'Loop' increments 'Counter'
+					;;    - #1: '[ebp-04h]' is 0
+					;;     - THEN 'continue'
+					;;    - #2: '[ebp-04h]' is 1
+					;;     - ELSE 'mov dword ptr [ebp-04h], eax'
+					;;   - 0 seens to be OK and anything else NOT OK
+jne	continue			;; THEN 'continue'
+					;; ELSE
+mov	dword ptr [ebp-04h], eax	;; 'eax' as the '[ebp-04h]'
+continue:				;; 'continue'
+					;;  - whether there is nothing or more to do
+inc	ebx				;; increment the 'Counter'
+cmp	ebx, esi			;; IF 'Counter' <= 'Array Index'
+					;;  - a good explanation for MS08-078 is:
+					;;   - since the 'Array' has been freed
+					;;   - the 'Array Elements' have been destroyed
+					;;   - the '[edi+08h]' has been updated
+					;;   - but 'Array Index' (esi) hasn't been
+jle	do_while			;; THEN 'do_while'
+					;; ELSE
+return:					;; 'return'
+					;;  - there is nothing to do
+mov	eax, dword ptr [ebp-04h]	;; 'eax' points to the '[ebp-04h]'
+pop	edi				;; 'edi' is 'Array' pointer
+pop	esi				;; 'esi' is 'Array Index'
+pop	ebx				;; 'ebx' is 'Counter' or 'Array Elements'
+leave					;; destroy current stack frame
+					;;  - restore the previous frame
+ret					;; guess what? ;)
+stop:
+TransferToDestination@CRecordInstance ENDP
+align	8
+ELSE
+	echo Sorry! Duplicate assembly component file TransferToDestination.asm!
+ENDIF
+END
+```
+#### Reverse Engineering
+The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
+```
+#ifndef __TRANFERTODESTINATION_CXX__
+#define __TRANFERTODESTINATION_CXX__ 1
+
+#define TranferFromSrc          "CXfer::TransferFromSrc(void)"
+#define TransfertoDestination   "CRecordInstance::TransferToDestination(void)"
+
+int CRecordInstance::TransferToDestination () {
+	int ebp_minus_4h, eax;
+	int esi, ebx = 0;
+
+	esi = (sizeof(edi) >> 2) - 1;
+
+	ebp_minus_4h = ebx;
+
+	do{
+		if(edi[ebx] == 0) continue;
+
+		eax = edi[ebx]->TransferFromSrc();
+
+		if((ebp_minus_4h == 0) && (eax != 0))
+			ebp_minus_4h = eax;
+
+		ebx++;
+	}while(ebx <= esi);
+
+	return(ebp_minus_4h);
+}
+#endif
+````
+* _By the way, it is pretty similar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/)._
+
 #### Black Box (Dynamic) Approach
 ```
 0:018> bc *
@@ -336,168 +509,24 @@ mshtml!CXferThunk::PvInitVar+0x5:
 7ea814a1 ff7118          push    dword ptr [ecx+18h]  ds:0023:000c0018=????????
 0:018>
 ```
+
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
-
-### Understanding
-#### White Box (Static) Approach
-The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
-```
-IFNDEF		__TRANFERTODESTINATION_ASM__
-		__TRANFERTODESTINATION_ASM__	equ	<1>
-
-.686
-
-.MODEL	FLAT, STDCALL
-OPTION		CASEMAP:NONE
-INCLUDE		\MASM32\INCLUDE\WINDOWS.INC
-INCLUDE		\MASM32\INCLUDE\USER32.INC
-INCLUDE		\MASM32\INCLUDE\KERNEL32.INC
-INCLUDELIB	\MASM32\LIB\USER32.LIB
-INCLUDELIB	\MASM32\LIB\KERNEL32.LIB
-
-.DATA	?
-
-.DATA
-TransferFromSrc		db	"CXfer::TransferFromSrc()", 0
-TransferToDestination	db 	"CRecordInstance::TransferToDestination()", 0
-
-.CODE
-TransferToDestination@CRecordInstance PROC NEAR USES EAX ECX EBX EDI ESI EBP ESP
-start:
-mov	edi, edi			;; make sure 'edi' will be saved
-push	ebp				;; save the value of 'ebp'
-mov	ebp, esp			;; 'ebp' points to the top of the stack
-push	ecx				;; save the value of 'ecx'
-push	ebx				;; save the value of 'ebx'
-push	esi				;; save the value of 'esi'
-push	edi				;; save the value of 'edi'
-mov	edi, ecx			;; 'ecx' is 'Array' pointer
-					;;  - pointer is moved to 'edi'
-mov	esi, [edi+08h]			;; '[edi+08h]' is the 'Array' size
-					;;  - size is moved to 'esi'
-xor	ebx, ebx			;; 'ebx' is the 'Counter' for 'do_while' 'Loop'
-					;;  - xoring 'ebx' the value will be 0
-shr	esi, 02h			;; 'esi' is shifted right 2 bits
-					;;  - a good explanation is:
-					;;   - 16      = 0Ch = 0000 0000 0001 0000 = 16
-					;;   - 16 >> 2 = 04h = 0000 0000 0000 0100 = 4
-					;;  - this operation is very similar to:
-					;;   - int _arX[x] = { 1, 2, 3, 4, ..., x };
-					;;   - int _szX = sizeof(_arX)/sizeof(*_arX);
-					;;   - or 'Array.Size()'
-					;;   - or 'std::array::size' method
-dec	esi				;; IF 'esi' decremented < 0
-					;;  - this operation is very similar to:
-					;;   - int _arX[x] = { 1, 2, 3, 4, ..., x };
-					;;   - int _szX = (sizeof(_arX)/sizeof(*_arX));
-                                    	;;   - _szX -= 1;
-					;;   - or 'Array.Size() - 1'
-					;;  - 'esi' is the 'Array Index'
-mov	dword ptr [ebp-04h], ebx	;; 'ebx' as the '[ebp-04h]'
-js	return				;; THEN 'return'
-					;; ELSE
-do_while:				;; 'do_while'
-					;;  - there is more to do
-mov	eax, [edi+0Ch]			;; '[edi+0Ch]' is the 'Array Elements' pointer
-					;;  - pointer is moved to 'eax'
-cmp	dword ptr [eax+ebx*04h], 0	;; IF 'Array Element' == 0
-					;;  - a good explanation is:
-					;;	 - each 'Loop' increments 'Counter'
-					;;    - #1: 'ebx' is 0 and 'eax' is 12345678h
-					;;     - 'Array Element' is (12345678h+(0*4))
-					;;     - or 1234567Ch
-					;;    - #2: 'ebx' is 1 and 'eax' is 12345678h
-					;;     - 'Array Element' is (12345678h+(1*4))
-					;;     - or 12345680h
-je	continue			;; THEN 'continue'
-					;; ELSE
-mov	ecx, [eax+ebx*04h]		;; '[eax+ebx*04h]' is the 'Array Element' pointer
-					;;  - pointer is moved to 'ecx'
-call	TransferFromSrc@CXfer		;; call 'CXfer::TransferFromSrc()'
-test	eax, eax			;; IF 'eax' == 0
-					;;  - 'eax' modified by 'CXfer::TransferFromSrc()'
-je	continue			;; THEN 'continue'
-					;; ELSE
-cmp	dword ptr [ebp-04h], 0		;; IF '[ebp-04h]' != 0
-					;;  - '[ebp-04h]' already has 0
-					;;  - 'mov dword ptr [ebp-04h], ebx'
-					;;  - a good explanation is:
-					;;	 - each 'Loop' increments 'Counter'
-					;;    - #1: '[ebp-04h]' is 0
-					;;     - THEN 'continue'
-					;;    - #2: '[ebp-04h]' is 1
-					;;     - ELSE 'mov dword ptr [ebp-04h], eax'
-					;;   - 0 seens to be OK and anything else NOT OK
-jne	continue			;; THEN 'continue'
-					;; ELSE
-mov	dword ptr [ebp-04h], eax	;; 'eax' as the '[ebp-04h]'
-continue:				;; 'continue'
-					;;  - whether there is nothing or more to do
-inc	ebx				;; increment the 'Counter'
-cmp	ebx, esi			;; IF 'Counter' <= 'Array Index'
-					;;  - a good explanation for MS08-078 is:
-					;;   - since the 'Array' has been freed
-					;;   - the 'Array Elements' have been destroyed
-					;;   - the '[edi+08h]' has been updated
-					;;   - but 'Array Index' (esi) hasn't been
-jle	do_while			;; THEN 'do_while'
-					;; ELSE
-return:					;; 'return'
-					;;  - there is nothing to do
-mov	eax, dword ptr [ebp-04h]	;; 'eax' points to the '[ebp-04h]'
-pop	edi				;; 'edi' is 'Array' pointer
-pop	esi				;; 'esi' is 'Array Index'
-pop	ebx				;; 'ebx' is 'Counter' or 'Array Elements'
-leave					;; destroy current stack frame
-					;;  - restore the previous frame
-ret					;; guess what? ;)
-stop:
-TransferToDestination@CRecordInstance ENDP
-align	8
-ELSE
-	echo Sorry! Duplicate assembly component file TransferToDestination.asm!
-ENDIF
-END
-```
-#### Reverse Engineering
-The following C code represents the above assembly code, and it is based on the understaning of both [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) and [White Box](https://github.com/nbrito/research/tree/master/inception#white-box-static-approach) approaches.
-```
-#ifndef __TRANFERTODESTINATION_CXX__
-#define __TRANFERTODESTINATION_CXX__ 1
-
-#define TranferFromSrc          "CXfer::TransferFromSrc(void)"
-#define TransfertoDestination   "CRecordInstance::TransferToDestination(void)"
-
-int CRecordInstance::TransferToDestination () {
-	int ebp_minus_4h, eax;
-	int esi, ebx = 0;
-
-	esi = (sizeof(edi) >> 2) - 1;
-
-	ebp_minus_4h = ebx;
-
-	do{
-		if(edi[ebx] == 0) continue;
-
-		eax = edi[ebx]->TransferFromSrc();
-
-		if((ebp_minus_4h == 0) && (eax != 0))
-			ebp_minus_4h = eax;
-
-		ebx++;
-	}while(ebx <= esi);
-
-	return(ebp_minus_4h);
-}
-#endif
-````
-By the way, it is pretty similar to the [example code](https://cloudblogs.microsoft.com/microsoftsecure/2008/12/18/ms08-078-and-the-sdl/) given by [Michael Howard](https://cloudblogs.microsoft.com/microsoftsecure/author/michaelhoward/).
 
 ## KICK or LIMBO
 Stay tuned for the upcoming description.
 
+### Exploiting
+Stay tuned for the upcoming description.
+
+For further information, please, watch this [video](https://vimeo.com/242753342).
+
 # Chapter III
 ## BONUS
+### Microsoft Workarounds
+Stay tuned for the upcoming description.
+
+For further information, please, watch this [video](https://vimeo.com/242753439).
+
 ### [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) Description
 After three years, the [CVE Board](http://cve.mitre.org/community/board/index.html) has decided to change the description for [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) based on this research. As a direct result, the [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) is much more accurate than before. Check by yourself...
 
@@ -535,7 +564,7 @@ function Inception (){
 </BODY>
 </HTML>
 ```
-Researchers know how hard is to change vulnerabilities description, and I really apreciate the changes...
+* _Researchers know how hard is to change vulnerabilities description, and I really apreciate the changes..._
 
 Here is the [CVE Change Logs](https://cassandra.cerias.purdue.edu/CVE_changes/), and here is the [CVE Change Log](https://cassandra.cerias.purdue.edu/CVE_changes/CVE.2011.12.html) for modified [CVE-2008-4844](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-4844) entry ([December 21, 2011](https://cassandra.cerias.purdue.edu/CVE_changes/CVE.2011.12.html)).
 
