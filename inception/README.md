@@ -40,7 +40,7 @@ The "_**black magic**_" is finally unveiled, showing how to use tools (public av
 ## Why "Inception"?
 _"What is the most resilient parasite? Bacteria? A virus? An intestinal worm? An idea. Resilient... highly contagious. Once an idea has taken hold of the brain it's almost impossible to eradicate. An idea that is fully formed - fully understood - that sticks; right in there somewhere."_ (Cobb - [Inception](http://www.imdb.com/title/tt1375666/) - 2010)
 
-[Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is an extremely complex and boring task... It requires a very specific approach for each new task, but, from macro perspective, there are some common sense when performing a [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering). This [talk](https://github.com/nbrito/talks/tree/master/2016/ibm-systems) (latest version) shares my own strategy, as well as some tips and tricks I've learned reversing vulnerabilities... It tries to make this idea the _"most resilient parasite"_ to the [apprentices'](https://en.wikipedia.org/wiki/Newbie) brain.
+[Reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering) is an extremely complex and boring task... It requires a very specific approach for each new task, but, from macro perspective, there are some common sense when performing a [reverse engineering](https://en.wikipedia.org/wiki/Reverse_engineering). This [talk](https://github.com/nbrito/talks/tree/master/2016/ibm-systems) shares a proposed approach, as well as some tips and tricks learned while reversing vulnerabilities... It tries to make this idea the _"most resilient parasite"_ to the [apprentices'](https://en.wikipedia.org/wiki/Newbie) brain.
 
 ## Conferences
 ### 2011
