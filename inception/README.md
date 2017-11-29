@@ -159,8 +159,6 @@ For further information, please, watch this [video](https://vimeo.com/242753168)
 ### Understanding
 Stay tuned for the upcoming description.
 
-For further information, please, watch this [video](https://vimeo.com/242753270).
-
 #### White Box (Static) Approach
 The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
 ```
@@ -509,8 +507,7 @@ mshtml!CXferThunk::PvInitVar+0x5:
 7ea814a1 ff7118          push    dword ptr [ecx+18h]  ds:0023:000c0018=????????
 0:018>
 ```
-
-For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing).
+For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/reversing) and watch this [video](https://vimeo.com/242753270).
 
 ## KICK or LIMBO
 Stay tuned for the upcoming description.
@@ -518,7 +515,7 @@ Stay tuned for the upcoming description.
 ### Exploiting
 Stay tuned for the upcoming description.
 
-For further information, please, watch this [video](https://vimeo.com/242753342).
+For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/inception/exploitation) and watch this [video](https://vimeo.com/242753342).
 
 # Chapter III
 ## BONUS
