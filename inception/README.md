@@ -162,7 +162,7 @@ For further information, please, watch this [video](https://vimeo.com/242753168)
 Stay tuned for the upcoming description.
 
 #### White Box (Static) Approach
-The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understaning of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
+The following assembly code represents the ```CRecordInstance::TransferToDestination``` in ```MSHTML.DLL``` (Microsoft Internet Explorer 7), customized to [```MASM32```](http://www.masm32.com) implementation, and the comments are based on the understanding of the [Black Box](https://github.com/nbrito/research/tree/master/inception#black-box-dynamic-approach) approach.
 ```
 IFNDEF		__TRANFERTODESTINATION_ASM__
 		__TRANFERTODESTINATION_ASM__	equ	<1>
