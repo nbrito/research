@@ -21,12 +21,43 @@ file named COPYING.  Among other things, the copyright notice
 and this notice must be preserved on all copies.  
 */
 
-#ifndef _Filebuf_h
+#ifndef _filebuf_h
 #ifdef __GNUG__
 #pragma once
 #pragma interface
 #endif
-#define _Filebuf_h 1
+#define _filebuf_h 1
+
+#include <streambuf.h>
+#include <stdio.h>
+
+class filebuf: public streambuf
+{
+public:
+  int         fd;
+  char        opened;
+
+  int         overflow(int c = EOF);
+  int         underflow();
+
+              filebuf();
+              filebuf(int newfd);
+              filebuf(int newfd, char* buf, int buflen);
+              filebuf(const char* filename, io_mode m, access_mode a);
+              filebuf(const char* filename, const char* m);   
+              filebuf(int filedesc, io_mode m);
+              filebuf(FILE* fileptr);
+
+             ~filebuf();
+
+  streambuf*  open(const char* name, open_mode m);
+  streambuf*  open(const char* filename, io_mode m, access_mode a);
+  streambuf*  open(const char* filename, const char* m);
+  streambuf*  open(int  filedesc, io_mode m);
+  streambuf*  open(FILE* fileptr);
+  int         is_open();
+  int         close();
+};
 
 
 #endif

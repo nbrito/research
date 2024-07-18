@@ -1,6 +1,6 @@
 /**************************************************************************
  * Talk:        Inception - The extended edition
- * Author:      Nelson Brito <nbrito *NoSPAM* sekure.org>
+ * Author:      Nelson Brito <nbrito *NoSPAM* prontonmail.com>
  * Conference:  Hackers to Hackers Conference Eighth Edition (October 2011)
  **************************************************************************
  *         .___                            __  .__                        *

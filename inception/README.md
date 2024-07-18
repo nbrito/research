@@ -1,7 +1,7 @@
 ```
 /**************************************************************************
  * Talk:        Inception - The extended edition
- * Author:      Nelson Brito <nbrito *NoSPAM* sekure.org>
+ * Author:      Nelson Brito <nbrito *NoSPAM* protonmail.com>
  * Conference:  Hackers to Hackers Conference Eighth Edition (October 2011)
  **************************************************************************
  *         .___                            __  .__                        *
@@ -568,12 +568,12 @@ Here is the [CVE Change Logs](https://cassandra.cerias.purdue.edu/CVE_changes/),
 For further information, please, refer to this [link](https://github.com/nbrito/research/tree/master/pop/html/ips-bypass-test-bed).
 
 # Credits
-[Nelson Brito](mailto:nbrito@sekure.org)
+[Nelson Brito](mailto:nbrito@protonmail.com)
 
 # Disclaimer
 Codes are available for research purposes only, and I vehemently deny the malicious use, as well as the illegal purpose use, of any information, code and/or tool contained on this repository.
 
-If you think there is any information, code and/or tool that should not be here, please, [let me know](mailto:nbrito@sekure.org).
+If you think there is any information, code and/or tool that should not be here, please, [let me know](mailto:nbrito@protonmail.com).
 
 # Warning
 This repository does not provide you with any legal rights to any intellectual property in any information, code and/or tool, also, be aware that the use of some information, code and/or tool may be forbidden in some countries, and there may be rules and laws prohibiting any unauthorized user from use the information, code and/or tool, being these actions considered illegal.

@@ -410,7 +410,7 @@ BUGS AND LIMITATIONS
        Report ESF.pl bugs and limitations directly to the author.
 
 AUTHOR
-       Nelson Brito <mailto:nbrito@sekure.org>.
+       Nelson Brito <mailto:nbrito@prontonmail.com>.
 
 COPYRIGHT
        Copyright(c) 2010-2012 Nelson Brito. All rights reserved worldwide.

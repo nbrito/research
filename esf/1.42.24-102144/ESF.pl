@@ -27,7 +27,7 @@ eval 'exec `which perl` -x -S $0 ${1+"$@"} ;'
 #             Powered by Exploit Next Generation Technology               #
 #                                                                         #
 ###########################################################################
-# Author:         Nelson Brito <nbrito *NoSPAM* sekure.org>               #
+# Author:         Nelson Brito <nbrito *NoSPAM* prontonmail.com>          #
 # Release Date:   December 25th, 2012                                     #
 ###########################################################################
 # Copyright(c) 2010-2012 Nelson Brito. All rights reserved worldwide.     #
@@ -80,7 +80,7 @@ my $record    = 0;
 ##
 my $version   = "$major.$minor.$build-$revision[0]$revision[1]$revision[2]";
 my $script    = "SQL Fingerprint powered by ENG++ Technology [Version $version]";
-my $author    = "Nelson Brito <nbrito\@sekure.org>";
+my $author    = "Nelson Brito <nbrito\@prontonmail.com>";
 ##
 # getoptions ()
 ##
@@ -1295,7 +1295,7 @@ Report B<ESF.pl> bugs and limitations directly to the L<author|"AUTHOR">.
 
 =head1 AUTHOR
 
-B<Nelson Brito> L<mailto:nbrito@sekure.org>.
+B<Nelson Brito> L<mailto:nbrito@prontonmail.com>.
 
 =head1 COPYRIGHT
 

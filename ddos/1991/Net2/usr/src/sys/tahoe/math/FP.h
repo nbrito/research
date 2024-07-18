@@ -33,35 +33,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)FP.h	7.1 (Berkeley) 12/6/90
+ *	@(#)fp.h	7.1 (Berkeley) 12/6/90
  */
 
-/*
- * General definitions of the floating point stuff on Power 6/32.
- * The floating point format definition is:
- *
- *		S    (exp-128)
- *	    (-1)  * 2	       * F
- *
- *	Where exp is the exponent field and F is the binary
- *	mantissa following it, including the hidden bit.
- *	The hidden bit actually is 1/2, so F is known to
- *	satisfy the range:
- *		1/2 <= F < 1
- */
-
-typedef struct {
-	unsigned	sign:1;
-	unsigned	exponent:8;
-	unsigned	mantissa:23;
-} sp_format;
-
-typedef struct {
-	unsigned	sign:1;
-	unsigned	exponent:8;
-	unsigned	mantissa:23;
-	unsigned	mantissa_lst;
-} dp_format;
-
-#define	EXP_BIAS	128		/* Exponent bias */
-#define SIGN_BIT	0x80000000	/* S bit mask */
+#define	EXPMASK		0x7f800000
+#define	SIGNBIT		0x80000000
+#define	ONE_EXP		0x40800000
+#define	TWO_EXP		0x40000000
+#define	EXPSHIFT	23
+#define	HID_POS		24
+#define	HID_R0R1	24+32
+#define	CLEARHID	0xff7fffff
+#define	EXPSIGN		0x40000000
+#define	MAX_EXP_DIF	55
+#define	SMAX_EXP_DIF	23
+#define	BIAS		0x80
+#define	BIASP1		0x81
+#define	BIASM1		0x7f
+#define	HUGE0		0x7fffffff
+#define	HUGE1		0xffffffff

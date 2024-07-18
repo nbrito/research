@@ -145,7 +145,7 @@ extern int  errno;
 
 /* ARGSUSED */
 
-old_isod_main (argc, argv, envp)
+main (argc, argv, envp)
 int     argc;
 char  **argv,
       **envp;
