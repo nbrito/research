@@ -31,7 +31,7 @@
 #            Powered by Exploit Next Generation++ Technology              #
 #                                                                         #
 ###########################################################################
-# Author:         Nelson Brito <nbrito *NoSPAM* sekure.org>               #
+# Author:         Nelson Brito <nbrito *NoSPAM* protonmail.com>           #
 # Release:        You Sh0t The Sheriff Seventh Edition                    #
 # Version:        Version 2 (Next Generation)                             #
 ###########################################################################
@@ -98,7 +98,7 @@ my $stop    = 0;
 ##
 my $version = "$major.$minor.$build[0]$build[1]$build[2]/$release";
 my $script  = "SQL Fingerprint NG powered by ENG++ Technology [Version $version]";
-my $author  = "Nelson Brito <nbrito\@sekure.org>";
+my $author  = "Nelson Brito <nbrito\@protonmail.com>";
 
 ##
 # getoptions ()
@@ -1969,7 +1969,7 @@ I<NOTE: This is a very limited version for public releases, which does not intro
 
 =head1 AUTHOR
 
-B<Nelson Brito> L<mailto:nbrito@sekure.org>.
+B<Nelson Brito> L<mailto:nbrito@protonmail.com>.
 
 =head1 COPYRIGHT NOTICE
 

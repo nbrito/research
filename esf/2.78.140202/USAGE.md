@@ -1,6 +1,6 @@
 ```
 SQL Fingerprint NG powered by ENG++ Technology [Version 2.78.140202/YSTS+GPL]
-Nelson Brito <nbrito@sekure.org>
+Nelson Brito <nbrito@protonmail.com>
 
 Usage:
     "ESF.pl host[/CIDR] [options]"

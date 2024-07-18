@@ -579,7 +579,7 @@ LEGAL NOTICE
            Seventh Edition.
 
 AUTHOR
-       Nelson Brito <mailto:nbrito@sekure.org>.
+       Nelson Brito <mailto:nbrito@protonmail.com>.
 
 COPYRIGHT NOTICE
        Copyright 2010-2014, Nelson Brito. All rights reserved worldwide.
