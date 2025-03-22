@@ -81,6 +81,10 @@ _"What is the most resilient parasite? Bacteria? A virus? An intestinal worm? An
 #### FIAP Cyber Conference 2020
 * ["Reverse Engineer: Dissecting a "Client Side" vulnerability in the APT era"](https://github.com/nbrito/talks/blob/master/2018/bradesco-garage-week/nbrito-reversing.pdf) (June 8, 2020)
 
+### 2025
+#### [BSides Rio de Janeiro](https://bsidesrj.com.br/schedule.html)
+* ["Inception — Tips and tricks I've learned reversing vulnerabilities!"]() (Marce 22, 2025)
+
 # Chapter I
 ## Motivation
 Many talks have been done in the last years, as well as too many useless information has been given by security community:
