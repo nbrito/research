@@ -65,11 +65,21 @@ _"What is the most resilient parasite? Bacteria? A virus? An intestinal worm? An
 
 ### 2016
 #### [Quinta Academia SSI @ ITAÚ](https://www.itau.com.br/)
-* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack)  (April 26, 2016)
+* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack) (April 26, 2016)
 #### [ROADSEC-RJ](http://roadsec.com.br/riodejaneiro2016/)
-* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack)  (October 1, 2016)
+* ["Inception: The extended edition"](https://github.com/nbrito/talks/tree/master/2013/bhack) (October 1, 2016)
 #### [IBM Systems Technical University](https://www-03.ibm.com/services/learning/ites.wss/zz-en?pageType=page&c=X515387T93550G53)
-* ["Inception: A reverse-engineer horror history"](https://github.com/nbrito/talks/tree/master/2016/ibm-systems)  (October 18 to 20, 2016)
+* ["Inception: A reverse-engineer horror history"](https://github.com/nbrito/talks/tree/master/2016/ibm-systems) (October 18 to 20, 2016)
+
+### 2018
+#### [Garage Week - BRADESCO](https://www.bradesco.com.br/)
+* ["Reverse Engineer: Dissecting a "Client Side" vulnerability in the APT era"](https://github.com/nbrito/talks/blob/master/2018/bradesco-garage-week/nbrito-reversing.pdf) (March 29, 2018)
+#### [Conferência Anual Orientada à Segurança (CAOS) Quarta Edição](http://caos.ufrj.br/)
+* ["Reverse Engineer: Dissecting a "Client Side" vulnerability in the APT era"](https://github.com/nbrito/talks/blob/master/2018/bradesco-garage-week/nbrito-reversing.pdf) (October 5, 2018)
+
+### 2020
+#### FIAP Cyber Conference 2020
+* ["Reverse Engineer: Dissecting a "Client Side" vulnerability in the APT era"](https://github.com/nbrito/talks/blob/master/2018/bradesco-garage-week/nbrito-reversing.pdf) (June 8, 2020)
 
 # Chapter I
 ## Motivation
