@@ -83,7 +83,7 @@ _"What is the most resilient parasite? Bacteria? A virus? An intestinal worm? An
 
 ### 2025
 #### [BSides Rio de Janeiro](https://bsidesrj.com.br/schedule.html)
-* ["Inception — Tips and tricks I've learned reversing vulnerabilities!"]() (Marce 22, 2025)
+* ["Inception — Tips and tricks I've learned reversing vulnerabilities!"]() (March 22, 2025)
 
 # Chapter I
 ## Motivation
